@@ -1,0 +1,22 @@
+\PG{c+c1}{\PGZsh{} Illustrative manifest; use your own approved container image.}
+\PG{n+nt}{apiVersion}\PG{p}{:}\PG{+w}{ }\PG{l+lScalar+lScalarPlain}{batch/v1}
+\PG{n+nt}{kind}\PG{p}{:}\PG{+w}{ }\PG{l+lScalar+lScalarPlain}{CronJob}
+\PG{n+nt}{metadata}\PG{p}{:}
+\PG{+w}{  }\PG{n+nt}{name}\PG{p}{:}\PG{+w}{ }\PG{l+lScalar+lScalarPlain}{sample\PGZhy{}import}
+\PG{n+nt}{spec}\PG{p}{:}
+\PG{+w}{  }\PG{n+nt}{schedule}\PG{p}{:}\PG{+w}{ }\PG{l+s}{\PGZdq{}}\PG{l+s}{*/15}\PG{n+nv}{ }\PG{l+s}{*}\PG{n+nv}{ }\PG{l+s}{*}\PG{n+nv}{ }\PG{l+s}{*}\PG{n+nv}{ }\PG{l+s}{*}\PG{l+s}{\PGZdq{}}
+\PG{+w}{  }\PG{n+nt}{timeZone}\PG{p}{:}\PG{+w}{ }\PG{l+lScalar+lScalarPlain}{Etc/UTC}
+\PG{+w}{  }\PG{n+nt}{concurrencyPolicy}\PG{p}{:}\PG{+w}{ }\PG{l+lScalar+lScalarPlain}{Forbid}
+\PG{+w}{  }\PG{n+nt}{startingDeadlineSeconds}\PG{p}{:}\PG{+w}{ }\PG{l+lScalar+lScalarPlain}{300}
+\PG{+w}{  }\PG{n+nt}{jobTemplate}\PG{p}{:}
+\PG{+w}{    }\PG{n+nt}{spec}\PG{p}{:}
+\PG{+w}{      }\PG{n+nt}{backoffLimit}\PG{p}{:}\PG{+w}{ }\PG{l+lScalar+lScalarPlain}{3}
+\PG{+w}{      }\PG{n+nt}{activeDeadlineSeconds}\PG{p}{:}\PG{+w}{ }\PG{l+lScalar+lScalarPlain}{720}
+\PG{+w}{      }\PG{n+nt}{template}\PG{p}{:}
+\PG{+w}{        }\PG{n+nt}{spec}\PG{p}{:}
+\PG{+w}{          }\PG{n+nt}{restartPolicy}\PG{p}{:}\PG{+w}{ }\PG{l+lScalar+lScalarPlain}{Never}
+\PG{+w}{          }\PG{n+nt}{terminationGracePeriodSeconds}\PG{p}{:}\PG{+w}{ }\PG{l+lScalar+lScalarPlain}{45}
+\PG{+w}{          }\PG{n+nt}{containers}\PG{p}{:}
+\PG{+w}{            }\PG{p+pIndicator}{\PGZhy{}}\PG{+w}{ }\PG{n+nt}{name}\PG{p}{:}\PG{+w}{ }\PG{l+lScalar+lScalarPlain}{import}
+\PG{+w}{              }\PG{n+nt}{image}\PG{p}{:}\PG{+w}{ }\PG{l+lScalar+lScalarPlain}{example.invalid/import:1.0}
+\PG{+w}{              }\PG{n+nt}{args}\PG{p}{:}\PG{+w}{ }\PG{p+pIndicator}{[}\PG{l+s}{\PGZdq{}}\PG{l+s}{\PGZhy{}\PGZhy{}resume}\PG{l+s}{\PGZdq{}}\PG{p+pIndicator}{]}

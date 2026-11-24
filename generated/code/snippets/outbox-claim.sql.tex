@@ -1,0 +1,21 @@
+\PG{k}{START}\PG{+w}{ }\PG{k}{TRANSACTION}\PG{p}{;}
+\PG{k}{SELECT}\PG{+w}{ }\PG{n}{id}\PG{p}{,}\PG{+w}{ }\PG{n}{payload}\PG{p}{,}\PG{+w}{ }\PG{n}{attempt}
+\PG{k}{FROM}\PG{+w}{ }\PG{n}{delivery\PGZus{}job}
+\PG{k}{WHERE}\PG{+w}{ }\PG{n}{status}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}ready\PGZsq{}}
+\PG{+w}{   }\PG{k}{OR}\PG{+w}{ }\PG{p}{(}\PG{n}{status}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}running\PGZsq{}}\PG{+w}{ }\PG{k}{AND}\PG{+w}{ }\PG{n}{lease\PGZus{}until}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{n}{UTC\PGZus{}TIMESTAMP}\PG{p}{(}\PG{l+m+mi}{6}\PG{p}{)}\PG{p}{)}
+\PG{k}{ORDER}\PG{+w}{ }\PG{k}{BY}\PG{+w}{ }\PG{n}{id}
+\PG{k}{LIMIT}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{k}{FOR}\PG{+w}{ }\PG{k}{UPDATE}\PG{+w}{ }\PG{n}{SKIP}\PG{+w}{ }\PG{n}{LOCKED}\PG{p}{;}
+
+\PG{c+c1}{\PGZhy{}\PGZhy{} Use selected id; roll back if no row is returned.}
+\PG{k}{UPDATE}\PG{+w}{ }\PG{n}{delivery\PGZus{}job}
+\PG{k}{SET}\PG{+w}{ }\PG{n}{status}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}running\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{attempt}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{attempt}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{    }\PG{n}{lease\PGZus{}until}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{UTC\PGZus{}TIMESTAMP}\PG{p}{(}\PG{l+m+mi}{6}\PG{p}{)}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nb}{INTERVAL}\PG{+w}{ }\PG{l+m+mi}{60}\PG{+w}{ }\PG{k}{SECOND}
+\PG{k}{WHERE}\PG{+w}{ }\PG{n}{id}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{o}{?}\PG{p}{;}
+\PG{k}{COMMIT}\PG{p}{;}
+
+\PG{c+c1}{\PGZhy{}\PGZhy{} Deliver outside the transaction, using a stable event ID.}
+\PG{c+c1}{\PGZhy{}\PGZhy{} Bind the selected id and its incremented attempt number.}
+\PG{k}{UPDATE}\PG{+w}{ }\PG{n}{delivery\PGZus{}job}
+\PG{k}{SET}\PG{+w}{ }\PG{n}{status}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}done\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{lease\PGZus{}until}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{k}{NULL}
+\PG{k}{WHERE}\PG{+w}{ }\PG{n}{id}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{o}{?}\PG{+w}{ }\PG{k}{AND}\PG{+w}{ }\PG{n}{status}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}running\PGZsq{}}\PG{+w}{ }\PG{k}{AND}\PG{+w}{ }\PG{n}{attempt}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{o}{?}\PG{p}{;}
+\PG{c+c1}{\PGZhy{}\PGZhy{} Zero changed rows: this attempt no longer owns the job.}

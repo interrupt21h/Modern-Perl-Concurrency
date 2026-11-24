@@ -1,0 +1,13 @@
+\PG{c+ch}{\PGZsh{}!/bin/sh}
+\PG{c+c1}{\PGZsh{} Provision this directory for the service account.}
+\PG{c+c1}{\PGZsh{} All launchers use the same stable path on the same host.}
+\PG{n+nb}{exec}\PG{+w}{ }\PG{l+m}{9}\PGZgt{}\PGZgt{}/var/lib/example\PGZhy{}import/import.lock\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{n+nb}{exit}\PG{+w}{ }\PG{l+m}{1}
+flock\PG{+w}{ }\PGZhy{}n\PG{+w}{ }\PGZhy{}E\PG{+w}{ }\PG{l+m}{75}\PG{+w}{ }\PG{l+m}{9}
+\PG{n+nv}{status}\PG{o}{=}\PG{n+nv}{\PGZdl{}?}
+\PG{k}{case}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}}\PG{n+nv}{\PGZdl{}status}\PG{l+s+s2}{\PGZdq{}}\PG{+w}{ }\PG{k}{in}
+\PG{+w}{    }\PG{l+m}{0}\PG{o}{)}\PG{+w}{ }\PG{p}{;}\PG{p}{;}
+\PG{+w}{    }\PG{l+m}{75}\PG{o}{)}\PG{+w}{ }\PG{n+nb}{echo}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}import already active\PGZdq{}}\PG{p}{;}\PG{+w}{ }\PG{n+nb}{exit}\PG{+w}{ }\PG{l+m}{75}\PG{+w}{ }\PG{p}{;}\PG{p}{;}
+\PG{+w}{    }*\PG{o}{)}\PG{+w}{ }\PG{n+nb}{exit}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}}\PG{n+nv}{\PGZdl{}status}\PG{l+s+s2}{\PGZdq{}}\PG{+w}{ }\PG{p}{;}\PG{p}{;}
+\PG{k}{esac}
+\PG{c+c1}{\PGZsh{} Do not daemonize, close fd 9 or unlink the lock file.}
+\PG{n+nb}{exec}\PG{+w}{ }perl\PG{+w}{ }/opt/example\PGZhy{}import/bin/import.pl
