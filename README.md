@@ -224,8 +224,10 @@ A successful build confirms the stages that ran; consult its log for skipped opt
 ## Author
 
 **Scott Muller**  
-Software Engineer · Matsch Systems  
-Owner · 21h Systems (consulting)  
+Software Engineer, Matsch Systems  
+Owner & Independent Consultant, 21h Systems  
 [scott@21h.io](mailto:scott@21h.io)
 
-© 2026 Scott Muller. This is an independent technical reference. Professional affiliations identify the author and do not imply institutional endorsement.
+*This work is an independent technical publication. The views and recommendations expressed herein are solely those of the author and do not necessarily reflect those of his employer or affiliated organizations. Professional affiliations do not imply institutional endorsement.*
+
+© 2026 Scott Muller.

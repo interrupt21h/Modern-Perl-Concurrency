@@ -76,7 +76,8 @@ footer{{border-top:1px solid var(--line);padding:1.5rem 1.25rem;color:var(--mute
 <div class="eyebrow">Engineering handbook / Edition 1.3</div>
 <h1>Modern Perl Concurrency and Locking</h1>
 <p>From interpreter threads and process synchronization to transactional databases, distributed leases, fencing, and concurrent web requests.</p>
-<p>Created and written by Scott Muller · <a href="mailto:scott@21h.io">scott@21h.io</a><br>Software Engineer, Matsch Systems · Owner, 21h Systems (consulting)</p>
+<p><strong>Scott Muller</strong> · <a href="mailto:scott@21h.io">scott@21h.io</a><br>Software Engineer, Matsch Systems<br>Owner &amp; Independent Consultant, 21h Systems</p>
+<p><em>This work is an independent technical publication. The views and recommendations expressed herein are solely those of the author and do not necessarily reflect those of his employer or affiliated organizations. Professional affiliations do not imply institutional endorsement.</em></p>
 <div class="actions"><a class="button" href="{PDF}">Read the PDF</a><a class="button secondary" href="perl-concurrency-cheat-sheet.pdf">Two-page cheat sheet</a><a class="button secondary" href="{SOURCE}" download>Download source</a><a class="button secondary" href="{esc(release)}">GitHub release</a></div>
 </div></header>
 <main class="wrap">
