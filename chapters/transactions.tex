@@ -29,6 +29,7 @@ business operation, not to an individual ORM result object.
 \strategy{app-transactions}{Service-owned transactions}{One receipt covers all items or none.}{multiple changes must commit together.}{remote effects cannot share the same transaction.}{DBIx::Class, DBI, InnoDB}
 
 \section{DBIx::Class composition}
+\index{API!txn_do@\texttt{txn\_do}}\index{API!txn_scope_guard@\texttt{txn\_scope\_guard}}
 Use \code{txn_do} for a complete unit of work or \code{txn_scope_guard}
 when a lexical transaction guard better expresses the lifecycle.
 Nested \code{txn_do} calls do not independently commit: the outer transaction
@@ -87,7 +88,7 @@ verifies that both the outer and inner writes disappear on rollback.
 Do not assume an ORM transaction-depth counter proves an engine
 transaction has started; test the exact driver and transaction pattern.}
 
-\section{Reusable retry policy}
+\needspace{6\baselineskip}\section{Reusable retry policy}
 Example 38 separates confirmed conflicts from unknown outcomes and checks
 a monotonic deadline and cooperative cancellation between attempts.
 Driver-specific code must classify errors before entering this helper;

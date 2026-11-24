@@ -18,7 +18,7 @@ SOURCE = "formatted-source.tar.gz"
 esc = html.escape
 
 OUT.mkdir(exist_ok=True)
-for name in (PDF, SOURCE, "SHA256SUMS", "tidy-build.txt", "perl-concurrency-cheat-sheet.pdf", "cheat-sheet.tex"):
+for name in (PDF, SOURCE, "SHA256SUMS", "tidy-build.txt", "perl-concurrency-cheat-sheet.pdf", "cheat-sheet.tex", "verification.json", "benchmark-results.txt"):
     shutil.copy2(DIST / name, OUT / name)
 (OUT / ".nojekyll").touch()
 
@@ -66,8 +66,9 @@ footer{{border-top:1px solid var(--line);padding:1.5rem 1.25rem;color:var(--mute
 </head>
 <body>
 <header><div class="wrap">
-<div class="eyebrow">Engineering handbook / Edition 2.1</div>
+<div class="eyebrow">Engineering handbook / Edition 2.1.1</div>
 <h1>Modern Perl Concurrency and Locking</h1>
+<p><a href="{REPO}/releases/tag/v2.1.1">Stable edition</a> · <a href="verification.json">Current verification manifest</a> · <a href="benchmark-results.txt">Measured benchmark trials</a></p>
 <p>A six-part engineering reference for local synchronization, persistent state, distributed coordination and production application architecture. Includes a recoverable processing capstone and complete laboratory appendices.</p>
 <p><strong>Scott Muller</strong> · <a href="mailto:scott@21h.io">scott@21h.io</a><br>Software Engineer, Matsch Systems<br>Owner &amp; Independent Consultant, 21h Systems</p>
 <p><em>This work is an independent technical publication. The views and recommendations expressed herein are solely those of the author and do not necessarily reflect those of his employer or affiliated organizations. Professional affiliations do not imply institutional endorsement.</em></p>

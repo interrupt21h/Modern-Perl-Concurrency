@@ -115,6 +115,13 @@ scheduler conditions. Warm workers before timing for more stable
 microbenchmarks; vary the contention distribution and report variation
 and tail latency rather than only a mean. The full benchmark is in
 Appendix~\ref{app:capstone}.
+\subsection{Representative measured trials}
+\IfFileExists{generated/benchmark-results.tex}{\input{generated/benchmark-results.tex}}{No measured trials are recorded in this source checkout. Run example 39 and the release verification script to produce the table.}
+The counter invariant is tested in every trial. Treat the timings as a
+snapshot of the stated environment, not as a speedup guarantee. The shared
+array and Perl interpreter overhead still contribute even when separate
+locks are used. With different hardware, data skew or scheduling, results
+can change; compare repeated runs under controlled conditions.
 \section{Connection pool exhaustion}
 \index{Connection pools}
 A pool is a semaphore around a finite set of live resources. When all

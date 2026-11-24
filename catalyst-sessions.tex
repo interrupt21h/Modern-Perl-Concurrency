@@ -35,6 +35,7 @@ Hardened custom store (this chapter) & One atomic \code{SET ... EX}, Sereal with
 \warn{Storable \code{thaw} can instantiate arbitrary Perl classes and trigger their hooks and destructors. Any process that can write to the session database can then influence code paths in every application worker. Treat write access to session keys as equivalent to code execution unless the store refuses objects.}
 
 \section{A hardened Redis store}
+\index{API!Catalyst::Plugin::Session}
 The store below implements the four methods that \code{Catalyst::Plugin::Session::Store} requires. Each write sets the value and its TTL in one command, so a crash can never leave a session that never expires. Records are encoded with Sereal, and the decoder refuses blessed data, so a forged record is discarded and logged rather than revived. Size limits bound the cost of a hostile payload.
 See the complete implementation in Appendix~\ref{app:catalyst}.
 The connection helper creates one Redis handle per process, lazily, and creates a new one when the PID changes. A preforking server can therefore load the application in its master process without the workers sharing an inherited socket, whose replies would interleave between processes. The helper disables automatic reconnection, so a lost reply is never followed by a silent replay of \code{SET NX} or \code{INCR}, and it caches scripts with an \code{EVALSHA} fallback.
@@ -55,6 +56,7 @@ An identifier issued before authentication must not survive it, or an attacker w
 Keep secrets out of the session. Pair the idle timeout (\code{expires}) with an absolute lifetime enforced by the application, for example a \code{created} timestamp checked in \code{auto}. IP binding (\code{verify_address}) logs out mobile and NAT users and is rarely worth it. To revoke every session for a user after a password change, keep an index set of that user's session IDs (\code{user-sessions:USER}) and delete their records. The laboratory's \code{logout_everywhere} action does exactly this.
 
 \section{Concurrent requests in one session}\label{sec:session-race}
+\index{Lost update}
 \strategy{session}{Per-session coordination}{A shared shopping list on the fridge. If two people each take it down, add an item at their desk and pin their copy back up, the second copy hides the first person's addition. Either write each item directly on the list in one stroke (atomic), or let only one person hold the list at a time (lock).}
 {a web session receives parallel requests that change session state: tabs, background fetches, double clicks.}
 {the session only identifies the user and holds rarely changed data; then nothing needs coordinating.}
@@ -74,6 +76,7 @@ See the complete implementation in Appendix~\ref{app:catalyst}.
 The same file sets \code{STDERR->autoflush(1)} after \code{setup}. Catalyst's default UTF-8 encoding applies \code{binmode(STDERR, ':encoding(UTF-8)')}, which makes STDERR \emph{buffered}. Without the fix, worker log lines reached the container log late, in batches, and were lost when a worker was killed. The laboratory's log assertion failed until this line was added.
 
 \section{Idempotency keys for unsafe requests}
+\index{Idempotency}
 \strategy{idempotency}{Idempotency key}{A cloakroom ticket for a request. Hand in the same ticket twice and you get the same coat back, not a second coat. While the attendant is still fetching your coat, a second ticket holder is told to wait.}
 {a client might send an unsafe request more than once: payments, orders, filings, account changes.}
 {the operation is naturally idempotent (setting a value, deleting by ID) or read-only.}

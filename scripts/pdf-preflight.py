@@ -27,3 +27,24 @@ for i, page in enumerate(pages, 1):
         if "\ufffd" in (word.text or ""):
             raise SystemExit(f"{pdf}: replacement glyph on page {i}")
 print(f"PDF preflight: {pdf}, {len(pages)} pages, no unresolved references or off-page text")
+
+# The index title must resolve to the physical index, not the previous chapter.
+if pdf.name == "guide.pdf":
+    import fitz
+    with fitz.open(pdf) as doc:
+        entries = [row for row in doc.get_toc() if row[1] == "Subject and API index"]
+        if len(entries) != 1:
+            raise SystemExit("Missing or duplicate index bookmark")
+        destination = entries[0][2] - 1
+        actual = [p.number for p in doc if any(35 < r.y0 < 180 and r.height > 14 for r in p.search_for("Subject and API index")) and p.number > len(doc) // 2]
+        if actual != [destination]:
+            raise SystemExit(f"Index bookmark points to {destination + 1}, actual pages {actual}")
+        links = []
+        for p in doc:
+            if p.number == destination:
+                continue
+            for rect in p.search_for("Subject and API index"):
+                links.extend(link for link in p.get_links() if link["from"].intersects(rect))
+        if not links or any(link.get("page") != destination for link in links):
+            raise SystemExit("Index contents link missing or points to wrong destination")
+        print(f"Index navigation: bookmark and contents link point to page {destination + 1}")

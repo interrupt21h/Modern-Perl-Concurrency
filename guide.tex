@@ -16,6 +16,7 @@
 \usepackage{titlesec}
 \usepackage{caption}
 \usepackage{needspace}
+\usepackage{float}
 \usepackage{adjustbox}
 \usepackage{xurl}
 \usepackage{makeidx}
@@ -34,7 +35,7 @@
 \hypersetup{colorlinks=true,linkcolor=teal,urlcolor=teal,
   pdftitle={Modern Perl Concurrency and Locking},
   pdfauthor={Scott Muller},
-  pdfsubject={Engineering handbook, edition 2.1},
+  pdfsubject={Engineering handbook, edition 2.1.1},
   pdfkeywords={Perl, concurrency, locking, MySQL, Redis, Valkey, Memcached}}
 
 % ---------------------------------------------------------------- layout
@@ -138,7 +139,7 @@
 \textbf{\sffamily\color{navy}Use it when:} #4\par\smallskip
 \textbf{\sffamily\color{rust}Avoid it when:} #5\par\smallskip
 \textbf{\sffamily\color{navy}In Perl:} #6\end{strategybox}}
-\newcommand{\refdoc}[2]{\par\hangindent=1.5em\hangafter=1\textbf{#1.} \url{#2}\par\vspace{-2pt}}
+\newcommand{\refdoc}[2]{\par\hangindent=1.5em\hangafter=1\textbf{#1.} \url{#2}\par}
 
 
 \newcommand{\chapterbrief}[1]{\par\noindent{\sffamily\color{teal}\bfseries Reading objective}\par
@@ -149,9 +150,9 @@
   \markboth{}{}\thispagestyle{empty}%
   \vspace*{.9in}{\sffamily\bfseries\Large\color{teal}PART \thepart\par}
   \vspace{10pt}{\color{teal}\rule{\linewidth}{2pt}}\par
-  \vspace{18pt}{\sffamily\bfseries\Huge\color{navy}#2\par}
+  \vspace{18pt}{\sffamily\bfseries\Huge\color{navy}\raggedright\hyphenpenalty=10000\exhyphenpenalty=10000 #2\par}
   \vspace{20pt}{\large #3\par}\vfill
-  {\small\sffamily\color{muted}Modern Perl Concurrency and Locking \textperiodcentered{} Edition 2.1}
+  {\small\sffamily\color{muted}Modern Perl Concurrency and Locking \textperiodcentered{} Edition 2.1.1}
   \clearpage}
 \begin{document}
 % ================================================================ title page
@@ -171,7 +172,7 @@ MySQL and DBIx::Class, Redis and Valkey, Catalyst sessions and Memcached\par}
 Owner \& Independent Consultant, 21h Systems\\
 \href{mailto:scott@21h.io}{scott@21h.io}\par}
 \vspace{0.3in}
-{\sffamily November 2026\quad /\quad Edition 2.1\quad /\quad Technical reference and self-verifying laboratory\par}
+{\sffamily November 2026\quad /\quad Edition 2.1.1\quad /\quad Technical reference and self-verifying laboratory\par}
 \end{titlepage}
 
 % ---------------------------------------------------------------- copyright page
@@ -179,16 +180,17 @@ Owner \& Independent Consultant, 21h Systems\\
 \vspace*{\fill}
 {\small\sffamily
 \textbf{Modern Perl Concurrency and Locking}\\
-Engineering Handbook, Edition 2.1 (November 2026)\par\medskip
+Engineering Handbook, Edition 2.1.1 (November 2026)\par\medskip
 \textbf{Scott Muller}\par
 Software Engineer, Matsch Systems\\
 Owner \& Independent Consultant, 21h Systems\par
 Contact: \href{mailto:scott@21h.io}{scott@21h.io}.\par
 \textit{This work is an independent technical publication. The views and recommendations expressed herein are solely those of the author and do not necessarily reflect those of his employer or affiliated organizations. Professional affiliations do not imply institutional endorsement.}\par
-\copyright\ 2026 Scott Muller.\par\bigskip
+\copyright\ 2026 Scott Muller.\par\smallskip
+Author-owned prose and illustrations: \href{https://creativecommons.org/licenses/by/4.0/}{CC BY 4.0}. Author-owned example code and build tooling: MIT. See the source package's license notices; third-party material retains its own terms.\par\bigskip
 \color{muted}
 Documentation baseline: Perl 5.44; MySQL 8.4 LTS and 9.7 LTS; Redis 7.2--8.4; Valkey 8.1--9.0; Catalyst 5.90; DBIx::Class 0.0828.\\
-Verification environment: threaded Perl 5.38.2, MySQL 8.0.46, Redis 7.0.15 and Memcached 1.6.24 on Linux.\par\medskip
+Current release verification: Appendix~\ref{sec:current-verification}; historical results are retained separately.\par\medskip
 The original laboratory verification record is retained in Appendix~\ref{ch:refs}. The application-architecture laboratories are separately identified in the verification chapter. Current release logs distinguish executed tests from optional skips; full publication requires the configured laboratories.
 Examples that create, flush or delete data must be run only against disposable, isolated services.\par}
 \clearpage
@@ -220,11 +222,14 @@ Use the subject index, API entries and example catalog for problem-oriented look
 The appendices retain the complete application sources and native implementation details.
 
 \section*{Conventions}
-\note{Design guidance and operational practice.}
-\warn{A failure mode that silently corrupts state or violates mutual exclusion.}
-\version{Behavior that depends on a server, module or Perl release.}
-\tested{What the laboratory actually exercised, and against which environment.}
-\tip{A short, practical shortcut or habit worth adopting: something to do on Monday morning.}
+\begin{longtable}{L{.28\linewidth}L{.63\linewidth}}
+\toprule Label & Meaning \\ \midrule\endhead
+\textcolor{teal}{\textbf{Engineering note}} & Design guidance and operational practice.\\
+\textcolor{rust}{\textbf{Correctness warning}} & A failure mode that can corrupt state or violate exclusion.\\
+\textcolor{gold}{\textbf{Version note}} & Behavior dependent on a server, module or Perl release.\\
+\textcolor{navy}{\textbf{Historical evidence}} & What earlier laboratories actually verified.\\
+\textcolor{leaf}{\textbf{Practical tip}} & A useful operational practice or shortcut.\\
+\bottomrule\end{longtable}
 
 \strategy{example}{How a strategy card reads}{A one-paragraph explanation with an everyday analogy, for readers meeting the idea for the first time.}
 {the situations the strategy is designed for.}
@@ -242,6 +247,7 @@ The appendices retain the complete application sources and native implementation
 \end{itemize}
 
 \section*{Locking strategies at a glance}
+\begingroup\small\renewcommand{\arraystretch}{1.03}
 \begin{longtable}{L{.30\linewidth}L{.24\linewidth}L{.24\linewidth}L{.10\linewidth}}\toprule Strategy & Scope & Typical use & Section \\ \midrule\endhead
 Mutex (\code{lock}) & threads & shared variables & \ref{str:mutex} \\
 Atomic operations, futexes & native code & how locks work & \ref{str:futex} \\
@@ -283,10 +289,11 @@ Deterministic race test & tests & reproduce failure & \ref{str:app-testing}\\
 Bounded admission & deployment & finite capacity & \ref{str:app-operations}\\
 \bottomrule\end{longtable}
 
-\section*{Coverage and verification}
+\endgroup
+\needspace{4\baselineskip}\section*{Coverage and verification}
 The laboratories demonstrate successful coordination and deliberately reproduced races. Appendix~\ref{ch:refs} identifies the original integration environment and the limits of subsequent verification. The source archive contains the complete examples, build instructions and revision history.
 
-\begingroup\small\tableofcontents\endgroup
+\begingroup\footnotesize\setlength{\parskip}{0pt}\tableofcontents\endgroup
 
 % ================================================================ chapter 1
 
@@ -302,6 +309,7 @@ A Perl interpreter thread (ithread) runs its own interpreter. Creating one clone
 
 A forked worker has its own address space, initially sharing pages copy-on-write on Unix-like systems. A process crash can be isolated from its supervisor, although inherited descriptors and database connections demand care. An event loop instead multiplexes nonblocking I/O in one interpreter. It avoids memory-sharing races, but logical races still occur between callbacks and across every \code{await}: state read before a suspension point may be stale after it (Section~\ref{sec:async}). Blocking calls stall the whole loop unless dispatched to a worker.
 \fig{execmodels}{The three execution models available to Perl programs, and how each shares and coordinates state.}
+\begingroup\small\renewcommand{\arraystretch}{1.02}
 \begin{longtable}{L{.22\linewidth}L{.36\linewidth}L{.34\linewidth}}
 \toprule Model & Strength & Trade-off \\ \midrule\endhead
 Ithreads & Existing shared-state applications, fixed worker pools & Interpreter memory, XS compatibility, complex lifecycle; officially discouraged for new code \\
@@ -311,6 +319,7 @@ Database workers & Durable coordination across hosts & Transaction design, laten
 Redis Streams workers & Low-latency distribution across hosts with acknowledgment & At-least-once delivery; durability depends on server configuration \\
 \bottomrule
 \end{longtable}
+\endgroup
 
 \section{Practical module selection}
 Core facilities include \code{threads}, \code{threads::shared}, \code{Thread::Queue}, \code{Thread::Semaphore}, \code{IPC::Semaphore}, pipes and \code{flock}. MCE offers persistent worker pools and chunked parallel computation [9]; \code{MCE::Shared} provides managed shared objects across workers [16]. \code{Parallel::ForkManager} is useful for bounded process fan-out. For event-driven code, \code{IO::Async} supplies the loop, timers and process management [10]; \code{Future} represents eventual results; \code{Future::AsyncAwait} provides \code{async}/\code{await} syntax [29]; and \code{Future::Mutex} serializes asynchronous critical sections [30]. \code{Mojo::IOLoop} with \code{Mojo::Promise} is a coherent alternative within the Mojolicious ecosystem. DBI with \code{DBD::mysql} or \code{DBD::MariaDB} provides the database layer (Section~\ref{sec:dbi}); Redis client selection is covered in Section~\ref{sec:redis-clients}.
@@ -387,6 +396,7 @@ explains the implementation, memory ordering and C laboratory.
 \index{API!lock}
 
 \section{Shared memory and lexical mutexes}
+\index{API!threads::shared}\index{API!lock}
 Load \code{threads} before \code{threads::shared}. Declare shared variables before creating workers. A shared container may hold scalars and references to shareable values; use \code{shared_clone} for nested structures and verify object compatibility. Lock the same stable shared variable in every participant; a dedicated, never-reassigned lock variable avoids confusion about what is protected. Locking a container does not recursively lock nested values. A plain increment is a read-modify-write and is not atomic [2].
 \fig{ithreads}{The ithreads memory model: separate interpreters, one explicitly shared store.}
 \CodeFile{perl}{examples/01-mutex.pl}{\nolinkurl{01-mutex.pl}}
@@ -425,6 +435,7 @@ Use a fixed pool, join each worker and inspect failures. A thread exception does
 \index{API!cond_wait@\texttt{cond\_wait}}
 
 \section{Counting semaphores}
+\index{API!Thread::Semaphore}\index{API!down}\index{API!up}
 \strategy{semaphore}{Counting semaphore}{A car park with a fixed number of spaces and a counter at the gate. Each car entering takes a ticket (\code{down}); each car leaving returns one (\code{up}). When the counter reaches zero, the next car waits at the barrier.}
 {you need to cap how many workers use something at once: database connections, API calls, CPU-heavy jobs.}
 {you need exclusive ownership of a specific resource (use a mutex), or you need to limit requests per second (that is a rate limit, Section~\ref{str:ratelimit}).}
@@ -434,6 +445,7 @@ Use a fixed pool, join each worker and inspect failures. A thread exception does
 \CodeFile{perl}{examples/02-semaphore.pl}{\nolinkurl{02-semaphore.pl}}
 A permit is not a database connection. Create a private connection per worker or use a separately designed pool. Do not use \code{down_force} as a normal acquisition operation: it may drive the permit count negative. When acquiring multiple permits, request them together rather than one at a time, which risks partial-capacity deadlock.
 \section{Condition-variable rendezvous}
+\index{API!cond_wait@\texttt{cond\_wait}}\index{API!cond_signal@\texttt{cond\_signal}}\index{API!cond_broadcast@\texttt{cond\_broadcast}}
 \strategy{condvar}{Condition variable}{A waiting room with a bell. You check the notice board (the predicate) while holding the room key; if your number is not up, you hand back the key and doze until the bell rings, then take the key again and re-read the board.}
 {one thread must wait until another has prepared something: startup readiness, ``queue not empty'', ``all results in''.}
 {a queue already expresses the hand-off (prefer \code{Thread::Queue}), or the waiting crosses process boundaries.}
@@ -464,6 +476,7 @@ A generation counter prevents a fast thread entering the next phase from confusi
 \index{API!Future}
 
 \section{Ownership instead of shared state}
+\index{API!Thread::Queue}\index{API!enqueue}\index{API!dequeue}
 \strategy{queue}{Work queue (ownership transfer)}{A conveyor belt between a kitchen and the waiters. The cook puts plates on the belt; each waiter takes one plate and is then its only owner. Nobody fights over a plate, so nobody needs a lock.}
 {work can be split into independent jobs; this is the default design for worker pools.}
 {jobs must survive a crash (an in-memory queue loses them: use a database queue or Redis Streams), or the consumer needs results from many jobs at once.}
@@ -474,11 +487,14 @@ A generation counter prevents a fast thread entering the next phase from confusi
 \section{Operational patterns}
 A single writer thread can own a file or database session and apply updates from many compute workers. Batch writes to amortize overhead, but cap batch size and maximum delay. A dedicated result consumer permits bounded outputs. Track queue depth, oldest-item age, throughput and service time; depth alone is not a latency measure. If workers fail, the supervisor must detect outstanding work and avoid waiting indefinitely for queue capacity. In-memory queues lose pending messages on process failure; durable workloads need a database queue (Section~\ref{sec:dbqueue}) or a broker such as Redis Streams (Section~\ref{sec:streams}), with explicit acknowledgment and idempotent effects.
 \section{Process pools}
+\index{API!MCE}\index{API!gather}
 \code{MCE::Loop} supplies persistent workers and chunk distribution [9]. Create database and Redis connections inside each worker, never before the fork.
 Example 27 shows the three habits that matter in practice: per-worker setup in \code{user_begin} (where connections belong), chunking so that each worker does a meaningful batch per round trip, and one \code{gather} per chunk rather than per item.
 \CodeFile{perl}{examples/27-mce-loop.pl}{\nolinkurl{27-mce-loop.pl}}
-\tested{The gathered result matched the closed-form sum exactly, with every chunk received once. An earlier draft used $N=2{,}000{,}000$; its sum exceeded $2^{53}$, silently lost precision as a floating-point value, and still ``passed'' because both sides were rounded alike. The example now refuses results outside the exact integer range.}
+\tested{The gathered result matched the closed-form sum exactly, with every chunk received once.}
+\warn{For $N=2{,}000{,}000$, the sum exceeds $2^{53}$; a floating-point computation can round both the result and the reference value alike. Use exact arithmetic or reject inputs beyond the exact integer range, as example 27 does.}
 \section{Event loops and async/await}\label{sec:async}
+\index{API!Future::AsyncAwait}\index{API!Future::Mutex}\index{API!await}
 \strategy{asyncmutex}{Async mutex in an event loop}{One cashier serving many customers: while one customer looks for their wallet (\code{await}), the cashier helps someone else. If both customers are editing the same order, the cashier must not switch between them halfway through.}
 {a read-modify-write of shared state spans an \code{await}.}
 {the critical section has no \code{await} in it (it is already atomic in a single-threaded loop), or the state is shared with other processes.}
@@ -487,7 +503,7 @@ Example 27 shows the three habits that matter in practice: per-worker setup in \
 \code{Future::AsyncAwait} turns callback chains into sequential-looking code [29]. The single interpreter removes data races but not logical races: every \code{await} is a suspension point at which other tasks run. A read-modify-write that spans an \code{await} needs serialization, provided by \code{Future::Mutex} [30]. Bounded fan-out (an asynchronous semaphore) is provided by \code{fmap_void} and its siblings in \code{Future::Utils} with the \code{concurrent} option.
 \CodeFile{perl}{examples/19-async-await.pl}{\nolinkurl{19-async-await.pl}}
 \tested{With the mutex removed, the same program lost 8 of 40 increments on the verification host. Concurrency peaked at exactly the configured bound of 5.}
-Use nonblocking clients or offload DBI work to \code{IO::Async::Function}. Bound each await with a timeout future and \code{Future->wait_any}; propagate cancellation. Re-read state after an await or protect it with \code{Future::Mutex}.
+Use nonblocking clients or offload DBI work to \code{IO::Async::Function}. Race a task-owned future against a timeout future using \code{Future->wait_any}; inspect which outcome won and propagate cancellation. Do not cancel shared work merely because one observer stops waiting. Re-read state after an await or protect it with \code{Future::Mutex}.
 
 % ================================================================ chapter 6
 
@@ -500,6 +516,35 @@ Cancellation requests do not prove that remote effects did not occur.
 Future cancellation callbacks [76] depend on underlying I/O cleanup support.
 Bound outstanding work with an overall deadline rather than a new timeout
 for every retry. Example 38 demonstrates cooperative cancellation.
+
+\subsection{Propagating an end-to-end deadline}
+\index{Deadline propagation}\index{API!clock_gettime@\texttt{clock\_gettime}}\index{API!Future!wait_any@\texttt{wait\_any}}
+Use a monotonic clock [83] for an absolute deadline within one process.
+If an operation has a two-second budget, a 400~ms admission wait leaves
+1.6~s, a 600~ms database operation leaves 1.0~s, and a 250~ms backoff
+leaves 750~ms for any retry and response. The same deadline is passed
+to each stage, not reset at each call. Reserve time for cleanup; if no
+budget remains, refuse to start new work. The following excerpt is an
+adapter contract, not a complete network client.
+\CodeFile{perl}{snippets/deadline-budget.pl}{Deadline propagation through admission, storage and response (illustrative excerpt)}
+\begin{figure}[H]\centering
+\begin{tikzpicture}[x=5.7cm,y=1cm]
+\draw[navy,thick] (0,0)--(2,0);
+\foreach \x/\lab in {0/0,.4/400,1/1000,1.25/1250,2/2000}{\draw[navy] (\x,-.07)--(\x,.07);\node[lbl,below] at (\x,-.08){\lab};}
+\foreach \a/\b/\txt/\col in {0/.4/Admission/teal,.4/1/Database/navy,1/1.25/Backoff/rust,1.25/2/Remaining/leaf}{\fill[\col!14] (\a,.12) rectangle (\b,.55);\node[lbl,text=navy] at ({(\a+\b)/2},.33){\txt};}
+\node[lbl,anchor=east] at (2,-.55){Elapsed milliseconds};
+\end{tikzpicture}
+\caption{One operation budget: each stage consumes the same deadline, including backoff.}
+\end{figure}
+Map remaining time to documented adapter-specific connection, acquisition,
+statement and response timeouts; an adapter may have only second-level
+resolution or no cancellation API. A timeout on the waiting caller is not
+a guarantee that database or remote work stopped. For a write with an
+unknown result, reconcile by durable operation identity instead of retrying
+blindly. Clean up task-owned resources and wait for children to terminate
+where required. For cross-host calls transmit a remaining relative budget
+or a protocol-defined deadline, and account for transport time and clock
+skew; monotonic clock readings cannot be compared between hosts.
 
 \chapter{Reader/writer locking and lock design}
 \chapterbrief{Choose granularity, acquisition order and cleanup.}
@@ -530,6 +575,7 @@ Example 23 applies this to 64 accounts guarded by 8 stripe locks. A transfer loc
 \fig{deadlock}{A wait-for cycle and how a global acquisition order removes it.}
 A deadlock requires mutual exclusion, hold-and-wait, no preemption and a circular wait. Enforce a total ordering or avoid nested acquisitions. Livelock occurs when competing workers keep retrying without progress; randomized backoff helps. Starvation is indefinite denial despite overall progress. Priority inversion occurs when a lower-priority owner blocks a higher-priority waiter; Perl-level locks provide no priority-inheritance contract.
 \section{Releasing on every path}\label{sec:release}
+\index{API!defer}
 \strategy{release}{Release on every path (scope-based cleanup)}{Whatever happens in the room (you finish, you are called away, the fire alarm goes off), you must hand back the key on the way out. Tie the return of the key to leaving the room, not to remembering to do it.}
 {anything is acquired that is not released automatically: file locks, semaphore permits, database locks, Redis leases.}
 {never; the only question is which mechanism to use.}
@@ -559,6 +605,7 @@ Where \code{defer} is not acceptable, because experimental features are disallow
 \index{API!IPC::Semaphore}
 
 \section{File locks}
+\index{API!flock}\index{API!LOCK_EX@\texttt{LOCK\_EX}}\index{API!LOCK_NB@\texttt{LOCK\_NB}}
 \strategy{flock}{File lock (flock)}{A ``room occupied'' sign on a door that every process on the machine agrees to respect. It is advisory: a program that ignores signs can still walk in.}
 {processes on one host must not run a section at the same time: cron jobs, deploy scripts, single-writer files.}
 {the processes run on different hosts or containers that do not share a local filesystem, or the file is on NFS/SMB without testing.}
@@ -574,6 +621,7 @@ Use a private administrator-controlled directory, restrict permissions and avoid
 \tip{Lock a dedicated \code{.lock} file, not the data file itself. Code that rewrites data with write-to-temporary-then-\code{rename} replaces the inode, and a lock taken on the old file then protects nothing.}
 
 \section{System V and POSIX semaphores}
+\index{API!IPC::Semaphore}
 \strategy{sysvsem}{System V semaphore}{The car-park counter again, but kept by the kernel, so unrelated processes can share it. With \code{SEM_UNDO}, the kernel returns a ticket if a car is towed away (the process dies).}
 {forked processes on one host need a shared permit count.}
 {you can use \code{flock} (simpler) or a database (cross-host), or you cannot guarantee someone removes the semaphore set afterwards.}
@@ -603,7 +651,9 @@ Perl's \code{alarm} does interrupt a blocking \code{flock}: with \texttt{local \
 
 \section{Preforking web servers}
 Starman, Gazelle, Hypnotoad and uWSGI serve requests from a pool of forked workers (Figure~\ref{fig:prefork}). Each worker is a separate process with its own interpreter, so a Perl variable, a \code{lock} or an in-memory cache in one worker is invisible to the others, and to other pods and cron jobs. Anything that must be coordinated between requests belongs in Redis, the database or, for a single host, a file lock. Chapter~\ref{ch:catalyst} applies this to Catalyst sessions.
-\fig{prefork}{A preforking server. In-process state and locks are per worker; coordination lives outside the interpreter.}
+\begin{figure}[H]\centering
+\begin{adjustbox}{max width=.85\linewidth}\input{figures/prefork}\end{adjustbox}
+\caption{A preforking server. In-process state and locks are per worker; coordination lives outside the interpreter.}\label{fig:prefork}\end{figure}
 
 % ================================================================ chapter 8
 
@@ -646,6 +696,7 @@ Prefer a single conditional statement or a unique constraint to a check-then-act
 {\code{UPDATE ... WHERE id = ? AND version = ?} and check the affected-row count; with DBIx::Class, \code{->search({ version => $seen })->update(...)}; example 29.}
 \fig{optimistic}{Optimistic concurrency: the losing writer detects the conflict from a zero-row update.}
 \section{Pessimistic locking reads}
+\index{API!FOR UPDATE}
 \strategy{rowlocks}{Pessimistic row locks (FOR UPDATE, NOWAIT, SKIP LOCKED)}{Reserving the exact items you are about to change, so nobody else changes them before you have finished. NOWAIT means ``if it is reserved, tell me immediately''; SKIP LOCKED means ``give me the next unreserved one''.}
 {a transaction reads rows and then updates them based on what it read, or workers claim rows from a queue table.}
 {the transaction would wait on users or remote APIs while holding the lock, or a single guarded \code{UPDATE} can express the rule.}
@@ -670,6 +721,7 @@ Error 1213 marks a deadlock victim; InnoDB has rolled back the whole transaction
 \tip{Set \code{innodb_print_all_deadlocks = ON}. \code{SHOW ENGINE INNODB STATUS} keeps only the latest deadlock; with this setting every one is written to the error log, where your log pipeline can count and alert on them.}
 
 \section{Named advisory locks}
+\index{API!GET_LOCK@\texttt{GET\_LOCK}}\index{API!RELEASE_LOCK@\texttt{RELEASE\_LOCK}}
 \strategy{advisory}{Named advisory lock (GET\_LOCK)}{A named token kept at the database's front desk. Your database connection signs it out; if the connection drops, the desk silently takes the token back, even if you are still working.}
 {several hosts must not run a job at once and they already share a MySQL server, but the job does not fit in one transaction.}
 {the work's correctness depends on the lock (use constraints and fencing), or connections are pooled and may be swapped.}
@@ -679,6 +731,7 @@ Error 1213 marks a deadlock victim; InnoDB has rolled back the whole transaction
 \CodeFile{perl}{examples/10-mysql-advisory.pl}{\nolinkurl{10-mysql-advisory.pl}}
 \note{A session lock disappears on disconnect while the client may still believe it holds it. For external side effects, use durable idempotency and, where appropriate, fencing tokens validated by the target. A named lock is not a substitute for a transaction.}
 \section{Database work queues}\label{sec:dbqueue}
+\index{API!SKIP LOCKED}\index{Job claims}
 \strategy{dbqueue}{Database work queue with leases}{A ticket rail in a kitchen. A cook takes a ticket and writes their name and a ``back by'' time on it. If they do not finish in time, the ticket returns to the rail for someone else, and the late cook's work is no longer accepted.}
 {jobs must survive crashes and deploys, and workers run on several hosts that share the database.}
 {volume or latency needs exceed what the database should carry; consider Redis Streams or a broker.}
@@ -691,6 +744,7 @@ The attempt number is the fencing token. Heartbeats, failure reports and complet
 \tested{Four concurrent workers completed 220 jobs; every job produced exactly one effect at attempt 1. A job whose lease had expired was reclaimed at attempt 2, an exhausted job was dead-lettered, and a completion attempted by the expired owner matched zero rows.}
 \code{SKIP LOCKED} does not guarantee fairness or strict ordering under concurrency. Effects outside the database (an email, a payment API) cannot join the transaction; make them idempotent with a request key derived from the job ID and attempt, or stage them through an outbox table.
 \section{Transactions and locking with DBIx::Class}\label{sec:dbic}
+\index{API!txn_do@\texttt{txn\_do}}\index{API!txn_scope_guard@\texttt{txn\_scope\_guard}}
 Most modern Perl applications reach MySQL through DBIx::Class rather than raw DBI. The same rules apply, but four DBIx::Class behaviors matter for locking. Each was confirmed in the source of version 0.082843 and exercised by example 29.
 \begin{itemize}
 \item \textbf{\code{txn_do} does not retry deadlocks.} It reruns the code block once, and only if the connection is gone after the first failure. A deadlock (1213) or lock-wait timeout (1205) propagates to the caller, so retry policy is the application's job (\code{with_deadlock_retry} in the example). Because of the reconnect retry, the block must also be safe to run twice if a connection can drop during \code{COMMIT}.
@@ -706,7 +760,7 @@ Guarded updates read naturally as resultset updates. \code{$rs->search({ id => $
 
 \section{Metadata locks and legacy tables}
 DDL may wait for transactions that retain metadata locks even while their queries are idle. Monitor metadata lock waits during migrations and ensure transactions end promptly. \code{LOCK TABLES} is a coarse session-level mechanism with implicit-commit interactions and is generally wrong for ordinary InnoDB application transactions. MyISAM relies on table locking and lacks transactions. Older MySQL versions may lack \code{NOWAIT}, \code{SKIP LOCKED}, enforced \code{CHECK} constraints, expression defaults or modern Performance Schema views; MariaDB behavior is not assumed identical.
-\section{Observability and contention diagnostics}
+\needspace{15\baselineskip}\section{Observability and contention diagnostics}
 \CodeFile{sql}{snippets/guide-07.sql}{Inspect InnoDB and metadata lock contention}
 Validate index selection with \code{EXPLAIN} before deploying locking queries. Examine blocking transactions, statement duration, lock hold time and transaction age. Performance Schema visibility depends on privileges and instrumentation. Killing a query does not necessarily end its transaction; verify the blocking session and the operational impact before terminating it. Never wait on a remote API while holding row locks when an outbox or staged workflow can provide equivalent correctness.
 
@@ -753,19 +807,19 @@ When correctness spans hosts and no shared database is available, use a coordina
 
 \section{Failure modes: progress and correctness}
 \index{Deadlock}\index{Livelock}\index{Starvation}\index{Fencing}
-\begin{figure}[!htbp]\centering
+\begin{figure}[H]\centering
 \begin{tikzpicture}[x=1cm,y=1cm]
-\node[box,text width=5cm] at (0,1.8) {Deadlock\\A holds X, waits for Y; B holds Y, waits for X};
-\node[box,text width=5cm] at (6,1.8) {Starvation\\Other owners keep winning while one waits};
-\node[badbox,text width=5cm] at (0,0) {Livelock\\Both retry repeatedly; neither completes};
-\node[badbox,text width=5cm] at (6,0) {Stale ownership\\A resumes after B takes over};
+\node[box,text width=4.6cm] at (0,1.8) {Deadlock\\A holds X, waits for Y; B holds Y, waits for X};
+\node[box,text width=4.6cm] at (6.1,1.8) {Starvation\\Other owners keep winning while one waits};
+\node[badbox,text width=4.6cm] at (0,0) {Livelock\\Both retry repeatedly; neither completes};
+\node[badbox,text width=4.6cm] at (6.1,0) {Stale ownership\\A resumes after B takes over};
 \end{tikzpicture}
 \caption{Deadlock and livelock prevent collective progress; starvation prevents individual progress; stale ownership threatens correctness.}
 \end{figure}
 Use consistent lock order for deadlock prevention, bounded retry and jitter
 for livelock, explicit fairness policies for starvation, and destination
 fencing for stale ownership. Test safety separately from liveness.
-\begin{longtable}{L{.20\linewidth}L{.22\linewidth}L{.22\linewidth}L{.22\linewidth}}
+\begingroup\small\renewcommand{\arraystretch}{1.02}\begin{longtable}{L{.20\linewidth}L{.22\linewidth}L{.22\linewidth}L{.22\linewidth}}
 \toprule Failure & InnoDB transaction & Redis lease & Memcached claim\\ \midrule\endhead
 Worker exits & Uncommitted work rolls back & TTL or release & Expiry or eviction\\
 Worker pauses & May retain locks & May expire & May expire or be evicted\\
@@ -773,7 +827,7 @@ Response lost & Commit uncertain & Command uncertain & Command uncertain\\
 Failover & Configuration matters & Lease history may regress & State may disappear\\
 Duplicate effects & Constraints and transactions & Resource guard required & Not an authority\\
 \bottomrule
-\end{longtable}
+\end{longtable}\endgroup
 
 \partstart{V / Application architecture}{Application architecture and practical scenarios}{Combine the mechanisms into object-oriented applications, web requests and recoverable processing pipelines.}
 \input{chapters/objects.tex}
@@ -785,7 +839,7 @@ Duplicate effects & Constraints and transactions & Resource guard required & Not
 \input{chapters/migration.tex}
 \input{chapters/testing.tex}
 \input{chapters/operations.tex}
-\appendix
+\clearpage\appendix
 \renewcommand{\currentpart}{Technical appendices}
 \chapter{Native synchronization implementation}\label{app:native}
 \section{Futexes, atomics and memory ordering}
@@ -819,7 +873,7 @@ The following listings retain the full implementation accompanying Chapter~\ref{
 \subsection{Session controller and routing}
 The controller implements the session patterns in this chapter. The cart actions differ only in where the data lives and whether a lock is held.
 \CodeFile{perllua}{examples/catalyst-session/lib/SessionLab/Controller/Root.pm}{\nolinkurl{catalyst-session/lib/SessionLab/Controller/Root.pm}}
-\subsection{PSGI entry point}
+\needspace{11\baselineskip}\subsection{PSGI entry point}
 \CodeFile{perl}{examples/catalyst-session/app.psgi}{\nolinkurl{catalyst-session/app.psgi}}
 \subsection{Session integration driver}
 The driver starts Starman with four workers on a free port. It acts as several independent browsers, fires concurrent requests from forked processes that share one session cookie, inspects Redis directly, and cleans up only its own key namespaces. Its \code{END} block localizes \code{$?} so that stopping the server cannot mask a failure as success.
@@ -829,7 +883,7 @@ The driver starts Starman with four workers on a free port. It acts as several i
 \subsection{API credential helpers}
 The API controller and the token helpers implement Section~\ref{sec:api-tokens}. Secrets come from the environment (\code{SESSIONLAB_JWT_KEY}, \code{SESSIONLAB_REFRESH_KEY}, \code{SESSIONLAB_SIGNING_KEY}); the defaults are for the laboratory only.
 \CodeFile{perl}{examples/catalyst-session/lib/SessionLab/Tokens.pm}{\nolinkurl{catalyst-session/lib/SessionLab/Tokens.pm}}
-\subsection{API controller and atomic Redis operations}
+\needspace{11\baselineskip}\subsection{API controller and atomic Redis operations}
 \CodeFile{perllua}{examples/catalyst-session/lib/SessionLab/Controller/API.pm}{\nolinkurl{catalyst-session/lib/SessionLab/Controller/API.pm}}
 \subsection{API integration driver}
 The driver logs in through the browser flow, creates an API key and token pairs, then attacks its own API: concurrent refreshes from forked processes, tokens it forges with the laboratory key, replayed and forged signatures. It starts the server with a 1.5-second grace window so that the reuse test runs quickly.
@@ -839,40 +893,40 @@ The driver logs in through the browser flow, creates an API key and token pairs,
 \input{chapters/capstone-listings.tex}
 \input{chapters/example-catalog.tex}
 \chapter{Glossary}\label{ch:glossary}
-\begin{description}[style=nextline,leftmargin=1.2em,itemsep=1pt,parsep=0pt,font=\sffamily\bfseries\color{navy}]\small
-\item[Attempt ID] A generation associated with a particular job claim; a late worker cannot complete a replacement worker's claim.
+\begin{description}[style=unboxed,leftmargin=0pt,labelsep=.5em,itemsep=3pt,parsep=0pt,font=\sffamily\bfseries\color{navy}]\small
 \item[Advisory lock] A lock that only works if every participant checks it; nothing stops code that ignores it. Perl's \code{lock}, \code{flock} and MySQL \code{GET_LOCK} are advisory.
-\item[Atomic operation] A change that happens completely or not at all, with no observable halfway state, such as a single Redis command or one SQL \code{UPDATE}.
 \item[At-least-once delivery] Under the transport's durability, retention and acknowledgement assumptions, an unacknowledged message is eligible for redelivery. Duplicates are possible; consumers must make effects idempotent. Data loss outside those assumptions is not excluded.
+\item[Atomic operation] A change that happens completely or not at all, with no observable halfway state, such as a single Redis command or one SQL \code{UPDATE}.
+\item[Attempt ID] A generation associated with a particular job claim; a late worker cannot complete a replacement worker's claim.
 \item[Backoff and jitter] Waiting longer after each failed attempt (backoff), with a random component (jitter), so that competing retries do not collide again in lockstep.
 \item[Barrier] A meeting point where a group of threads waits until all members have arrived.
 \item[CAS (compare-and-swap)] Update a value only if it still equals what you last read; otherwise do nothing and report a conflict.
+\item[Checkpoint] Durable progress recorded with the effects it describes, allowing a restarted pipeline to resume without losing committed work.
 \item[Consensus] A protocol (Raft, ZAB) that lets a group of servers agree on one ordered history even when some fail; etcd and ZooKeeper are built on it.
 \item[Consumer group] A Redis Streams feature that delivers each entry to one member of a group and tracks unacknowledged entries in a pending entries list (PEL).
 \item[Critical section] The code that must not run in two places at once because it touches shared state.
-\item[Checkpoint] Durable progress recorded with the effects it describes, allowing a restarted pipeline to resume without losing committed work.
 \item[Deadlock] Two or more parties each waiting for a lock the other holds, so none can proceed.
 \item[Eviction] A cache deleting keys to free memory. Harmless for caches, harmful for sessions and locks.
-\item[Outbox] An event record committed in the same transaction as a business change, then relayed independently.
 \item[Failover] Promoting a replica to primary after the primary fails; with asynchronous replication the newest writes can be lost.
 \item[Fencing token] A number that increases with every new lock holder and is checked by the protected resource, which rejects older numbers.
-\item[Grace window] A short period after a refresh token is rotated during which presenting it again returns the same successor instead of revoking the family; it absorbs concurrent and retried refreshes.
 \item[Gap lock, next-key lock] InnoDB locks on the space between index records (gap) or on a record plus the gap before it (next-key); they block inserts into ranges.
+\item[Grace window] A short period after a refresh token is rotated during which presenting it again returns the same successor instead of revoking the family; it absorbs concurrent and retried refreshes.
 \item[HMAC] A keyed hash (for example HMAC-SHA256). Only holders of the key can compute it, so it proves that a message came from them and was not altered.
 \item[Idempotent] Safe to repeat: doing it twice has the same effect as doing it once.
-\item[JWT] JSON Web Token: a signed set of claims (user, audience, expiry) that a server can verify without a lookup. Used here as a short-lived access token.
 \item[Isolation level] How much of other transactions' work a transaction can see (READ COMMITTED, REPEATABLE READ, and so on), and therefore which locks it takes.
+\item[JWT] JSON Web Token: a signed set of claims (user, audience, expiry) that a server can verify without a lookup. Used here as a short-lived access token.
 \item[Lease] A lock with an expiry time. It frees itself if the holder disappears, but can also expire while the holder is still working.
 \item[Livelock] Workers keep reacting to each other and retrying without making progress.
 \item[Lost update] Two read-modify-write operations interleave and one overwrites the other's change.
 \item[Monotonic clock] A clock that never jumps backwards (\code{CLOCK_MONOTONIC}); use it for timeouts and durations, never wall-clock time.
-\item[MVCC] Multi-version concurrency control: readers see a consistent snapshot without blocking writers.
 \item[Mutex] A lock that only one holder can own at a time (mutual exclusion).
-\item[Open file description] The kernel object created by \code{open}; \code{flock} locks belong to it, and \code{fork} shares it.
+\item[MVCC] Multi-version concurrency control: readers see a consistent snapshot without blocking writers.
 \item[Nonce] A value used only once. A server that remembers recent nonces can reject a replayed request.
-\item[Optimistic and pessimistic concurrency] Optimistic: proceed without locking and detect conflicts at write time. Pessimistic: lock first so conflicts cannot happen.
-\item[Preforking server] A server (Starman, uWSGI) that forks a pool of worker processes; each worker has its own memory and its own locks.
+\item[Open file description] The kernel object created by \code{open}; \code{flock} locks belong to it, and \code{fork} shares it.
 \item[OpenAPI security scheme] The part of an OpenAPI description that says how clients authenticate (API key, HTTP bearer, OAuth~2.0, mutual TLS); operations then state which schemes they require.
+\item[Optimistic and pessimistic concurrency] Optimistic: proceed without locking and detect conflicts at write time. Pessimistic: lock first so conflicts cannot happen.
+\item[Outbox] An event record committed in the same transaction as a business change, then relayed independently.
+\item[Preforking server] A server (Starman, uWSGI) that forks a pool of worker processes; each worker has its own memory and its own locks.
 \item[Race condition] A bug whose outcome depends on the timing of concurrent operations.
 \item[Refresh token] A long-lived credential that a client exchanges for new access tokens. With rotation, each use returns a new one and invalidates the old.
 \item[Semaphore] A counter of available permits; acquiring takes one, releasing returns one, and acquirers wait at zero.
@@ -883,10 +937,13 @@ The driver logs in through the browser flow, creates an API key and token pairs,
 
 % ================================================================ chapter 12
 \chapter{References and verification}\label{ch:refs}
-\section{Verification record}
-The following integration record is retained from Edition 1.2. Edition 1.3 added example 31; Edition 2.0 added application architecture and examples 32--35. Edition 2.1 reorganizes the publication and adds the processing capstone and further laboratories. The historical results below are not a fresh integration run. See the revision test log for current checks.
+\section{Current release verification}\label{sec:current-verification}
+\IfFileExists{generated/release-verification.tex}{\input{generated/release-verification.tex}}{No recorded release manifest is present in this source checkout. Run the complete publishing workflow to generate current evidence; the historical record below is not a substitute.}
 
-Primary documentation was consulted on November 24, 2026. Perl documentation resolved to 5.44.0; MySQL documentation to 8.4 and 9.7; Redis documentation to 8.4; Valkey documentation to 9.0. The examples were executed with \code{run-tests.sh} three consecutive times after the final change on Linux with threaded Perl 5.38.2, GCC (example 21), MCE 1.889, Catalyst 5.90131 with \code{Catalyst::Plugin::Session} 0.43 and Starman 0.4017 (examples 28 and 30), \code{Crypt::JWT} 0.035 and \code{YAML::XS} 0.89 (example 30), \code{openapi-spec-validator} 0.9.0 for the OpenAPI document, DBIx::Class 0.082843 (example 29), Sereal 5.004, DBI 1.643, \code{DBD::mysql} 4.052, MySQL 8.0.46, Redis 7.0.15 with \code{Redis.pm} 2.000, Memcached 1.6.24 with \code{Cache::Memcached::Fast} 0.28, IO::Async 0.803 and \code{Future::AsyncAwait} 0.66. Examples 13 and 16 were additionally run under the least-privilege ACL user in Section~\ref{sec:redis-security}. Native Redis 8.4 and Valkey 9.0 commands are documented from primary sources but were not available on the verification host. No throughput benchmarks or fairness guarantees are claimed.
+\section{Historical verification record}
+The following integration record is retained from Edition 1.2. Edition 1.3 added example 31; Edition 2.0 added application architecture and examples 32--35. Edition 2.1 reorganized the publication and added the processing capstone and further laboratories. Edition 2.1.1 consolidates the presentation and records current release evidence separately. The historical results below are not a fresh integration run. See the revision test log for current checks.
+
+Primary documentation was consulted on November 24, 2026. Perl documentation resolved to 5.44.0; MySQL documentation to 8.4 and 9.7; Redis documentation to 8.4; Valkey documentation to 9.0. The examples were executed with \code{run-tests.sh} three consecutive times after the final change on Linux with threaded Perl 5.38.2, GCC (example 21), MCE 1.889, Catalyst 5.90131 with \code{Catalyst::Plugin::Session} 0.43 and Starman 0.4017 (examples 28 and 30), \code{Crypt::JWT} 0.035 and \code{YAML::XS} 0.89 (example 30), \code{openapi-spec-validator} 0.9.0 for the OpenAPI document, DBIx::Class 0.082843 (example 29), Sereal 5.004, DBI 1.643, \code{DBD::mysql} 4.052, MySQL 8.0.46, Redis 7.0.15 with \code{Redis.pm} 2.000, Memcached 1.6.24 with \code{Cache::Memcached::Fast} 0.28, IO::Async 0.803 and \code{Future::AsyncAwait} 0.66. Examples 13 and 16 were additionally run under the least-privilege ACL user in Section~\ref{sec:redis-security}. Native Redis 8.4 and Valkey 9.0 commands are documented from primary sources but were not available on the verification host. These historical results establish neither a throughput baseline nor a fairness guarantee; see the measured contention trials in Part VI.
 \begin{longtable}{L{.30\linewidth}L{.62\linewidth}}\toprule Example & Verified invariant \\ \midrule\endhead
 01--09, 20 & Exact totals, permit bounds, rendezvous, queue completeness, lock release on exception \\
 21 & 8 threads $\times$ 10\textsuperscript{6} non-atomic increments, no lost update; clean under ThreadSanitizer \\
@@ -909,7 +966,9 @@ Primary documentation was consulted on November 24, 2026. Perl documentation res
 Examples 32--39 use independently constructed synthetic data. Example 32 checks PID-local Moose resource ownership; 33 checks transaction rollback and duplicate-request behavior with DBIx::Class and SQLite; 34 checks durable source/outbox consistency and replay against a separate SQLite destination; 35 forces a lost-update interleaving and verifies the corrected critical section. SQLite tests demonstrate application transaction boundaries, not MySQL row-lock or isolation semantics. Examples 36--39 cover replay-safe processing, savepoints, classified retry/cancellation and contention measurement. Consult the release build log for actual test results and skipped dependencies.
 
 \section{References}
-\small
+\begingroup\small\setlength{\parskip}{2pt}
+References are grouped by subject; original numeric citations are preserved.
+\subsection{Perl, Unix and asynchronous execution}
 \refdoc{[1] Perl threading tutorial}{https://perldoc.perl.org/perlthrtut}
 \refdoc{[2] Shared variables and condition synchronization}{https://perldoc.perl.org/threads::shared}
 \refdoc{[3] Thread semaphores}{https://perldoc.perl.org/Thread::Semaphore}
@@ -920,14 +979,36 @@ Examples 32--39 use independently constructed synthetic data. Example 32 checks 
 \refdoc{[8] POSIX semaphore overview}{https://man7.org/linux/man-pages/man7/sem_overview.7.html}
 \refdoc{[9] MCE worker loops}{https://metacpan.org/pod/MCE::Loop}
 \refdoc{[10] IO::Async}{https://metacpan.org/pod/IO::Async}
+\refdoc{[16] MCE shared objects}{https://metacpan.org/pod/MCE::Shared}
+\refdoc{[17] Linux record and OFD locks}{https://man7.org/linux/man-pages/man2/fcntl_locking.2.html}
+\refdoc{[27] threads module documentation}{https://perldoc.perl.org/threads}
+\refdoc{[28] Try/catch and defer blocks (perlsyn)}{https://perldoc.perl.org/perlsyn}
+\refdoc{[29] Future::AsyncAwait}{https://metacpan.org/pod/Future::AsyncAwait}
+\refdoc{[30] Future::Mutex}{https://metacpan.org/pod/Future::Mutex}
+\refdoc{[46] perl5440delta}{https://perldoc.perl.org/perl5440delta}
+\refdoc{[76] Future cancellation semantics}{https://metacpan.org/pod/Future}
+\refdoc{[79] Linux rename semantics}{https://man7.org/linux/man-pages/man2/rename.2.html}
+\refdoc{[83] Time::HiRes monotonic clock}{https://perldoc.perl.org/Time::HiRes}
+\subsection{Database transactions and storage}
 \refdoc{[11] InnoDB locking}{https://dev.mysql.com/doc/refman/8.4/en/innodb-locking.html}
 \refdoc{[12] InnoDB locking reads}{https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html}
 \refdoc{[13] Handling InnoDB deadlocks}{https://dev.mysql.com/doc/refman/8.4/en/innodb-deadlocks-handling.html}
 \refdoc{[14] MySQL named locking functions}{https://dev.mysql.com/doc/refman/8.4/en/locking-functions.html}
 \refdoc{[15] DBI documentation}{https://metacpan.org/pod/DBI}
-\refdoc{[16] MCE shared objects}{https://metacpan.org/pod/MCE::Shared}
-\refdoc{[17] Linux record and OFD locks}{https://man7.org/linux/man-pages/man2/fcntl_locking.2.html}
 \refdoc{[18] DBD::mysql driver and changes}{https://metacpan.org/dist/DBD-mysql/changes}
+\refdoc{[31] DBD::MariaDB}{https://metacpan.org/pod/DBD::MariaDB}
+\refdoc{[32] MySQL release model: Innovation and LTS}{https://dev.mysql.com/doc/refman/9.7/en/mysql-releases.html}
+\refdoc{[47] PostgreSQL advisory locks}{https://www.postgresql.org/docs/current/explicit-locking.html}
+\refdoc{[65] DBIx::Class storage and nested transactions}{https://metacpan.org/pod/DBIx::Class::Storage}
+\refdoc{[67] InnoDB error handling}{https://dev.mysql.com/doc/refman/8.4/en/innodb-error-handling.html}
+\refdoc{[68] Converting MyISAM tables}{https://dev.mysql.com/doc/refman/8.4/en/converting-tables-to-innodb.html}
+\refdoc{[70] SQLite UPSERT}{https://www.sqlite.org/lang_upsert.html}
+\refdoc{[75] DBIx::Class DBI storage and savepoints}{https://metacpan.org/pod/DBIx::Class::Storage::DBI}
+\refdoc{[77] SQLite transaction semantics}{https://www.sqlite.org/lang_transaction.html}
+\refdoc{[78] SQLite WAL and concurrency}{https://www.sqlite.org/wal.html}
+\refdoc{[81] SQLite savepoint and release semantics}{https://www.sqlite.org/lang_savepoint.html}
+\refdoc{[82] DBD::SQLite transaction semantics}{https://metacpan.org/pod/DBD::SQLite}
+\subsection{Redis, Valkey and Memcached}
 \refdoc{[19] Redis distributed locks}{https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/}
 \refdoc{[20] Redis SET}{https://redis.io/docs/latest/commands/set/}
 \refdoc{[21] Perl Redis client}{https://metacpan.org/pod/Redis}
@@ -936,12 +1017,6 @@ Examples 32--39 use independently constructed synthetic data. Example 32 checks 
 \refdoc{[24] Perl Cache::Memcached::Fast}{https://metacpan.org/pod/Cache::Memcached::Fast}
 \refdoc{[25] Memcached meta protocol}{https://docs.memcached.org/protocols/meta/}
 \refdoc{[26] Memcached protocol specification}{https://github.com/memcached/memcached/blob/master/doc/protocol.txt}
-\refdoc{[27] threads module documentation}{https://perldoc.perl.org/threads}
-\refdoc{[28] Try/catch and defer blocks (perlsyn)}{https://perldoc.perl.org/perlsyn}
-\refdoc{[29] Future::AsyncAwait}{https://metacpan.org/pod/Future::AsyncAwait}
-\refdoc{[30] Future::Mutex}{https://metacpan.org/pod/Future::Mutex}
-\refdoc{[31] DBD::MariaDB}{https://metacpan.org/pod/DBD::MariaDB}
-\refdoc{[32] MySQL release model: Innovation and LTS}{https://dev.mysql.com/doc/refman/9.7/en/mysql-releases.html}
 \refdoc{[33] Redis DELEX}{https://redis.io/docs/latest/commands/delex/}
 \refdoc{[34] What's new in Redis 8.4}{https://redis.io/docs/latest/develop/whats-new/8-4/}
 \refdoc{[35] Valkey DELIFEQ}{https://valkey.io/commands/delifeq/}
@@ -952,11 +1027,18 @@ Examples 32--39 use independently constructed synthetic data. Example 32 checks 
 \refdoc{[40] Redis licenses}{https://redis.io/legal/licenses/}
 \refdoc{[41] Redis::Fast}{https://metacpan.org/pod/Redis::Fast}
 \refdoc{[42] Net::Async::Redis}{https://metacpan.org/pod/Net::Async::Redis}
+\refdoc{[61] Redis transactions and WATCH semantics}{https://redis.io/docs/latest/develop/using-commands/transactions/}
+\refdoc{[62] Redis EXEC reply semantics}{https://redis.io/docs/latest/commands/exec/}
+\subsection{Distributed coordination and production operations}
 \refdoc{[43] M. Kleppmann, How to do distributed locking}{https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html}
 \refdoc{[44] Kubernetes Leases}{https://kubernetes.io/docs/concepts/architecture/leases/}
 \refdoc{[45] etcd API guarantees and revisions}{https://etcd.io/docs/v3.5/learning/api/}
-\refdoc{[46] perl5440delta}{https://perldoc.perl.org/perl5440delta}
-\refdoc{[47] PostgreSQL advisory locks}{https://www.postgresql.org/docs/current/explicit-locking.html}
+\refdoc{[66] Kubernetes CronJob controller}{https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/}
+\refdoc{[71] Transactional outbox pattern}{https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html}
+\refdoc{[72] Kubernetes Pod termination}{https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/}
+\refdoc{[73] OpenTelemetry metrics concepts}{https://opentelemetry.io/docs/concepts/signals/metrics/}
+\refdoc{[74] Kubernetes leader election and fencing limitations}{https://pkg.go.dev/k8s.io/client-go/tools/leaderelection}
+\subsection{Application frameworks, API security and verification}
 \refdoc{[48] RFC 9700: Best Current Practice for OAuth 2.0 Security}{https://www.rfc-editor.org/rfc/rfc9700}
 \refdoc{[49] RFC 8725: JSON Web Token Best Current Practices}{https://www.rfc-editor.org/rfc/rfc8725}
 \refdoc{[50] RFC 9068: JWT Profile for OAuth 2.0 Access Tokens}{https://www.rfc-editor.org/rfc/rfc9068}
@@ -970,32 +1052,15 @@ Examples 32--39 use independently constructed synthetic data. Example 32 checks 
 \refdoc{[58] Okta: refresh token rotation and grace period}{https://developer.okta.com/docs/guides/refresh-tokens/main/}
 \refdoc{[59] Amazon Cognito: RefreshTokenRotationType}{https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_RefreshTokenRotationType.html}
 \refdoc{[60] Auth0: refresh token rotation}{https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation}
-\refdoc{[61] Redis transactions and WATCH semantics}{https://redis.io/docs/latest/develop/using-commands/transactions/}
-\refdoc{[62] Redis EXEC reply semantics}{https://redis.io/docs/latest/commands/exec/}
 \refdoc{[63] Moose attributes}{https://metacpan.org/pod/Moose::Manual::Attributes}
 \refdoc{[64] Catalyst component lifecycle}{https://metacpan.org/pod/Catalyst::Component}
-\refdoc{[65] DBIx::Class storage and nested transactions}{https://metacpan.org/pod/DBIx::Class::Storage}
-\refdoc{[66] Kubernetes CronJob controller}{https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/}
-\refdoc{[67] InnoDB error handling}{https://dev.mysql.com/doc/refman/8.4/en/innodb-error-handling.html}
-\refdoc{[68] Converting MyISAM tables}{https://dev.mysql.com/doc/refman/8.4/en/converting-tables-to-innodb.html}
 \refdoc{[69] Test2 harness}{https://metacpan.org/pod/Test2::Harness}
-\refdoc{[70] SQLite UPSERT}{https://www.sqlite.org/lang_upsert.html}
-\refdoc{[71] Transactional outbox pattern}{https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html}
-\refdoc{[72] Kubernetes Pod termination}{https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/}
-\refdoc{[73] OpenTelemetry metrics concepts}{https://opentelemetry.io/docs/concepts/signals/metrics/}
-\refdoc{[74] Kubernetes leader election and fencing limitations}{https://pkg.go.dev/k8s.io/client-go/tools/leaderelection}
-\refdoc{[75] DBIx::Class DBI storage and savepoints}{https://metacpan.org/pod/DBIx::Class::Storage::DBI}
-\refdoc{[76] Future cancellation semantics}{https://metacpan.org/pod/Future}
-\refdoc{[77] SQLite transaction semantics}{https://www.sqlite.org/lang_transaction.html}
-\refdoc{[78] SQLite WAL and concurrency}{https://www.sqlite.org/wal.html}
-\refdoc{[79] Linux rename semantics}{https://man7.org/linux/man-pages/man2/rename.2.html}
 \refdoc{[80] Test2::V0}{https://metacpan.org/pod/Test2::V0}
-\refdoc{[81] SQLite savepoint and release semantics}{https://www.sqlite.org/lang_savepoint.html}
-\refdoc{[82] DBD::SQLite transaction semantics}{https://metacpan.org/pod/DBD::SQLite}
-
+\endgroup
 
 \clearpage
 \renewcommand{\indexname}{Subject and API index}
+\phantomsection
 \addcontentsline{toc}{chapter}{Subject and API index}
 \printindex
 \end{document}

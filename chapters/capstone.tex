@@ -43,6 +43,24 @@ transactions serialize writers [77,78]. On InnoDB replace this claim
 with indexed locking reads and \code{SKIP LOCKED}; retry engine-specific
 deadlocks. Never hold a transaction across a remote call.
 
+\section{Walk through the critical operations}
+\index{API!DBI!begin_work@\texttt{begin\_work}}\index{API!DBI!commit}\index{API!DBI!rollback}
+The first excerpt is the complete \code{finish} function from example 36.
+The caller passes its claimed job and attempt. The guarded update must
+change exactly one row; otherwise the attempt has been replaced and no
+result or outbox event is inserted. All three writes occur through
+\code{tx}, which commits or rolls back the unit together. The result value
+is twice the input, so the aggregate can be checked independently.
+\CodeFile{perl}{snippets/capstone-finish.pl}{Capstone excerpt: guarded completion and atomic result/outbox persistence}
+
+The relay stores a destination effect keyed by event ID. Repeated sends
+with the same value are harmless; the lookup detects divergent payloads.
+Only after the destination commits does the relay acknowledge the source,
+using the current attempt ID. A crash between the two commits leaves
+work eligible for replay. This example uses independent SQLite databases,
+not a distributed transaction.
+\CodeFile{perl}{snippets/capstone-deliver.pl}{Capstone excerpt: deduplicating delivery and conditional acknowledgement}
+
 \section{Failure injection and recovery}
 \begin{longtable}{L{.33\linewidth}L{.59\linewidth}}
 \toprule Injected condition & Expected result \\ \midrule\endhead
@@ -62,9 +80,23 @@ or exactly-once transport. Its admission bound applies to processing
 jobs, not the entire outbox backlog; a deployed system should also bound
 or throttle delivery backlog independently.
 
-\section{Run and inspect the laboratory}
+\needspace{10\baselineskip}\section{Run and inspect the laboratory}
 \CodeFile{bash}{snippets/capstone-run.sh}{Run the self-verifying capstone and its independent tests}
 The complete implementation appears in Appendix~\ref{app:capstone}.
+\subsection{Expected output and interpretation}
+\CodeFile{text}{snippets/capstone-expected.txt}{Successful example 36 output (deterministic invariant)}
+\begin{longtable}{L{.30\linewidth}L{.62\linewidth}}
+\toprule Field & What was verified\\ \midrule\endhead
+48 results & Every generated identity 1 through 48 is represented exactly once; the final result count is checked.\\
+48 effects & The independent destination has one effect per event ID despite replay after a lost acknowledgement.\\
+Sum 2352 & The doubled values sum to $2(1+2+\cdots+48)=48\times49=2352$; both source and destination totals agree.\\
+Exit status 0 & Earlier assertions also checked claim recovery, stale completion rejection, divergent duplicate detection, the admission window and empty pending queues.\\
+\bottomrule\end{longtable}
+Any failed invariant terminates nonzero; the summary line is not a
+substitute for checking the process exit status. A restart of the whole
+laboratory creates new temporary databases; the simulated recovery occurs
+within its run. In production the same durable databases must survive a
+supervisor restart.
 For production, partition by the resource whose updates must be ordered,
 bound queue depth and worker connection budgets, and expose queue age,
 attempt counts and outbox lag. Report throughput only with the dataset,

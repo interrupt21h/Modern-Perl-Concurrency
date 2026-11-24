@@ -70,7 +70,7 @@ jobs:
             make tidy-check
             export MYSQL_PWD="$DB_PASS"
             mysql --protocol=TCP -h 127.0.0.1 -P "$MYSQL_PORT" -u "$DB_USER" concurrency_lab < examples/schema.sql
-            sh run-tests.sh
+            sh run-tests.sh | tee verification-suite.txt
             env -u DB_DSN -u DB_USER -u DB_PASS perl examples/37-savepoints.pl
             prove -v examples/t/processing.t
             yath test -j2 examples/t/
@@ -79,6 +79,8 @@ jobs:
             for example in 13-redis-lease.pl 16-redis-semaphore.pl 17-redis-stream-worker.pl 18-fenced-write.pl 31-redis-watch-lease.pl 28-catalyst-sessions.pl 30-api-tokens.pl; do
               REDIS_SERVER="$VALKEY_SERVER" timeout 90 perl "examples/$example"
             done
+            perl examples/39-contention-benchmark.pl | tee verification-benchmark.txt
+            python3 scripts/record-verification.py --suite verification-suite.txt --benchmark verification-benchmark.txt
             make pdf
             python3 scripts/pdf-preflight.py guide.pdf guide.log
             python3 scripts/render-review.py guide.pdf review
@@ -98,7 +100,7 @@ jobs:
             git commit -m 'Apply verified Perl::Tidy formatting and regenerate listings'
           fi
           echo "PUBLISHED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-          echo "RELEASE_TAG=v2.1-build.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=v2.1.1-build.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
       - name: Package formatted source and PDF
         run: |
           set -euo pipefail
@@ -108,7 +110,9 @@ jobs:
           cp cheat-sheet.pdf dist/perl-concurrency-cheat-sheet.pdf
           cp cheat-sheet.tex dist/
           cp tidy-build.txt tidy-source.diff dist/
-          (cd dist && sha256sum modern-perl-concurrency.pdf perl-concurrency-cheat-sheet.pdf cheat-sheet.tex formatted-source.tar.gz > SHA256SUMS)
+          cp generated/release-verification.json dist/verification.json
+          cp verification-benchmark.txt dist/benchmark-results.txt
+          (cd dist && sha256sum modern-perl-concurrency.pdf perl-concurrency-cheat-sheet.pdf cheat-sheet.tex formatted-source.tar.gz verification.json benchmark-results.txt > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with:
           name: tidied-perl-handbook
@@ -131,10 +135,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create "$RELEASE_TAG" dist/modern-perl-concurrency.pdf dist/perl-concurrency-cheat-sheet.pdf dist/cheat-sheet.tex dist/formatted-source.tar.gz dist/SHA256SUMS dist/tidy-build.txt \
+          gh release create "$RELEASE_TAG" dist/modern-perl-concurrency.pdf dist/perl-concurrency-cheat-sheet.pdf dist/cheat-sheet.tex dist/formatted-source.tar.gz dist/SHA256SUMS dist/tidy-build.txt dist/verification.json dist/benchmark-results.txt \
             --target "$PUBLISHED_SHA" \
-            --title "Modern Perl Concurrency and Locking — Edition 2.1 (build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT})" \
+            --title "Modern Perl Concurrency and Locking — Edition 2.1.1 (build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT})" \
             --notes "Formatted and rebuilt by CI from commit $PUBLISHED_SHA. See tidy-build.txt for the executed and skipped tests. Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          # The edition tag is immutable once published; later CI builds remain versioned.
+          if ! gh release view v2.1.1 >/dev/null 2>&1; then
+            gh release create v2.1.1 dist/modern-perl-concurrency.pdf dist/perl-concurrency-cheat-sheet.pdf dist/cheat-sheet.tex dist/formatted-source.tar.gz dist/SHA256SUMS dist/tidy-build.txt dist/verification.json dist/benchmark-results.txt \
+              --target "$PUBLISHED_SHA" --title "Modern Perl Concurrency and Locking — Edition 2.1.1" \
+              --notes "Stable edition snapshot. Automated verification: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. See verification.json and SHA256SUMS for provenance. Independent peer review is not implied."
+          fi
       - name: Build static handbook portal
         if: github.ref == 'refs/heads/main'
         run: python3 scripts/build-site.py

@@ -2,7 +2,7 @@
 
 **An illustrated engineering handbook and executable laboratory for Perl developers.**
 
-[![Edition](https://img.shields.io/badge/edition-2.1-34546B)](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest)
+[![Edition](https://img.shields.io/badge/edition-2.1.1-34546B)](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest)
 [![Build and publish](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions/workflows/tidy-handbook.yml/badge.svg?branch=main)](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions/workflows/tidy-handbook.yml)
 
 [Documentation website](https://interrupt21h.github.io/Modern-Perl-Concurrency/) · [Latest release](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest) · [Source examples](examples/) · [Build history](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions)
@@ -17,6 +17,8 @@
 | **Build verification** | Formatter output, regression results, compilation log and download integrity. | [Build log](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/tidy-build.txt) · [SHA-256](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/SHA256SUMS) |
 
 For the cheat sheet, print at actual size (100%), in landscape orientation, flipping on the short edge for double-sided use.
+
+The stable edition is [v2.1.1](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/tag/v2.1.1) once its publication gate succeeds. Subsequent automated releases remain separately versioned. The current release includes `verification.json` and `benchmark-results.txt`, with the actual environment and observed timings.
 
 ## About the guide
 
@@ -264,3 +266,7 @@ Owner & Independent Consultant, 21h Systems
 ### Release verification
 
 The publishing workflow provisions disposable MySQL, Redis, Valkey and Memcached services and installs the full module set. `REQUIRE_FULL_SUITE=1` makes skipped laboratories fatal. Full-page rendered review artifacts are available from CI. PDF preflight checks final LaTeX references, overflow and extracted word bounds; visual inspection remains a separate editorial task.
+
+## Licensing
+
+Author-owned prose, diagrams and publications are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Author-owned example code, snippets and build tooling are licensed under the [MIT License](LICENSE-CODE). Third-party material retains its own terms. See [LICENSE.md](LICENSE.md).

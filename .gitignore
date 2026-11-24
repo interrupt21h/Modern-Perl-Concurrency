@@ -19,3 +19,6 @@ __pycache__/
 *.ind
 *.ilg
 /review/
+
+/verification-suite.txt
+/verification-benchmark.txt

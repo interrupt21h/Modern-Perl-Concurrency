@@ -14,6 +14,7 @@ lock duration. Instead, separate durable intent from delivery.
 \strategy{app-outbox}{Transactional outbox}{Write the shipping instruction on the same receipt as the sale.}{a committed change must trigger a remote effect.}{the effect can be committed in the same local transaction.}{DBI, unique keys, durable queues}
 
 \section{Transactional outbox and inbox}
+\index{Transactional outbox}\index{Idempotency}
 \begin{figure}[!htbp]\centering
 \begin{tikzpicture}[node distance=10mm]
 \node[okbox,text width=5cm] (s) {Source database\\business row + outbox event\\one transaction};

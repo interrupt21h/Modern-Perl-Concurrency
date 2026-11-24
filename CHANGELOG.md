@@ -1,5 +1,12 @@
 # Changelog
 
+## Edition 2.1.1 — publication polish
+
+- Repair index navigation, compact front matter and glossary, protect short listing headings, and improve figure placement and part titles.
+- Add canonical capstone excerpts, output interpretation, deadline propagation, implementation-site API index entries, and subject-grouped references.
+- Capture actual CI environment, test outcomes and contention timings; validate index links in PDF preflight.
+- Publish an immutable edition tag alongside automated builds; specify separate documentation and code licenses.
+
 ## Edition 2.1 — editorial and reproducibility revision
 
 - Reorganize the book into six parts and technical appendices; preserve full listings.
