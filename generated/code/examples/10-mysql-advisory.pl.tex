@@ -4,23 +4,34 @@
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{DBI}\PG{p}{;}
 
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{DBI}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{connect}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{DB\PGZus{}DSN}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{DB\PGZus{}USER}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{DB\PGZus{}PASS}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{n}{RaiseError}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{n}{PrintError}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{n}{AutoCommit}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
-\PG{+w}{    }\PG{n}{mysql\PGZus{}auto\PGZus{}reconnect}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{     }\PG{c+c1}{\PGZsh{} reconnecting would silently drop the lock}
-\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{DBI}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{connect}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{DB\PGZus{}DSN}\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{DB\PGZus{}USER}\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{DB\PGZus{}PASS}\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{RaiseError}\PG{+w}{           }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{        }\PG{n}{PrintError}\PG{+w}{           }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}
+\PG{+w}{        }\PG{n}{AutoCommit}\PG{+w}{           }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{        }\PG{n}{mysql\PGZus{}auto\PGZus{}reconnect}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}
+\PG{+w}{            }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{    }\PG{c+c1}{\PGZsh{} reconnecting would silently drop the lock}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
 
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{name}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZsq{}app:billing:customer:42\PGZsq{}}\PG{p}{;}
 \PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lock name exceeds 64 characters\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nb}{length}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{name}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{64}\PG{p}{;}
 
 \PG{c+c1}{\PGZsh{} 1 = acquired, 0 = timed out, NULL = error.}
-\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{got}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{selectrow\PGZus{}array}\PG{p}{(}\PG{l+s}{\PGZsq{}SELECT GET\PGZus{}LOCK(?, ?)\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{name}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{5}\PG{p}{)}\PG{p}{;}
-\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}GET\PGZus{}LOCK error\PGZbs{}n\PGZdq{}}\PG{+w}{  }\PG{k}{unless}\PG{+w}{ }\PG{n+nb}{defined}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{got}\PG{p}{;}
-\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lock timeout\PGZbs{}n\PGZdq{}}\PG{+w}{    }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{got}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{got}\PG{p}{)}\PG{+w}{ }\PG{o}{=}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{selectrow\PGZus{}array}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZsq{}SELECT GET\PGZus{}LOCK(?, ?)\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{name}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{5}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}GET\PGZus{}LOCK error\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nb}{defined}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{got}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lock timeout\PGZbs{}n\PGZdq{}}\PG{+w}{   }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{got}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
 
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}
+
 \PG{+w}{    }\PG{c+c1}{\PGZsh{} Protected work must run on this same session.}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{holder}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{selectrow\PGZus{}array}\PG{p}{(}\PG{l+s}{\PGZsq{}SELECT IS\PGZus{}USED\PGZus{}LOCK(?)\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{name}\PG{p}{)}\PG{p}{;}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{self}\PG{p}{)}\PG{+w}{   }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{selectrow\PGZus{}array}\PG{p}{(}\PG{l+s}{\PGZsq{}SELECT CONNECTION\PGZus{}ID()\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{holder}\PG{p}{)}\PG{+w}{ }\PG{o}{=}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{selectrow\PGZus{}array}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZsq{}SELECT IS\PGZus{}USED\PGZus{}LOCK(?)\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{name}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{self}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{selectrow\PGZus{}array}\PG{p}{(}\PG{l+s}{\PGZsq{}SELECT CONNECTION\PGZus{}ID()\PGZsq{}}\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lock not held by this session\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{holder}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{self}\PG{p}{;}
 \PG{+w}{    }\PG{l+m+mi}{1}\PG{p}{;}
 \PG{p}{\PGZcb{}}\PG{p}{;}
@@ -28,11 +39,12 @@
 
 \PG{c+c1}{\PGZsh{} 1 = released, 0 = held by another session, NULL = no such lock.}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{released}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{selectrow\PGZus{}array}\PG{p}{(}\PG{l+s}{\PGZsq{}SELECT RELEASE\PGZus{}LOCK(?)\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{name}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r}\PG{p}{)}\PG{+w}{ }\PG{o}{=}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{selectrow\PGZus{}array}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZsq{}SELECT RELEASE\PGZus{}LOCK(?)\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{name}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{defined}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
 \PG{p}{\PGZcb{}}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{release\PGZus{}err}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{p}{;}
 \PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{disconnect}\PG{p}{;}
 \PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}release failed: \PGZdl{}release\PGZus{}err; work: \PGZdl{}err\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{released}\PG{p}{;}
-\PG{n+nb}{die}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{err}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{err}\PG{+w}{                                       }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{;}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}advisory lock acquired, verified and released\PGZbs{}n\PGZdq{}}\PG{p}{;}

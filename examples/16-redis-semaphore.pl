@@ -6,8 +6,8 @@
 use strict;
 use warnings;
 use Redis;
-use File::Temp qw(tempfile);
-use POSIX qw(_exit);
+use File::Temp  qw(tempfile);
+use POSIX       qw(_exit);
 use Time::HiRes qw(clock_gettime CLOCK_MONOTONIC sleep);
 
 my $SERVER  = $ENV{REDIS_SERVER} // '127.0.0.1:6379';
@@ -49,73 +49,86 @@ sub now { clock_gettime(CLOCK_MONOTONIC) }
 
 sub token {
     open my $fh, '<:raw', '/dev/urandom' or die "urandom: $!";
-    read($fh, my $bytes, 16) == 16 or die "short random read\n";
+    read( $fh, my $bytes, 16 ) == 16 or die "short random read\n";
     return unpack 'H*', $bytes;
 }
 
 my %sha;
+
 sub run_script {
-    my ($r, $name, @rest) = @_;
+    my ( $r, $name, @rest ) = @_;
     my $reply = eval {
-        $sha{$name} //= $r->script_load($SCRIPT{$name});
-        $r->evalsha($sha{$name}, @rest);
+        $sha{$name} //= $r->script_load( $SCRIPT{$name} );
+        $r->evalsha( $sha{$name}, @rest );
     };
     return $reply unless $@;
-    die $@ unless $@ =~ /NOSCRIPT/;
-    $sha{$name} = $r->script_load($SCRIPT{$name});
-    return $r->evalsha($sha{$name}, @rest);
+    die $@        unless $@ =~ /NOSCRIPT/;
+    $sha{$name} = $r->script_load( $SCRIPT{$name} );
+    return $r->evalsha( $sha{$name}, @rest );
 }
 
 sub worker {
     my ($trace_fh) = @_;
-    my $r = Redis->new(server => $SERVER, cnx_timeout => 1,
-        read_timeout => 1, write_timeout => 1, reconnect => 0,
-        (defined $ENV{REDIS_PASSWORD}
-            ? (username => $ENV{REDIS_USERNAME} // 'default',
-               password => $ENV{REDIS_PASSWORD}) : ()));
+    my $r = Redis->new(
+        server        => $SERVER,
+        cnx_timeout   => 1,
+        read_timeout  => 1,
+        write_timeout => 1,
+        reconnect     => 0,
+        (
+            defined $ENV{REDIS_PASSWORD}
+            ? (
+                username => $ENV{REDIS_USERNAME} // 'default',
+                password => $ENV{REDIS_PASSWORD}
+                )
+            : ()
+        )
+    );
     my $owner = token();
     my $stop  = now() + 20;
-    until (run_script($r, 'acquire', 1, $KEY, $PERMITS, $owner, $TTL_MS)) {
+    until (
+        run_script( $r, 'acquire', 1, $KEY, $PERMITS, $owner, $TTL_MS ) )
+    {
         die "permit timeout\n" if now() >= $stop;
-        sleep(0.02 + rand 0.05);
+        sleep( 0.02 + rand 0.05 );
     }
     my $entered = now();
-    my $ok = eval {
-        sleep(0.15);                                   # simulated call
-        run_script($r, 'renew', 1, $KEY, $owner, $TTL_MS)
-            or die "permit expired\n";                 # heartbeat demo
+    my $ok      = eval {
+        sleep(0.15);    # simulated call
+        run_script( $r, 'renew', 1, $KEY, $owner, $TTL_MS )
+            or die "permit expired\n";    # heartbeat demo
         sleep(0.05);
         1;
     };
-    my $err = $@;
+    my $err  = $@;
     my $left = now();
-    syswrite $trace_fh, sprintf("%.6f %.6f\n", $entered, $left);
-    eval { $r->zrem($KEY, $owner) };                   # owner-scoped release
+    syswrite $trace_fh, sprintf( "%.6f %.6f\n", $entered, $left );
+    eval { $r->zrem( $KEY, $owner ) };    # owner-scoped release
     die $err unless $ok;
 }
 
-my ($trace_fh, $trace) = tempfile(UNLINK => 1);
+my ( $trace_fh, $trace ) = tempfile( UNLINK => 1 );
 my @pids;
-for (1 .. $WORKERS) {
-    defined(my $pid = fork()) or die "fork: $!";
-    if (!$pid) {
+for ( 1 .. $WORKERS ) {
+    defined( my $pid = fork() ) or die "fork: $!";
+    if ( !$pid ) {
         my $ok = eval { worker($trace_fh); 1 };
         warn $@ unless $ok;
-        _exit($ok ? 0 : 1);
+        _exit( $ok ? 0 : 1 );
     }
     push @pids, $pid;
 }
 for (@pids) {
-    waitpid($_, 0);
+    waitpid( $_, 0 );
     die "worker failed\n" if $?;
 }
 
 # Sweep entry/exit events to find the peak number of concurrent holders.
 open my $in, '<', $trace or die "trace: $!";
 my @events = sort { $a->[0] <=> $b->[0] || $a->[1] <=> $b->[1] }
-    map { my ($s, $e) = split; ([$s, 1], [$e, -1]) } <$in>;
+    map { my ( $s, $e ) = split; ( [ $s, 1 ], [ $e, -1 ] ) } <$in>;
 die "expected $WORKERS holders\n" unless @events == 2 * $WORKERS;
-my ($active, $peak) = (0, 0);
+my ( $active, $peak ) = ( 0, 0 );
 for (@events) {
     $active += $_->[1];
     $peak = $active if $active > $peak;

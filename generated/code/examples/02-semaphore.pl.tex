@@ -7,33 +7,36 @@
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{Thread::Semaphore}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{Time::HiRes}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{sleep}\PG{l+s+sx}{)}\PG{p}{;}
 
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{slots}\PG{+w}{  }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Thread::Semaphore}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}\PG{l+m+mi}{3}\PG{p}{)}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{peak}\PG{+w}{   }\PG{p}{:}\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{slots}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Thread::Semaphore}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}\PG{l+m+mi}{3}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{peak}\PG{+w}{   }\PG{p}{:}\PG{+w}{ }\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
 
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{workers}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{map}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{n+nn}{threads}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{        }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}permit timeout\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{slots}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{down\PGZus{}timed}\PG{p}{(}\PG{l+m+mi}{5}\PG{p}{)}\PG{p}{;}
-\PG{+w}{        }\PG{c+c1}{\PGZsh{} Exactly one up() for the successful down(), on every path.}
-\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{p}{\PGZob{}}
-\PG{+w}{                }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{p}{)}\PG{p}{;}
-\PG{+w}{                }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{p}{;}
-\PG{+w}{                }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{peak}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{peak}\PG{p}{;}
-\PG{+w}{            }\PG{p}{\PGZcb{}}
-\PG{+w}{            }\PG{n+nb}{sleep}\PG{p}{(}\PG{l+m+mf}{0.05}\PG{p}{)}\PG{p}{;}\PG{+w}{      }\PG{c+c1}{\PGZsh{} simulated bounded work}
-\PG{+w}{            }\PG{l+m+mi}{1}\PG{p}{;}
-\PG{+w}{        }\PG{p}{\PGZcb{}}\PG{p}{;}
-\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{err}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{p}{;}
-\PG{+w}{        }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{o}{\PGZhy{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{p}{;}\PG{+w}{ }\PG{p}{\PGZcb{}}
-\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{slots}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{up}\PG{p}{;}
-\PG{+w}{        }\PG{n+nb}{die}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{err}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{;}
-\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
-\PG{+w}{    }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nn}{threads}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}
+\PG{+w}{        }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}permit timeout\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{slots}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{down\PGZus{}timed}\PG{p}{(}\PG{l+m+mi}{5}\PG{p}{)}\PG{p}{;}
+
+\PG{+w}{            }\PG{c+c1}{\PGZsh{} Exactly one up() for the successful down(), on every path.}
+\PG{+w}{            }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{p}{\PGZob{}}
+\PG{+w}{                    }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{p}{)}\PG{p}{;}
+\PG{+w}{                    }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{p}{;}
+\PG{+w}{                    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{peak}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{peak}\PG{p}{;}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{                }\PG{n+nb}{sleep}\PG{p}{(}\PG{l+m+mf}{0.05}\PG{p}{)}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} simulated bounded work}
+\PG{+w}{                }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{+w}{            }\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{            }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{err}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{p}{;}
+\PG{+w}{            }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{o}{\PGZhy{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{p}{;}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{slots}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{up}\PG{p}{;}
+\PG{+w}{            }\PG{n+nb}{die}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{err}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{;}
+\PG{+w}{            }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{12}\PG{p}{;}
 
 \PG{k}{for}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{thr}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{@}\PG{n+nv}{workers}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{thr}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{join}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZsq{}worker failed: \PGZsq{}}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{thr}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{error}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}no result\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{thr}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{join}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZsq{}worker failed: \PGZsq{}}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{thr}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{error}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}no result\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 \PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}invalid peak=\PGZdl{}peak active=\PGZdl{}active\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{peak}\PG{+w}{ }\PG{o}{\PGZlt{}=}\PG{+w}{ }\PG{l+m+mi}{3}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}peak=\PGZdl{}peak\PGZbs{}n\PGZdq{}}\PG{p}{;}

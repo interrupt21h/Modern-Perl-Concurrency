@@ -7,48 +7,61 @@
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{v5}\PG{l+m+mf}{.36}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{feature}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{try defer}\PG{l+s+sx}{)}\PG{p}{;}
 \PG{k}{no}\PG{+w}{ }\PG{n+nn}{warnings}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{experimental::try experimental::defer}\PG{l+s+sx}{)}\PG{p}{;}
-\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Fcntl}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{:DEFAULT :flock}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Fcntl}\PG{+w}{      }\PG{l+s+sx}{qw(}\PG{l+s+sx}{:DEFAULT :flock}\PG{l+s+sx}{)}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{File::Temp}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{tempdir}\PG{l+s+sx}{)}\PG{p}{;}
 
-\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{with\PGZus{}flock}\PG{+w}{ }\PG{p}{(\PGZdl{}path, \PGZdl{}code) \PGZob{}}
-\PG{+w}{    }\PG{n+nb}{sysopen}\PG{p}{(}\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n}{O\PGZus{}CREAT}\PG{+w}{ }\PG{o}{|}\PG{+w}{ }\PG{n}{O\PGZus{}RDWR}\PG{p}{,}\PG{+w}{ }\PG{l+m+mo}{0600}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}open \PGZdl{}path: \PGZdl{}!\PGZbs{}n\PGZdq{}}\PG{p}{;}
-\PG{+w}{    }\PG{n+nb}{flock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n}{LOCK\PGZus{}EX}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}flock \PGZdl{}path: \PGZdl{}!\PGZbs{}n\PGZdq{}}\PG{p}{;}
-\PG{+w}{    }\PG{n}{defer}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{close}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{                    }\PG{c+c1}{\PGZsh{} closing the handle drops the lock}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{with\PGZus{}flock}\PG{+w}{ }\PG{p}{( \PGZdl{}path, \PGZdl{}code ) \PGZob{}}
+\PG{+w}{    }\PG{n+nb}{sysopen}\PG{p}{(}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n}{O\PGZus{}CREAT}\PG{+w}{ }\PG{o}{|}\PG{+w}{ }\PG{n}{O\PGZus{}RDWR}\PG{p}{,}\PG{+w}{ }\PG{l+m+mo}{0600}\PG{+w}{ }\PG{p}{)}
+\PG{+w}{        }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}open \PGZdl{}path: \PGZdl{}!\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{flock}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n}{LOCK\PGZus{}EX}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}flock \PGZdl{}path: \PGZdl{}!\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{n}{defer}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{close}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{    }\PG{c+c1}{\PGZsh{} closing the handle drops the lock}
 
 \PG{+w}{    }\PG{n}{try}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{code}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{(}\PG{p}{)}\PG{p}{;}\PG{+w}{                  }\PG{c+c1}{\PGZsh{} returns from with\PGZus{}flock itself}
+\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{code}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{(}\PG{p}{)}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} returns from with\PGZus{}flock itself}
 \PG{+w}{    }\PG{p}{\PGZcb{}}
 \PG{+w}{    }\PG{n}{catch}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{e}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{        }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}locked section on \PGZdl{}path failed: \PGZdl{}e\PGZdq{}}\PG{p}{;}\PG{+w}{   }\PG{c+c1}{\PGZsh{} add context, rethrow}
+\PG{+w}{        }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}locked section on \PGZdl{}path failed: \PGZdl{}e\PGZdq{}}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} add context, rethrow}
 \PG{+w}{    }\PG{p}{\PGZcb{}}
 \PG{p}{\PGZcb{}}
 
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{tempdir}\PG{p}{(}\PG{n}{CLEANUP}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{l+s}{\PGZsq{}/report.lock\PGZsq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{tempdir}\PG{p}{(}\PG{+w}{ }\PG{n}{CLEANUP}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{l+s}{\PGZsq{}/report.lock\PGZsq{}}\PG{p}{;}
 
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{lock\PGZus{}is\PGZus{}free}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{n+nb}{sysopen}\PG{p}{(}\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{probe}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n}{O\PGZus{}CREAT}\PG{+w}{ }\PG{o}{|}\PG{+w}{ }\PG{n}{O\PGZus{}RDWR}\PG{p}{,}\PG{+w}{ }\PG{l+m+mo}{0600}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}open: \PGZdl{}!\PGZbs{}n\PGZdq{}}\PG{p}{;}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{free}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{flock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{probe}\PG{p}{,}\PG{+w}{ }\PG{n}{LOCK\PGZus{}EX}\PG{+w}{ }\PG{o}{|}\PG{+w}{ }\PG{n}{LOCK\PGZus{}NB}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{sysopen}\PG{p}{(}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{probe}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n}{O\PGZus{}CREAT}\PG{+w}{ }\PG{o}{|}\PG{+w}{ }\PG{n}{O\PGZus{}RDWR}\PG{p}{,}\PG{+w}{ }\PG{l+m+mo}{0600}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}open: \PGZdl{}!\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{free}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{flock}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{probe}\PG{p}{,}\PG{+w}{ }\PG{n}{LOCK\PGZus{}EX}\PG{+w}{ }\PG{o}{|}\PG{+w}{ }\PG{n}{LOCK\PGZus{}NB}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{close}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{probe}\PG{p}{;}
 \PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{free}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
 \PG{c+c1}{\PGZsh{} 1. Normal completion returns the block\PGZsq{}s value and releases the lock.}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{with\PGZus{}flock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lock not exclusive\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n}{lock\PGZus{}is\PGZus{}free}\PG{p}{(}\PG{p}{)}\PG{p}{;}
-\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{42}\PG{p}{;}
-\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
-\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}wrong result: \PGZdl{}value\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{42}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{with\PGZus{}flock}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}
+\PG{+w}{    }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lock not exclusive\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n}{lock\PGZus{}is\PGZus{}free}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{42}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}wrong result: \PGZdl{}value\PGZbs{}n\PGZdq{}}\PG{+w}{     }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{42}\PG{p}{;}
 \PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lock leaked after return\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n}{lock\PGZus{}is\PGZus{}free}\PG{p}{(}\PG{p}{)}\PG{p}{;}
 
 \PG{c+c1}{\PGZsh{} 2. An exception propagates with context and still releases the lock.}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{with\PGZus{}flock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}disk full\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n}{with\PGZus{}flock}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}disk full\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{l+m+mi}{1}
+\PG{p}{\PGZcb{}}\PG{p}{;}
 \PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}exception swallowed\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{;}
-\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}missing context: \PGZdl{}@\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZca{}locked section on .* failed: disk full\PGZdl{}/}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}missing context: \PGZdl{}@\PGZdq{}}
+\PG{+w}{    }\PG{k}{unless}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZca{}locked section on .* failed: disk full\PGZdl{}/}\PG{p}{;}
 \PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lock leaked after exception\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n}{lock\PGZus{}is\PGZus{}free}\PG{p}{(}\PG{p}{)}\PG{p}{;}
 
 \PG{c+c1}{\PGZsh{} 3. Nested use on different files works; inner lock released first.}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{inner}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}path.inner\PGZdq{}}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{nested}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{with\PGZus{}flock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{with\PGZus{}flock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{inner}\PG{p}{,}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}nested\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{inner}\PG{+w}{  }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}path.inner\PGZdq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{nested}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{with\PGZus{}flock}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}
+\PG{+w}{    }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{with\PGZus{}flock}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{inner}\PG{p}{,}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}nested\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
 \PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}nested call failed\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{nested}\PG{+w}{ }\PG{o+ow}{eq}\PG{+w}{ }\PG{l+s}{\PGZsq{}nested\PGZsq{}}\PG{p}{;}
 
 \PG{n}{say}\PG{+w}{ }\PG{l+s}{\PGZsq{}try/catch/defer released the lock on return, exception and nesting\PGZsq{}}\PG{p}{;}

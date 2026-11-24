@@ -3,21 +3,24 @@
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{threads}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{threads::shared}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{Time::HiRes}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{sleep}\PG{l+s+sx}{)}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{readers}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{writer}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{waiting}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{+w}{    }\PG{p}{:}\PG{+w}{ }\PG{n}{shared}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{readers}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{writer}\PG{+w}{  }\PG{p}{:}\PG{+w}{ }\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{waiting}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{+w}{   }\PG{p}{:}\PG{+w}{ }\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{acquire\PGZus{}read}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{n}{cond\PGZus{}wait}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{p}{)}\PG{+w}{ }\PG{k}{while}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{writer}\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{waiting}\PG{p}{;}
 \PG{+w}{    }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{readers}\PG{p}{;}
 \PG{p}{\PGZcb{}}
+
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{release\PGZus{}read}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{o}{\PGZhy{}}\PG{o}{\PGZhy{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{readers}\PG{p}{;}
 \PG{+w}{    }\PG{n}{cond\PGZus{}broadcast}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{p}{)}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{readers}\PG{p}{;}
 \PG{p}{\PGZcb{}}
+
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{acquire\PGZus{}write}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{waiting}\PG{p}{;}
@@ -25,30 +28,36 @@
 \PG{+w}{    }\PG{o}{\PGZhy{}}\PG{o}{\PGZhy{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{waiting}\PG{p}{;}
 \PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{writer}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
 \PG{p}{\PGZcb{}}
+
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{release\PGZus{}write}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{writer}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
 \PG{+w}{    }\PG{n}{cond\PGZus{}broadcast}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}
+
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{with\PGZus{}rw}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{write}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{code}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{write}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{code}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
 \PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{write}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{n}{acquire\PGZus{}write}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n}{acquire\PGZus{}read}\PG{p}{(}\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{result}\PG{p}{;}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{result}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{code}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{(}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{  }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{result}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{code}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{(}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{err}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{p}{;}
 \PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{write}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{n}{release\PGZus{}write}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n}{release\PGZus{}read}\PG{p}{(}\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{err}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{;}
 \PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{result}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{t}\PG{p}{;}
-\PG{n+nb}{push}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{t}\PG{p}{,}\PG{+w}{ }\PG{n+nn}{threads}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{n}{with\PGZus{}rw}\PG{p}{(}\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{+w}{ }\PG{k}{for}\PG{+w}{ }\PG{l+m+mi}{1}\PG{o}{..}\PG{l+m+mi}{500}\PG{p}{;}
-\PG{p}{\PGZcb{}}\PG{p}{)}\PG{+w}{ }\PG{k}{for}\PG{+w}{ }\PG{l+m+mi}{1}\PG{o}{..}\PG{l+m+mi}{2}\PG{p}{;}
-\PG{n+nb}{push}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{t}\PG{p}{,}\PG{+w}{ }\PG{n+nn}{threads}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{1}\PG{o}{..}\PG{l+m+mi}{500}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{        }\PG{n}{with\PGZus{}rw}\PG{p}{(}\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}bad value\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{n+nb}{push}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{t}\PG{p}{,}\PG{+w}{ }\PG{n+nn}{threads}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}
+\PG{+w}{    }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{with\PGZus{}rw}\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{k}{for}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{500}\PG{p}{;}
 \PG{+w}{    }\PG{p}{\PGZcb{}}
-\PG{p}{\PGZcb{}}\PG{p}{)}\PG{+w}{ }\PG{k}{for}\PG{+w}{ }\PG{l+m+mi}{1}\PG{o}{..}\PG{l+m+mi}{4}\PG{p}{;}
+\PG{p}{)}\PG{+w}{ }\PG{k}{for}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{;}
+\PG{n+nb}{push}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{t}\PG{p}{,}\PG{+w}{ }\PG{n+nn}{threads}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}
+\PG{+w}{    }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{500}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n}{with\PGZus{}rw}\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}bad value\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{+w}{ }\PG{k}{for}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{4}\PG{p}{;}
 \PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{join}\PG{+w}{ }\PG{k}{for}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{t}\PG{p}{;}
 \PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lost update\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1000}\PG{p}{;}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}value=\PGZdl{}value\PGZbs{}n\PGZdq{}}\PG{p}{;}

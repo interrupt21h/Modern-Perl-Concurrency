@@ -1,33 +1,36 @@
 \PG{k}{package}\PG{+w}{ }\PG{n+nn}{SessionLab::Tokens}\PG{p}{;}
+
 \PG{c+c1}{\PGZsh{} Credential primitives for the API laboratory: random tokens, at\PGZhy{}rest}
 \PG{c+c1}{\PGZsh{} hashing, deterministic refresh successors, JWT access tokens and HMAC}
 \PG{c+c1}{\PGZsh{} request signatures. Secrets come from the environment; the defaults exist}
 \PG{c+c1}{\PGZsh{} only so the laboratory runs out of the box.}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{strict}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
-\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Crypt::JWT}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{encode\PGZus{}jwt decode\PGZus{}jwt}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Crypt::JWT}\PG{+w}{  }\PG{l+s+sx}{qw(}\PG{l+s+sx}{encode\PGZus{}jwt decode\PGZus{}jwt}\PG{l+s+sx}{)}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{Digest::SHA}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{sha256\PGZus{}hex hmac\PGZus{}sha256\PGZus{}hex}\PG{l+s+sx}{)}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{Exporter}\PG{+w}{ }\PG{l+s}{\PGZsq{}import\PGZsq{}}\PG{p}{;}
 
 \PG{k}{our}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{EXPORT\PGZus{}OK}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{random\PGZus{}hex token\PGZus{}hash new\PGZus{}api\PGZus{}key new\PGZus{}family new\PGZus{}refresh}
 \PG{l+s+sx}{    successor\PGZus{}of family\PGZus{}of issue\PGZus{}access\PGZus{}token verify\PGZus{}access\PGZus{}token sign\PGZus{}request}\PG{l+s+sx}{)}\PG{p}{;}
 
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{JWT\PGZus{}KEY}\PG{+w}{     }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{SESSIONLAB\PGZus{}JWT\PGZus{}KEY}\PG{p}{\PGZcb{}}\PG{+w}{     }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}lab\PGZhy{}only\PGZhy{}jwt\PGZhy{}key\PGZhy{}change\PGZhy{}me\PGZhy{}0123456789abcdef\PGZsq{}}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{REFRESH\PGZus{}KEY}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{SESSIONLAB\PGZus{}REFRESH\PGZus{}KEY}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}lab\PGZhy{}only\PGZhy{}refresh\PGZhy{}key\PGZhy{}change\PGZhy{}me\PGZhy{}0123456789\PGZsq{}}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ISSUER}\PG{+w}{      }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZsq{}https://sessionlab.example/\PGZsq{}}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{AUDIENCE}\PG{+w}{    }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZsq{}sessionlab\PGZhy{}api\PGZsq{}}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ACCESS\PGZus{}TTL}\PG{+w}{  }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{300}\PG{p}{;}\PG{+w}{                       }\PG{c+c1}{\PGZsh{} five minutes}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{JWT\PGZus{}KEY}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{SESSIONLAB\PGZus{}JWT\PGZus{}KEY}\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}lab\PGZhy{}only\PGZhy{}jwt\PGZhy{}key\PGZhy{}change\PGZhy{}me\PGZhy{}0123456789abcdef\PGZsq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{REFRESH\PGZus{}KEY}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{SESSIONLAB\PGZus{}REFRESH\PGZus{}KEY}\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}lab\PGZhy{}only\PGZhy{}refresh\PGZhy{}key\PGZhy{}change\PGZhy{}me\PGZhy{}0123456789\PGZsq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ISSUER}\PG{+w}{     }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZsq{}https://sessionlab.example/\PGZsq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{AUDIENCE}\PG{+w}{   }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZsq{}sessionlab\PGZhy{}api\PGZsq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ACCESS\PGZus{}TTL}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{300}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} five minutes}
 
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{random\PGZus{}hex}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bytes}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{open}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZlt{}:raw\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/dev/urandom\PGZsq{}}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}urandom: \PGZdl{}!\PGZdq{}}\PG{p}{;}
-\PG{+w}{    }\PG{n+nb}{read}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{buf}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bytes}\PG{p}{)}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bytes}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}short read from urandom\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{read}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{buf}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bytes}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bytes}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}short read from urandom\PGZdq{}}\PG{p}{;}
 \PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nb}{unpack}\PG{+w}{ }\PG{l+s}{\PGZsq{}H*\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{buf}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
 \PG{c+c1}{\PGZsh{} Tokens are 256\PGZhy{}bit random values, so a fast hash is the right choice:}
 \PG{c+c1}{\PGZsh{} slow password hashes (bcrypt, Argon2) exist for low\PGZhy{}entropy secrets.}
-\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{token\PGZus{}hash}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{sha256\PGZus{}hex}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{token\PGZus{}hash}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{sha256\PGZus{}hex}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}
 
 \PG{c+c1}{\PGZsh{} A recognizable prefix lets secret scanners and log filters find leaked keys.}
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{new\PGZus{}api\PGZus{}key}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}slk\PGZus{}\PGZsq{}}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{n}{random\PGZus{}hex}\PG{p}{(}\PG{l+m+mi}{32}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}
@@ -36,7 +39,11 @@
 \PG{c+c1}{\PGZsh{} server can build Redis keys with a \PGZob{}family\PGZcb{} hash tag without a lookup.}
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{new\PGZus{}family}\PG{+w}{  }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{random\PGZus{}hex}\PG{p}{(}\PG{l+m+mi}{8}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{new\PGZus{}refresh}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{family}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}family.\PGZdq{}}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{n}{random\PGZus{}hex}\PG{p}{(}\PG{l+m+mi}{32}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}
-\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{family\PGZus{}of}\PG{+w}{   }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZbs{}A([0\PGZhy{}9a\PGZhy{}f]\PGZob{}16\PGZcb{})\PGZbs{}.[0\PGZhy{}9a\PGZhy{}f]\PGZob{}64\PGZcb{}\PGZbs{}z/}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{1}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n+nb}{undef}\PG{+w}{ }\PG{p}{\PGZcb{}}
+
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{family\PGZus{}of}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZbs{}A([0\PGZhy{}9a\PGZhy{}f]\PGZob{}16\PGZcb{})\PGZbs{}.[0\PGZhy{}9a\PGZhy{}f]\PGZob{}64\PGZcb{}\PGZbs{}z/}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{1}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n+nb}{undef}
+\PG{p}{\PGZcb{}}
 
 \PG{c+c1}{\PGZsh{} The successor of a refresh token is a keyed hash of it. Duplicate refresh}
 \PG{c+c1}{\PGZsh{} requests within the grace window therefore receive the same successor}
@@ -44,19 +51,32 @@
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{successor\PGZus{}of}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{token}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{family}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{family\PGZus{}of}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{token}\PG{p}{)}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}malformed refresh token\PGZbs{}n\PGZdq{}}\PG{p}{;}
-\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}family.\PGZdq{}}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{n}{hmac\PGZus{}sha256\PGZus{}hex}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{token}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{REFRESH\PGZus{}KEY}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}family.\PGZdq{}}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{n}{hmac\PGZus{}sha256\PGZus{}hex}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{token}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{REFRESH\PGZus{}KEY}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{issue\PGZus{}access\PGZus{}token}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{claims}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}\PG{+w}{                       }\PG{c+c1}{\PGZsh{} sub, fam}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{now}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{time}\PG{p}{;}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{payload}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{claims}\PG{p}{,}\PG{+w}{ }\PG{n}{iss}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ISSUER}\PG{p}{,}\PG{+w}{ }\PG{n}{aud}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{AUDIENCE}\PG{p}{,}
-\PG{+w}{        }\PG{n}{iat}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{now}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{exp}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{now}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ACCESS\PGZus{}TTL}\PG{p}{,}\PG{+w}{ }\PG{n}{jti}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n}{random\PGZus{}hex}\PG{p}{(}\PG{l+m+mi}{16}\PG{p}{)}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{claims}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} sub, fam}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{now}\PG{+w}{      }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{time}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{payload}\PG{+w}{  }\PG{o}{=}\PG{+w}{ }\PG{p}{(}
+\PG{+w}{        }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{claims}\PG{p}{,}
+\PG{+w}{        }\PG{n}{iss}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ISSUER}\PG{p}{,}
+\PG{+w}{        }\PG{n}{aud}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{AUDIENCE}\PG{p}{,}
+\PG{+w}{        }\PG{n}{iat}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{now}\PG{p}{,}
+\PG{+w}{        }\PG{n+nb}{exp}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{now}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ACCESS\PGZus{}TTL}\PG{p}{,}
+\PG{+w}{        }\PG{n}{jti}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n}{random\PGZus{}hex}\PG{p}{(}\PG{l+m+mi}{16}\PG{p}{)}
+\PG{+w}{    }\PG{p}{)}\PG{p}{;}
+
 \PG{+w}{    }\PG{c+c1}{\PGZsh{} typ \PGZdq{}at+jwt\PGZdq{} marks this as an access token (RFC 9068), so an ID token}
 \PG{+w}{    }\PG{c+c1}{\PGZsh{} or any other JWT signed with the same key cannot be replayed here.}
-\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{p}{(}\PG{n}{encode\PGZus{}jwt}\PG{p}{(}\PG{n}{payload}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{payload}\PG{p}{,}\PG{+w}{ }\PG{n}{alg}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}HS256\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{key}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{JWT\PGZus{}KEY}\PG{p}{,}
-\PG{+w}{                       }\PG{n}{extra\PGZus{}headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{typ}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}at+jwt\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{,}
-\PG{+w}{            }\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{payload}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{p}{(}
+\PG{+w}{        }\PG{n}{encode\PGZus{}jwt}\PG{p}{(}
+\PG{+w}{            }\PG{n}{payload}\PG{+w}{       }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{payload}\PG{p}{,}
+\PG{+w}{            }\PG{n}{alg}\PG{+w}{           }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}HS256\PGZsq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n}{key}\PG{+w}{           }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{JWT\PGZus{}KEY}\PG{p}{,}
+\PG{+w}{            }\PG{n}{extra\PGZus{}headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{typ}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}at+jwt\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{)}\PG{p}{,}
+\PG{+w}{        }\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{payload}
+\PG{+w}{    }\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
 \PG{c+c1}{\PGZsh{} Pin the algorithm, REQUIRE exp (Crypt::JWT checks exp only when the claim}
@@ -64,25 +84,26 @@
 \PG{c+c1}{\PGZsh{} which Crypt::JWT does not verify on its own.}
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{verify\PGZus{}access\PGZus{}token}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{jwt}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{header}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{claims}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{decode\PGZus{}jwt}\PG{p}{(}
-\PG{+w}{        }\PG{n}{token}\PG{+w}{          }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{jwt}\PG{p}{,}
-\PG{+w}{        }\PG{n}{key}\PG{+w}{            }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{JWT\PGZus{}KEY}\PG{p}{,}
-\PG{+w}{        }\PG{n}{accepted\PGZus{}alg}\PG{+w}{   }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}HS256\PGZsq{}}\PG{p}{,}
-\PG{+w}{        }\PG{n}{verify\PGZus{}exp}\PG{+w}{     }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
-\PG{+w}{        }\PG{n}{verify\PGZus{}iss}\PG{+w}{     }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ISSUER}\PG{p}{,}
-\PG{+w}{        }\PG{n}{verify\PGZus{}aud}\PG{+w}{     }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{AUDIENCE}\PG{p}{,}
-\PG{+w}{        }\PG{n}{leeway}\PG{+w}{         }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{30}\PG{p}{,}\PG{+w}{                }\PG{c+c1}{\PGZsh{} tolerate small clock skew}
-\PG{+w}{        }\PG{n}{decode\PGZus{}header}\PG{+w}{  }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{header}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{claims}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{decode\PGZus{}jwt}\PG{p}{(}
+\PG{+w}{        }\PG{n}{token}\PG{+w}{         }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{jwt}\PG{p}{,}
+\PG{+w}{        }\PG{n}{key}\PG{+w}{           }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{JWT\PGZus{}KEY}\PG{p}{,}
+\PG{+w}{        }\PG{n}{accepted\PGZus{}alg}\PG{+w}{  }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}HS256\PGZsq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n}{verify\PGZus{}exp}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{        }\PG{n}{verify\PGZus{}iss}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ISSUER}\PG{p}{,}
+\PG{+w}{        }\PG{n}{verify\PGZus{}aud}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{AUDIENCE}\PG{p}{,}
+\PG{+w}{        }\PG{n}{leeway}\PG{+w}{        }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{30}\PG{p}{,}\PG{+w}{    }\PG{c+c1}{\PGZsh{} tolerate small clock skew}
+\PG{+w}{        }\PG{n}{decode\PGZus{}header}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
 \PG{+w}{    }\PG{p}{)}\PG{p}{;}
-\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}not an access token\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nb}{lc}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{header}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{typ}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZsq{}}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{eq}\PG{+w}{ }\PG{l+s}{\PGZsq{}at+jwt\PGZsq{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}not an access token\PGZbs{}n\PGZdq{}}
+\PG{+w}{        }\PG{k}{unless}\PG{+w}{ }\PG{n+nb}{lc}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{header}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{typ}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o+ow}{eq}\PG{+w}{ }\PG{l+s}{\PGZsq{}at+jwt\PGZsq{}}\PG{p}{;}
 \PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{claims}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
 \PG{c+c1}{\PGZsh{} Signature over method, path, timestamp, nonce and body.}
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{sign\PGZus{}request}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{secret}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{method}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ts}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{nonce}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
-\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n}{hmac\PGZus{}sha256\PGZus{}hex}\PG{p}{(}\PG{n+nb}{join}\PG{p}{(}\PG{l+s}{\PGZdq{}\PGZbs{}n\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{method}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ts}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{nonce}\PG{p}{,}
-\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZsq{}}\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{secret}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{secret}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{method}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ts}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{nonce}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n}{hmac\PGZus{}sha256\PGZus{}hex}\PG{p}{(}
+\PG{+w}{        }\PG{n+nb}{join}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZbs{}n\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{method}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ts}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{nonce}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{secret}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
 \PG{l+m+mi}{1}\PG{p}{;}

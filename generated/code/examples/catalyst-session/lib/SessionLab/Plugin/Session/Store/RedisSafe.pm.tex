@@ -1,4 +1,5 @@
 \PG{k}{package}\PG{+w}{ }\PG{n+nn}{SessionLab::Plugin::Session::Store::RedisSafe}\PG{p}{;}
+
 \PG{c+c1}{\PGZsh{} Hardened Redis session store for Catalyst::Plugin::Session.}
 \PG{c+c1}{\PGZsh{}}
 \PG{c+c1}{\PGZsh{} Differences from Catalyst::Plugin::Session::Store::Redis 0.900:}
@@ -18,26 +19,28 @@
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{Sereal::Decoder}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{SessionLab::Redis}\PG{p}{;}
 
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENCODER}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Sereal::Encoder}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{croak\PGZus{}on\PGZus{}bless}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{DECODER}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Sereal::Decoder}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{n}{refuse\PGZus{}objects}\PG{+w}{       }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{      }\PG{c+c1}{\PGZsh{} blessed data is rejected, never revived}
-\PG{+w}{    }\PG{n}{max\PGZus{}recursion\PGZus{}depth}\PG{+w}{  }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{64}\PG{p}{,}
-\PG{+w}{    }\PG{n}{max\PGZus{}num\PGZus{}hash\PGZus{}entries}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{10\PGZus{}000}\PG{p}{,}
-\PG{+w}{    }\PG{n}{max\PGZus{}num\PGZus{}array\PGZus{}entries}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{10\PGZus{}000}\PG{p}{,}
-\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENCODER}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Sereal::Encoder}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{croak\PGZus{}on\PGZus{}bless}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{DECODER}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Sereal::Decoder}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}
+\PG{+w}{    }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{refuse\PGZus{}objects}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{    }\PG{c+c1}{\PGZsh{} blessed data is rejected, never revived}
+\PG{+w}{        }\PG{n}{max\PGZus{}recursion\PGZus{}depth}\PG{+w}{   }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{64}\PG{p}{,}
+\PG{+w}{        }\PG{n}{max\PGZus{}num\PGZus{}hash\PGZus{}entries}\PG{+w}{  }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{10\PGZus{}000}\PG{p}{,}
+\PG{+w}{        }\PG{n}{max\PGZus{}num\PGZus{}array\PGZus{}entries}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{10\PGZus{}000}\PG{p}{,}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
 
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{\PGZus{}redis\PGZus{}key}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}\PG{+w}{                    }\PG{c+c1}{\PGZsh{} \PGZdl{}key: session:SID, expires:SID, flash:SID}
-\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{\PGZus{}session\PGZus{}plugin\PGZus{}config}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{redis\PGZus{}prefix}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}sess:\PGZsq{}}\PG{p}{)}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} \PGZdl{}key: session:SID, expires:SID, flash:SID}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{\PGZus{}session\PGZus{}plugin\PGZus{}config}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{redis\PGZus{}prefix}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}sess:\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{get\PGZus{}session\PGZus{}data}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{raw}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{SessionLab::Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{handle}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{get}\PG{p}{(}\PG{n}{\PGZus{}redis\PGZus{}key}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{)}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{raw}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{SessionLab::Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{handle}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{get}\PG{p}{(}\PG{+w}{ }\PG{n}{\PGZus{}redis\PGZus{}key}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nb}{defined}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{raw}\PG{p}{;}
 \PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{raw}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZca{}expires:/}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} plain epoch seconds}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{data}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{DECODER}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{decode}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{raw}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
-\PG{+w}{    }\PG{k}{unless}\PG{+w}{ }\PG{p}{(}\PG{n+nb}{defined}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{data}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{unless}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nb}{defined}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{data}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{log}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{warn}\PG{p}{(}\PG{l+s}{\PGZdq{}discarding undecodable session record \PGZsq{}\PGZdl{}key\PGZsq{}: \PGZdl{}@\PGZdq{}}\PG{p}{)}\PG{p}{;}
 \PG{+w}{        }\PG{k}{return}\PG{p}{;}
 \PG{+w}{    }\PG{p}{\PGZcb{}}
@@ -45,21 +48,23 @@
 \PG{p}{\PGZcb{}}
 
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{store\PGZus{}session\PGZus{}data}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{data}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{data}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+
 \PG{+w}{    }\PG{c+c1}{\PGZsh{} Expire every record together with the session it belongs to.}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ttl}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{session\PGZus{}expires}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{+w}{ }\PG{n+nb}{time}\PG{p}{;}
 \PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ttl}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ttl}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZca{}expires:/}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{data}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENCODER}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{encode}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{data}\PG{p}{)}\PG{p}{;}
-\PG{+w}{    }\PG{n+nn}{SessionLab::Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{handle}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{set}\PG{p}{(}\PG{n}{\PGZus{}redis\PGZus{}key}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}EX\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ttl}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nn}{SessionLab::Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{handle}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{set}\PG{p}{(}\PG{+w}{ }\PG{n}{\PGZus{}redis\PGZus{}key}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{p}{)}\PG{p}{,}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{value}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}EX\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ttl}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{k}{return}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{delete\PGZus{}session\PGZus{}data}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
-\PG{+w}{    }\PG{n+nn}{SessionLab::Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{handle}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{del}\PG{p}{(}\PG{n}{\PGZus{}redis\PGZus{}key}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{)}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nn}{SessionLab::Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{handle}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{del}\PG{p}{(}\PG{+w}{ }\PG{n}{\PGZus{}redis\PGZus{}key}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{k}{return}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
-\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{delete\PGZus{}expired\PGZus{}sessions}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{            }\PG{c+c1}{\PGZsh{} Redis expires keys itself}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{delete\PGZus{}expired\PGZus{}sessions}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{    }\PG{c+c1}{\PGZsh{} Redis expires keys itself}
 
 \PG{l+m+mi}{1}\PG{p}{;}

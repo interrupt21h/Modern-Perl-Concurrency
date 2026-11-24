@@ -11,15 +11,15 @@
 
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{now}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{clock\PGZus{}gettime}\PG{p}{(}\PG{n}{CLOCK\PGZus{}MONOTONIC}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}
 
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{counter}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n}{shared}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{counter}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
 
 \PG{c+c1}{\PGZsh{} lock() lives for the duration of this sub, so the code runs while held.}
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{with\PGZus{}timed\PGZus{}lock}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{samples}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{code}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{samples}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{code}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t0}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{p}{)}\PG{p}{;}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t1}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t1}\PG{+w}{     }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{result}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{code}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{(}\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{push}\PG{+w}{ }\PG{n+nv}{@}\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{samples}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n+nb}{wait}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t1}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t0}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{push}\PG{+w}{ }\PG{n+nv}{@}\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{samples}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{hold}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t1}\PG{p}{;}
@@ -27,27 +27,30 @@
 \PG{p}{\PGZcb{}}
 
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{percentile}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{p}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{sorted}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
-\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sorted}\PG{p}{[}\PG{+w}{ }\PG{n+nb}{int}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{p}\PG{+w}{ }\PG{o}{/}\PG{+w}{ }\PG{l+m+mi}{100}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{n+nv}{\PGZdl{}\PGZsh{}}\PG{n+nv}{sorted}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mf}{0.5}\PG{p}{)}\PG{+w}{ }\PG{p}{]}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{p}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{sorted}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sorted}\PG{p}{[}\PG{+w}{ }\PG{n+nb}{int}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{p}\PG{+w}{ }\PG{o}{/}\PG{+w}{ }\PG{l+m+mi}{100}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{n+nv}{\PGZdl{}\PGZsh{}}\PG{n+nv}{sorted}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mf}{0.5}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{]}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
-\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{THREADS}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ITER}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{WORK}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{4}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{200}\PG{p}{,}\PG{+w}{ }\PG{l+m+mf}{0.001}\PG{p}{)}\PG{p}{;}\PG{+w}{   }\PG{c+c1}{\PGZsh{} 1 ms simulated work}
+\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{THREADS}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ITER}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{WORK}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{4}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{200}\PG{p}{,}\PG{+w}{ }\PG{l+m+mf}{0.001}\PG{+w}{ }\PG{p}{)}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} 1 ms simulated work}
 
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{workers}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{map}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{n+nn}{threads}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{samples}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{p}{(}\PG{n+nb}{wait}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{o}{[]}\PG{p}{,}\PG{+w}{ }\PG{n}{hold}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{o}{[]}\PG{p}{)}\PG{p}{;}
-\PG{+w}{        }\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ITER}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n}{with\PGZus{}timed\PGZus{}lock}\PG{p}{(}\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{samples}\PG{p}{,}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{sleep}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{WORK}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{counter}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
-\PG{+w}{            }\PG{n+nb}{sleep}\PG{p}{(}\PG{n+nb}{rand}\PG{+w}{ }\PG{l+m+mf}{0.001}\PG{p}{)}\PG{p}{;}\PG{+w}{                 }\PG{c+c1}{\PGZsh{} think time outside the lock}
+\PG{+w}{    }\PG{n+nn}{threads}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}
+\PG{+w}{        }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{samples}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nb}{wait}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{o}{[]}\PG{p}{,}\PG{+w}{ }\PG{n}{hold}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{o}{[]}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{            }\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ITER}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n}{with\PGZus{}timed\PGZus{}lock}\PG{p}{(}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{samples}\PG{p}{,}
+\PG{+w}{                    }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{sleep}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{WORK}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{counter}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{                }\PG{n+nb}{sleep}\PG{p}{(}\PG{+w}{ }\PG{n+nb}{rand}\PG{+w}{ }\PG{l+m+mf}{0.001}\PG{+w}{ }\PG{p}{)}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} think time outside the lock}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{k}{return}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{samples}\PG{p}{;}
 \PG{+w}{        }\PG{p}{\PGZcb{}}
-\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{samples}\PG{p}{;}
-\PG{+w}{    }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{THREADS}\PG{p}{;}
 
-\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{@}\PG{n+nv}{wait}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{hold}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{wait}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{hold}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{k}{for}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{thr}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{@}\PG{n+nv}{workers}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{thr}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{join}\PG{p}{;}
-\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZsq{}worker failed: \PGZsq{}}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{thr}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{error}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}no result\PGZsq{}}\PG{p}{)}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZsq{}worker failed: \PGZsq{}}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{thr}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{error}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}no result\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{push}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{wait}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n+nb}{wait}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{push}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{hold}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{hold}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
 \PG{p}{\PGZcb{}}
@@ -57,14 +60,16 @@
 \PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}missing samples\PGZbs{}n\PGZdq{}}\PG{+w}{       }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{wait}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{hold}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{p}{;}
 \PG{n+nv}{@}\PG{n+nv}{wait}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{sort}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{a}\PG{+w}{ }\PG{l+s+sr}{\PGZlt{}=\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{b}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{wait}\PG{p}{;}
 \PG{n+nv}{@}\PG{n+nv}{hold}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{sort}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{a}\PG{+w}{ }\PG{l+s+sr}{\PGZlt{}=\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{b}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{hold}\PG{p}{;}
-\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}hold shorter than the work done under the lock\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{hold}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{WORK}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{l+m+mf}{0.9}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}hold shorter than the work done under the lock\PGZbs{}n\PGZdq{}}
+\PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{hold}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{WORK}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{l+m+mf}{0.9}\PG{p}{;}
 
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{contended}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{grep}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mf}{0.0001}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{wait}\PG{p}{;}\PG{+w}{      }\PG{c+c1}{\PGZsh{} waited more than 100 us}
-\PG{n+nb}{printf}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZpc{}\PGZhy{}5s \PGZpc{}8s \PGZpc{}8s \PGZpc{}8s \PGZpc{}8s   (ms, n=\PGZpc{}d)\PGZbs{}n\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}p50\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}p95\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}p99\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}max\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{p}{;}
-\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{p}{[}\PG{l+s}{\PGZsq{}wait\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{@}\PG{n+nv}{wait}\PG{p}{]}\PG{p}{,}\PG{+w}{ }\PG{p}{[}\PG{l+s}{\PGZsq{}hold\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{@}\PG{n+nv}{hold}\PG{p}{]}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{name}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{contended}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{grep}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mf}{0.0001}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{wait}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} waited more than 100 us}
+\PG{n+nb}{printf}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZpc{}\PGZhy{}5s \PGZpc{}8s \PGZpc{}8s \PGZpc{}8s \PGZpc{}8s   (ms, n=\PGZpc{}d)\PGZbs{}n\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}p50\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}p95\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}p99\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}max\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{p}{;}
+\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{p}{[}\PG{+w}{ }\PG{l+s}{\PGZsq{}wait\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{@}\PG{n+nv}{wait}\PG{+w}{ }\PG{p}{]}\PG{p}{,}\PG{+w}{ }\PG{p}{[}\PG{+w}{ }\PG{l+s}{\PGZsq{}hold\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{@}\PG{n+nv}{hold}\PG{+w}{ }\PG{p}{]}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{name}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{printf}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZpc{}\PGZhy{}5s \PGZpc{}8.3f \PGZpc{}8.3f \PGZpc{}8.3f \PGZpc{}8.3f\PGZbs{}n\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{name}\PG{p}{,}
-\PG{+w}{        }\PG{n+nb}{map}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+m+mi}{1000}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n}{percentile}\PG{p}{(}\PG{l+m+mi}{50}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{s}\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{n}{percentile}\PG{p}{(}\PG{l+m+mi}{95}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{s}\PG{p}{)}\PG{p}{,}
-\PG{+w}{                          }\PG{n}{percentile}\PG{p}{(}\PG{l+m+mi}{99}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{s}\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{[}\PG{o}{\PGZhy{}}\PG{l+m+mi}{1}\PG{p}{]}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{map}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+m+mi}{1000}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n}{percentile}\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{50}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{s}\PG{+w}{ }\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{n}{percentile}\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{95}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{s}\PG{+w}{ }\PG{p}{)}\PG{p}{,}
+\PG{+w}{        }\PG{n}{percentile}\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{99}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{s}\PG{+w}{ }\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{[}\PG{o}{\PGZhy{}}\PG{l+m+mi}{1}\PG{p}{]}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 \PG{n+nb}{printf}\PG{+w}{ }\PG{l+s}{\PGZdq{}contended acquisitions: \PGZpc{}.0f\PGZpc{}\PGZpc{}\PGZbs{}n\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{100}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{contended}\PG{+w}{ }\PG{o}{/}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{p}{;}

@@ -13,63 +13,69 @@
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{HTTP::Tiny}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{IO::Socket::INET}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{JSON::PP}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{decode\PGZus{}json}\PG{l+s+sx}{)}\PG{p}{;}
-\PG{k}{use}\PG{+w}{ }\PG{n+nn}{POSIX}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{\PGZus{}exit}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{POSIX}\PG{+w}{    }\PG{l+s+sx}{qw(}\PG{l+s+sx}{\PGZus{}exit}\PG{l+s+sx}{)}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{Redis}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{Sereal::Encoder}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{Time::HiRes}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{clock\PGZus{}gettime CLOCK\PGZus{}MONOTONIC sleep}\PG{l+s+sx}{)}\PG{p}{;}
 
 \PG{n+nv+vg}{\PGZdl{}|}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{APP}\PG{+w}{      }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}FindBin::Bin/catalyst\PGZhy{}session\PGZdq{}}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{REDIS}\PG{+w}{    }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{REDIS\PGZus{}SERVER}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}127.0.0.1:6379\PGZsq{}}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{NAMESPACES}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{sess:* cart:* idem:* charges:* ratelimit:* user\PGZhy{}sessions:* slock:*}\PG{l+s+sx}{)}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{COOKIE}\PG{+w}{   }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZsq{}sessionlab\PGZus{}sid\PGZsq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{APP}\PG{+w}{   }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}FindBin::Bin/catalyst\PGZhy{}session\PGZdq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{REDIS}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{REDIS\PGZus{}SERVER}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}127.0.0.1:6379\PGZsq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{NAMESPACES}\PG{+w}{ }\PG{o}{=}
+\PG{+w}{    }\PG{l+s+sx}{qw(}\PG{l+s+sx}{sess:* cart:* idem:* charges:* ratelimit:* user\PGZhy{}sessions:* slock:*}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{COOKIE}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZsq{}sessionlab\PGZus{}sid\PGZsq{}}\PG{p}{;}
 
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{now}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{clock\PGZus{}gettime}\PG{p}{(}\PG{n}{CLOCK\PGZus{}MONOTONIC}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}\PG{n}{server}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{REDIS}\PG{p}{,}\PG{+w}{ }\PG{n}{reconnect}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}\PG{+w}{ }\PG{n}{server}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{REDIS}\PG{p}{,}\PG{+w}{ }\PG{n}{reconnect}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 
 \PG{c+c1}{\PGZsh{} \PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{} server}
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{clear\PGZus{}namespaces}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{k}{for}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pattern}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{@}\PG{n+nv}{NAMESPACES}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cursor}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
 \PG{+w}{        }\PG{k}{do}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cursor}\PG{p}{,}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{keys}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{scan}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cursor}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}MATCH\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pattern}\PG{p}{,}
-\PG{+w}{                }\PG{l+s}{\PGZsq{}COUNT\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{500}\PG{p}{)}\PG{p}{;}
+\PG{+w}{            }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cursor}\PG{p}{,}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{keys}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}
+\PG{+w}{                }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{scan}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cursor}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}MATCH\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pattern}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}COUNT\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{500}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{+w}{            }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{del}\PG{p}{(}\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{keys}\PG{p}{)}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{keys}\PG{p}{;}
 \PG{+w}{        }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{k}{while}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cursor}\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{p}{\PGZcb{}}
 \PG{p}{\PGZcb{}}
 
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{port}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{k}{do}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{IO::Socket::INET}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}\PG{n}{Listen}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{n}{LocalAddr}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}127.0.0.1\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{LocalPort}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}
-\PG{+w}{        }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}no free port: \PGZdl{}!\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{IO::Socket::INET}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}
+\PG{+w}{        }\PG{n}{Listen}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{        }\PG{n}{LocalAddr}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}127.0.0.1\PGZsq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n}{LocalPort}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}
+\PG{+w}{    }\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}no free port: \PGZdl{}!\PGZdq{}}\PG{p}{;}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{p}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{sockport}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{close}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{p}{;}
 \PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{p}\PG{p}{;}
 \PG{p}{\PGZcb{}}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{log}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{tempdir}\PG{p}{(}\PG{n}{CLEANUP}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{l+s}{\PGZsq{}/starman.log\PGZsq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{log}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{tempdir}\PG{p}{(}\PG{+w}{ }\PG{n}{CLEANUP}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{l+s}{\PGZsq{}/starman.log\PGZsq{}}\PG{p}{;}
 \PG{n}{clear\PGZus{}namespaces}\PG{p}{(}\PG{p}{)}\PG{p}{;}
 
-\PG{n+nb}{defined}\PG{p}{(}\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{server}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{fork}\PG{p}{(}\PG{p}{)}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}fork: \PGZdl{}!\PGZdq{}}\PG{p}{;}
-\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{o}{!}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{server}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{n+nb}{defined}\PG{p}{(}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{server}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{fork}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}fork: \PGZdl{}!\PGZdq{}}\PG{p}{;}
+\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{o}{!}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{server}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{n+nb}{open}\PG{+w}{ }\PG{n+nb+bp}{STDOUT}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZgt{}\PGZgt{}\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{log}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{open}\PG{+w}{ }\PG{n+nb+bp}{STDERR}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZgt{}\PGZgt{}\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{log}\PG{p}{;}
-\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{SESSIONLAB\PGZus{}FAULTS}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}\PG{+w}{                }\PG{c+c1}{\PGZsh{} enable the crash switch}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{SESSIONLAB\PGZus{}FAULTS}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} enable the crash switch}
 \PG{+w}{    }\PG{n+nb}{exec}\PG{+w}{ }\PG{l+s}{\PGZsq{}starman\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZhy{}\PGZhy{}workers\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{4}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZhy{}\PGZhy{}listen\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}127.0.0.1:\PGZdl{}port\PGZdq{}}\PG{p}{,}
-\PG{+w}{        }\PG{l+s}{\PGZsq{}\PGZhy{}\PGZhy{}error\PGZhy{}log\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{log}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}APP/app.psgi\PGZdq{}}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n}{\PGZus{}exit}\PG{p}{(}\PG{l+m+mi}{127}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{l+s}{\PGZsq{}\PGZhy{}\PGZhy{}error\PGZhy{}log\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{log}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}APP/app.psgi\PGZdq{}}
+\PG{+w}{        }\PG{o+ow}{or}\PG{+w}{ }\PG{n}{\PGZus{}exit}\PG{p}{(}\PG{l+m+mi}{127}\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}
+
 \PG{c+c1}{\PGZsh{} local \PGZdl{}? keeps waitpid from overwriting this script\PGZsq{}s own exit status.}
 \PG{k}{END}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{n+nb}{local}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}?}\PG{p}{;}
 \PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{server}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{        }\PG{n+nb}{kill}\PG{+w}{ }\PG{l+s}{\PGZsq{}TERM\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{server}\PG{p}{;}
-\PG{+w}{        }\PG{n+nb}{waitpid}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{server}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{waitpid}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{server}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{p}{\PGZcb{}}
 \PG{p}{\PGZcb{}}
 
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{base}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZdq{}http://127.0.0.1:\PGZdl{}port\PGZdq{}}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{http}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{HTTP::Tiny}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}\PG{n}{timeout}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{10}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{base}\PG{+w}{  }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZdq{}http://127.0.0.1:\PGZdl{}port\PGZdq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{http}\PG{+w}{  }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{HTTP::Tiny}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}\PG{+w}{ }\PG{n}{timeout}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{10}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mi}{30}\PG{p}{;}
-\PG{k}{until}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{http}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{get}\PG{p}{(}\PG{l+s}{\PGZdq{}\PGZdl{}base/\PGZdq{}}\PG{p}{)}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{status}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{200}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{k}{until}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{http}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{get}\PG{p}{(}\PG{l+s}{\PGZdq{}\PGZdl{}base/\PGZdq{}}\PG{p}{)}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{status}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{200}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}server did not start; see \PGZdl{}log\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{sleep}\PG{p}{(}\PG{l+m+mf}{0.2}\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}
@@ -79,31 +85,34 @@
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{client}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{k}{return}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{sid}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nb}{undef}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{\PGZcb{}}
 
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{request}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cl}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{method}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{opt}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cl}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{method}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{opt}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{headers}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{opt}\PG{p}{\PGZob{}}\PG{n}{headers}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
 \PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{headers}\PG{p}{\PGZob{}}\PG{n}{Cookie}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}COOKIE=\PGZdl{}cl\PGZhy{}\PGZgt{}\PGZob{}sid\PGZcb{}\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cl}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{sid}\PG{p}{\PGZcb{}}\PG{p}{;}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{res}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{opt}\PG{p}{\PGZob{}}\PG{n}{form}\PG{p}{\PGZcb{}}
-\PG{+w}{        }\PG{p}{?}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{http}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{post\PGZus{}form}\PG{p}{(}\PG{l+s}{\PGZdq{}\PGZdl{}base\PGZdl{}path\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{opt}\PG{p}{\PGZob{}}\PG{n}{form}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{headers}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}
-\PG{+w}{        }\PG{p}{:}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{http}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{method}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}base\PGZdl{}path\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{headers}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{res}\PG{+w}{ }\PG{o}{=}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{opt}\PG{p}{\PGZob{}}\PG{n}{form}\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{?}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{http}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{post\PGZus{}form}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}base\PGZdl{}path\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{opt}\PG{p}{\PGZob{}}\PG{n}{form}\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{        }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{headers}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}
+\PG{+w}{        }\PG{p}{:}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{http}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{method}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}base\PGZdl{}path\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{headers}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{set}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{res}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{headers}\PG{p}{\PGZcb{}}\PG{p}{\PGZob{}}\PG{l+s}{\PGZsq{}set\PGZhy{}cookie\PGZsq{}}\PG{p}{\PGZcb{}}\PG{p}{;}
-\PG{+w}{    }\PG{k}{for}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{+w}{ }\PG{p}{(}\PG{n+nb}{ref}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{set}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{set}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n+nb}{grep}\PG{+w}{ }\PG{n+nb}{defined}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{set}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cl}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{sid}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{1}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cl}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{cookie}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZca{}\PGZbs{}Q\PGZdl{}COOKIE\PGZbs{}E=([0\PGZhy{}9a\PGZhy{}f]+)/}\PG{p}{;}
+\PG{+w}{    }\PG{k}{for}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nb}{ref}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{set}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{set}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n+nb}{grep}\PG{+w}{ }\PG{n+nb}{defined}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{set}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cl}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{sid}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{1}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cl}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{cookie}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}
+\PG{+w}{            }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZca{}\PGZbs{}Q\PGZdl{}COOKIE\PGZbs{}E=([0\PGZhy{}9a\PGZhy{}f]+)/}\PG{p}{;}
 \PG{+w}{    }\PG{p}{\PGZcb{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{decode\PGZus{}json}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{res}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{content}\PG{p}{\PGZcb{}}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{p}{\PGZcb{}}\PG{p}{;}
-\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{res}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{status}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{res}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{headers}\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{decode\PGZus{}json}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{res}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{content}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{res}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{status}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{res}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{headers}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
 \PG{c+c1}{\PGZsh{} Run \PGZdl{}n identical requests concurrently from forked processes that share}
 \PG{c+c1}{\PGZsh{} the client\PGZsq{}s session cookie; returns the status codes.}
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{concurrently}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cl}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{req}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dir}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{tempdir}\PG{p}{(}\PG{n}{CLEANUP}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cl}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{req}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dir}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{tempdir}\PG{p}{(}\PG{+w}{ }\PG{n}{CLEANUP}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{pids}\PG{p}{;}
-\PG{+w}{    }\PG{k}{for}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{i}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{        }\PG{n+nb}{defined}\PG{p}{(}\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{fork}\PG{p}{(}\PG{p}{)}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}fork: \PGZdl{}!\PGZdq{}}\PG{p}{;}
-\PG{+w}{        }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{o}{!}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{copy}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZpc{}\PGZdl{}}\PG{n+nv}{cl}\PG{p}{;}\PG{+w}{                       }\PG{c+c1}{\PGZsh{} same cookie, no write\PGZhy{}back}
-\PG{+w}{            }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{status}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{copy}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{req}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{for}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{i}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nb}{defined}\PG{p}{(}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{fork}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}fork: \PGZdl{}!\PGZdq{}}\PG{p}{;}
+\PG{+w}{        }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{o}{!}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{copy}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZpc{}\PGZdl{}}\PG{n+nv}{cl}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} same cookie, no write\PGZhy{}back}
+\PG{+w}{            }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{status}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{o}{\PGZbs{}}\PG{n+nv}{\PGZpc{}}\PG{n+nv}{copy}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{req}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{+w}{            }\PG{n+nb}{open}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZgt{}\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}dir/\PGZdl{}i\PGZdq{}}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n}{\PGZus{}exit}\PG{p}{(}\PG{l+m+mi}{1}\PG{p}{)}\PG{p}{;}
 \PG{+w}{            }\PG{k}{print}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{status}\PG{p}{;}
 \PG{+w}{            }\PG{n+nb}{close}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{;}
@@ -111,12 +120,12 @@
 \PG{+w}{        }\PG{p}{\PGZcb{}}
 \PG{+w}{        }\PG{n+nb}{push}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{pids}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{p}{;}
 \PG{+w}{    }\PG{p}{\PGZcb{}}
-\PG{+w}{    }\PG{n+nb}{waitpid}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{+w}{ }\PG{k}{for}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{pids}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{waitpid}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{k}{for}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{pids}\PG{p}{;}
 \PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nb}{map}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{open}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZlt{}\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}dir/\PGZdl{}\PGZus{}\PGZdq{}}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{p}{;}\PG{+w}{ }\PG{n+nb}{scalar}\PG{+w}{ }\PG{l+s+sr}{\PGZlt{}\PGZdl{}fh\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
 \PG{k}{sub}\PG{+w}{ }\PG{n+nf}{check}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{what}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{what}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}FAILED: \PGZdl{}what\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{printf}\PG{+w}{ }\PG{l+s}{\PGZdq{}  ok  \PGZpc{}s\PGZbs{}n\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{what}\PG{p}{;}
 \PG{p}{\PGZcb{}}
@@ -124,122 +133,188 @@
 \PG{c+c1}{\PGZsh{} \PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{} 1. storage}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}Session storage\PGZbs{}n\PGZdq{}}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{anon}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{client}\PG{p}{(}\PG{p}{)}\PG{p}{;}
-\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{anon}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZus{}atomic/x\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{anon}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{sid}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{anon}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{sid}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZbs{}A[0\PGZhy{}9a\PGZhy{}f]\PGZob{}64\PGZcb{}\PGZbs{}z/}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}256\PGZhy{}bit random session ID\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{anon}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{cookie}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /HttpOnly/i}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{anon}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{cookie}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /SameSite=Lax/i}\PG{p}{,}
-\PG{+w}{    }\PG{l+s}{\PGZsq{}cookie carries HttpOnly and SameSite=Lax\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{anon}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZus{}atomic/x\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{anon}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{sid}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{anon}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{sid}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZbs{}A[0\PGZhy{}9a\PGZhy{}f]\PGZob{}64\PGZcb{}\PGZbs{}z/}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}256\PGZhy{}bit random session ID\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{anon}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{cookie}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /HttpOnly/i}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{anon}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{cookie}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /SameSite=Lax/i}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}cookie carries HttpOnly and SameSite=Lax\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ttl}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{ttl}\PG{p}{(}\PG{l+s}{\PGZdq{}sess:session:\PGZdl{}anon\PGZhy{}\PGZgt{}\PGZob{}sid\PGZcb{}\PGZdq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ttl}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ttl}\PG{+w}{ }\PG{o}{\PGZlt{}=}\PG{+w}{ }\PG{l+m+mi}{3600}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}session record has a TTL (\PGZdl{}ttl s), set atomically\PGZdq{}}\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ttl}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ttl}\PG{+w}{ }\PG{o}{\PGZlt{}=}\PG{+w}{ }\PG{l+m+mi}{3600}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZdq{}session record has a TTL (\PGZdl{}ttl s), set atomically\PGZdq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{raw}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{get}\PG{p}{(}\PG{l+s}{\PGZdq{}sess:session:\PGZdl{}anon\PGZhy{}\PGZgt{}\PGZob{}sid\PGZcb{}\PGZdq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{raw}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZbs{}A=(?:srl|\PGZbs{}xF3rl)/}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}record is Sereal\PGZhy{}encoded, not Storable\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{raw}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZbs{}A=(?:srl|\PGZbs{}xF3rl)/}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}record is Sereal\PGZhy{}encoded, not Storable\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 
 \PG{c+c1}{\PGZsh{} \PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{} 2. fixation}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}Authentication\PGZbs{}n\PGZdq{}}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{client}\PG{p}{(}\PG{p}{)}\PG{p}{;}
-\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZus{}atomic/x\PGZsq{}}\PG{p}{)}\PG{p}{;}\PG{+w}{                  }\PG{c+c1}{\PGZsh{} pre\PGZhy{}login session}
+\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZus{}atomic/x\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} pre\PGZhy{}login session}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pre}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{sid}\PG{p}{\PGZcb{}}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{st}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/login\PGZsq{}}\PG{p}{,}
-\PG{+w}{    }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{user}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}alice\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{password}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}correct horse\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{st}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{200}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{rotated}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}login succeeds and rotates the session\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{sid}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o+ow}{ne}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pre}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}session ID changed at login (fixation defense)\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{o}{!}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{exists}\PG{p}{(}\PG{l+s}{\PGZdq{}sess:session:\PGZdl{}pre\PGZdq{}}\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}pre\PGZhy{}login session record deleted\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{st}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/login\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{user}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}alice\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{password}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}correct horse\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{st}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{200}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{rotated}\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}login succeeds and rotates the session\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{sid}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o+ow}{ne}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pre}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}session ID changed at login (fixation defense)\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}
+\PG{+w}{    }\PG{o}{!}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{exists}\PG{p}{(}\PG{l+s}{\PGZdq{}sess:session:\PGZdl{}pre\PGZdq{}}\PG{p}{)}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}pre\PGZhy{}login session record deleted\PGZsq{}}
+\PG{p}{)}\PG{p}{;}
 
 \PG{c+c1}{\PGZsh{} \PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{} 3. races}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}Concurrent requests in one session (8 at once, 4 workers)\PGZbs{}n\PGZdq{}}\PG{p}{;}
-\PG{n}{concurrently}\PG{p}{(}\PG{l+m+mi}{8}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZus{}naive/apple?delay=0.3\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{p}{(}\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{n}{concurrently}\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{8}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZus{}naive/apple?delay=0.3\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{naive}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{session}\PG{p}{\PGZcb{}}\PG{p}{\PGZob{}}\PG{n}{apple}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{naive}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{l+m+mi}{8}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}naive session read\PGZhy{}modify\PGZhy{}write LOST updates: \PGZdl{}naive of 8 kept\PGZdq{}}\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{naive}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{l+m+mi}{8}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZdq{}naive session read\PGZhy{}modify\PGZhy{}write LOST updates: \PGZdl{}naive of 8 kept\PGZdq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 
-\PG{n}{concurrently}\PG{p}{(}\PG{l+m+mi}{8}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZus{}atomic/pear?delay=0.3\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{p}{(}\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{atomic}\PG{p}{\PGZcb{}}\PG{p}{\PGZob{}}\PG{n}{pear}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{8}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}atomic HINCRBY outside the session: 8 of 8\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{n}{concurrently}\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{8}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZus{}atomic/pear?delay=0.3\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}
+\PG{+w}{    }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{atomic}\PG{p}{\PGZcb{}}\PG{p}{\PGZob{}}\PG{n}{pear}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{8}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}atomic HINCRBY outside the session: 8 of 8\PGZsq{}}
+\PG{p}{)}\PG{p}{;}
 
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t0}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{codes}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{concurrently}\PG{p}{(}\PG{l+m+mi}{8}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZus{}locked/plum?delay=0.1\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t0}\PG{+w}{    }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{codes}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{concurrently}\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{8}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZus{}locked/plum?delay=0.1\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{locked\PGZus{}elapsed}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t0}\PG{p}{;}
-\PG{p}{(}\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{session}\PG{p}{\PGZcb{}}\PG{p}{\PGZob{}}\PG{n}{plum}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{8}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{o}{!}\PG{n+nb}{grep}\PG{p}{(}\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{+w}{ }\PG{o}{!=}\PG{+w}{ }\PG{l+m+mi}{200}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{codes}\PG{p}{)}\PG{p}{,}
-\PG{+w}{    }\PG{l+s}{\PGZsq{}per\PGZhy{}session lock: 8 of 8 kept\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{locked\PGZus{}elapsed}\PG{+w}{ }\PG{o}{\PGZgt{}=}\PG{+w}{ }\PG{l+m+mf}{0.8}\PG{p}{,}
-\PG{+w}{    }\PG{n+nb}{sprintf}\PG{p}{(}\PG{l+s}{\PGZsq{}...at the price of serialization (\PGZpc{}.2fs for 8 x 0.1s)\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{locked\PGZus{}elapsed}\PG{p}{)}\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/cart\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{session}\PG{p}{\PGZcb{}}\PG{p}{\PGZob{}}\PG{n}{plum}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{8}
+\PG{+w}{        }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{o}{!}\PG{n+nb}{grep}\PG{p}{(}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{+w}{ }\PG{o}{!=}\PG{+w}{ }\PG{l+m+mi}{200}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{codes}\PG{+w}{ }\PG{p}{)}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}per\PGZhy{}session lock: 8 of 8 kept\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{locked\PGZus{}elapsed}\PG{+w}{ }\PG{o}{\PGZgt{}=}\PG{+w}{ }\PG{l+m+mf}{0.8}\PG{p}{,}
+\PG{+w}{    }\PG{n+nb}{sprintf}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZsq{}...at the price of serialization (\PGZpc{}.2fs for 8 x 0.1s)\PGZsq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{locked\PGZus{}elapsed}\PG{+w}{ }\PG{p}{)}
+\PG{p}{)}\PG{p}{;}
 
 \PG{c+c1}{\PGZsh{} \PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{} 4. idempotency}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}Idempotency keys\PGZbs{}n\PGZdq{}}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZsq{}order\PGZhy{}7f3a9c2e\PGZhy{}0001\PGZsq{}}\PG{p}{;}
-\PG{n+nv}{@}\PG{n+nv}{codes}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{concurrently}\PG{p}{(}\PG{l+m+mi}{6}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/pay\PGZsq{}}\PG{p}{,}
-\PG{+w}{    }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{amount}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{25}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Idempotency\PGZhy{}Key\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{n+nv}{@}\PG{n+nv}{codes}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{concurrently}\PG{p}{(}
+\PG{+w}{    }\PG{l+m+mi}{6}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/pay\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{form}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{amount}\PG{+w}{            }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{25}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Idempotency\PGZhy{}Key\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{created}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{grep}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{201}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{codes}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{created}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}6 simultaneous submissions: exactly one 201 (@codes)\PGZdq{}}\PG{p}{)}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rb}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rh}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/pay\PGZsq{}}\PG{p}{,}
-\PG{+w}{    }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{amount}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{25}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Idempotency\PGZhy{}Key\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{201}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{l+s}{\PGZsq{}idempotent\PGZhy{}replayed\PGZsq{}}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZsq{}}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{eq}\PG{+w}{ }\PG{l+s}{\PGZsq{}true\PGZsq{}}\PG{p}{,}
-\PG{+w}{    }\PG{l+s}{\PGZsq{}retry replays the stored response\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{p}{(}\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/charges\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{charges}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}customer charged once\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/pay\PGZsq{}}\PG{p}{,}
-\PG{+w}{    }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{amount}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{99}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Idempotency\PGZhy{}Key\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{422}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}same key, different request: rejected\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{created}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZdq{}6 simultaneous submissions: exactly one 201 (@codes)\PGZdq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rb}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rh}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/pay\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{form}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{amount}\PG{+w}{            }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{25}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Idempotency\PGZhy{}Key\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{201}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{l+s}{\PGZsq{}idempotent\PGZhy{}replayed\PGZsq{}}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o+ow}{eq}\PG{+w}{ }\PG{l+s}{\PGZsq{}true\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}retry replays the stored response\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/charges\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{charges}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}customer charged once\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/pay\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{form}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{amount}\PG{+w}{            }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{99}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Idempotency\PGZhy{}Key\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{422}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}same key, different request: rejected\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{idem\PGZus{}ttl}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{ttl}\PG{p}{(}\PG{l+s}{\PGZdq{}idem:alice:\PGZdl{}key\PGZdq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{idem\PGZus{}ttl}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{86\PGZus{}000}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}idempotency record kept for 24 h (TTL \PGZdl{}idem\PGZus{}ttl s)\PGZdq{}}\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{idem\PGZus{}ttl}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{86\PGZus{}000}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZdq{}idempotency record kept for 24 h (TTL \PGZdl{}idem\PGZus{}ttl s)\PGZdq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 
 \PG{c+c1}{\PGZsh{} A worker killed after charging but before storing the response: the}
 \PG{c+c1}{\PGZsh{} outcome is unknown to the client, so a retry must NOT charge again.}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{crash\PGZus{}key}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZsq{}order\PGZhy{}7f3a9c2e\PGZhy{}0002\PGZsq{}}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cs}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/pay?crash=1\PGZsq{}}\PG{p}{,}
-\PG{+w}{    }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{amount}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{40}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Idempotency\PGZhy{}Key\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{crash\PGZus{}key}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cs}\PG{+w}{ }\PG{o}{\PGZgt{}=}\PG{+w}{ }\PG{l+m+mi}{500}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}worker killed mid\PGZhy{}request: client sees \PGZdl{}cs\PGZdq{}}\PG{p}{)}\PG{p}{;}
-\PG{p}{(}\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/charges\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{charges}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}the side effect did happen\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/pay\PGZsq{}}\PG{p}{,}
-\PG{+w}{    }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{amount}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{40}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Idempotency\PGZhy{}Key\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{crash\PGZus{}key}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{409}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}immediate retry refused while the outcome is unknown\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{p}{(}\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/charges\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{charges}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}no second charge\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cs}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/pay?crash=1\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{form}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{amount}\PG{+w}{            }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{40}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Idempotency\PGZhy{}Key\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{crash\PGZus{}key}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{cs}\PG{+w}{ }\PG{o}{\PGZgt{}=}\PG{+w}{ }\PG{l+m+mi}{500}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}worker killed mid\PGZhy{}request: client sees \PGZdl{}cs\PGZdq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/charges\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{charges}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}the side effect did happen\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/pay\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{form}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{amount}\PG{+w}{            }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{40}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Idempotency\PGZhy{}Key\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{crash\PGZus{}key}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{409}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}immediate retry refused while the outcome is unknown\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/charges\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{charges}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}no second charge\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stuck\PGZus{}ttl}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{ttl}\PG{p}{(}\PG{l+s}{\PGZdq{}idem:alice:\PGZdl{}crash\PGZus{}key\PGZdq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stuck\PGZus{}ttl}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stuck\PGZus{}ttl}\PG{+w}{ }\PG{o}{\PGZlt{}=}\PG{+w}{ }\PG{l+m+mi}{120}\PG{p}{,}
-\PG{+w}{    }\PG{l+s}{\PGZdq{}abandoned pending key expires in \PGZdl{}stuck\PGZus{}ttl s, not 24 h\PGZdq{}}\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stuck\PGZus{}ttl}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stuck\PGZus{}ttl}\PG{+w}{ }\PG{o}{\PGZlt{}=}\PG{+w}{ }\PG{l+m+mi}{120}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZdq{}abandoned pending key expires in \PGZdl{}stuck\PGZus{}ttl s, not 24 h\PGZdq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 
 \PG{c+c1}{\PGZsh{} \PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{} 5. rate limit}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}Login rate limiting\PGZbs{}n\PGZdq{}}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bob}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{client}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bob}\PG{+w}{      }\PG{o}{=}\PG{+w}{ }\PG{n}{client}\PG{p}{(}\PG{p}{)}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{attempts}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{map}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{p}{(}\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bob}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/login\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{user}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}bob\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{password}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}guess\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{)}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}
+\PG{+w}{    }\PG{p}{(}
+\PG{+w}{        }\PG{n}{request}\PG{p}{(}
+\PG{+w}{            }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bob}\PG{p}{,}\PG{+w}{     }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}
+\PG{+w}{            }\PG{l+s}{\PGZsq{}/login\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{user}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}bob\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{password}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}guess\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{)}
+\PG{+w}{    }\PG{p}{)}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}
 \PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{7}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{l+s}{\PGZdq{}@attempts\PGZdq{}}\PG{+w}{ }\PG{o+ow}{eq}\PG{+w}{ }\PG{l+s}{\PGZsq{}401 401 401 401 401 429 429\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}attempts: @attempts\PGZdq{}}\PG{p}{)}\PG{p}{;}
-\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bob}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/login\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{user}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}bob\PGZsq{}}\PG{p}{,}
-\PG{+w}{    }\PG{n}{password}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}battery staple\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{429}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}even the right password waits for the window to expire\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{pttl}\PG{p}{(}\PG{l+s}{\PGZsq{}ratelimit:login:bob\PGZsq{}}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}counter expires with its window\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZdq{}@attempts\PGZdq{}}\PG{+w}{ }\PG{o+ow}{eq}\PG{+w}{ }\PG{l+s}{\PGZsq{}401 401 401 401 401 429 429\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZdq{}attempts: @attempts\PGZdq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bob}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/login\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{user}\PG{+w}{     }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}bob\PGZsq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n}{password}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}battery staple\PGZsq{}}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{429}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}even the right password waits for the window to expire\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{pttl}\PG{p}{(}\PG{l+s}{\PGZsq{}ratelimit:login:bob\PGZsq{}}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}counter expires with its window\PGZsq{}}
+\PG{p}{)}\PG{p}{;}
 
 \PG{c+c1}{\PGZsh{} \PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{} 6. revocation}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}Logout everywhere\PGZbs{}n\PGZdq{}}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice2}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{client}\PG{p}{(}\PG{p}{)}\PG{p}{;}
-\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice2}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/login\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{user}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}alice\PGZsq{}}\PG{p}{,}
-\PG{+w}{    }\PG{n}{password}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}correct horse\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{p}{(}\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/whoami\PGZsq{}}\PG{p}{)}\PG{p}{)}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{200}
-\PG{+w}{   }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{p}{(}\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice2}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/whoami\PGZsq{}}\PG{p}{)}\PG{p}{)}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{200}\PG{p}{,}
-\PG{+w}{       }\PG{l+s}{\PGZsq{}two concurrent sessions for alice\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{p}{(}\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice2}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/logout\PGZus{}everywhere\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{revoked}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{\PGZgt{}=}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}revoked \PGZdl{}body\PGZhy{}\PGZgt{}\PGZob{}revoked\PGZcb{} sessions\PGZdq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{p}{(}\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/whoami\PGZsq{}}\PG{p}{)}\PG{p}{)}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{401}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}other device is logged out\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{n}{request}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice2}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/login\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{user}\PG{+w}{     }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}alice\PGZsq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n}{password}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}correct horse\PGZsq{}}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}
+\PG{+w}{    }\PG{p}{(}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/whoami\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{)}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{200}
+\PG{+w}{        }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice2}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/whoami\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{)}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{200}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}two concurrent sessions for alice\PGZsq{}}
+\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice2}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/logout\PGZus{}everywhere\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{revoked}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{\PGZgt{}=}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}revoked \PGZdl{}body\PGZhy{}\PGZgt{}\PGZob{}revoked\PGZcb{} sessions\PGZdq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/whoami\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{)}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{401}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}other device is logged out\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 
 \PG{c+c1}{\PGZsh{} \PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{} 7. forgery}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}Forged session record\PGZbs{}n\PGZdq{}}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{victim}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{client}\PG{p}{(}\PG{p}{)}\PG{p}{;}
-\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{victim}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/login\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{user}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}alice\PGZsq{}}\PG{p}{,}
-\PG{+w}{    }\PG{n}{password}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}correct horse\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{evil}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Sereal::Encoder}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{encode}\PG{p}{(}\PG{n+nb}{bless}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{user}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}mallory\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}Evil::Payload\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{set}\PG{p}{(}\PG{l+s}{\PGZdq{}sess:session:\PGZdl{}victim\PGZhy{}\PGZgt{}\PGZob{}sid\PGZcb{}\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{evil}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}EX\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{60}\PG{p}{)}\PG{p}{;}
-\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{victim}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/whoami\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{401}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}record containing an object is discarded, not revived\PGZsq{}}\PG{p}{)}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{logged}\PG{p}{;}\PG{+w}{                                 }\PG{c+c1}{\PGZsh{} workers may flush after replying}
-\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{20}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{n}{request}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{victim}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/login\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{form}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{user}\PG{+w}{     }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}alice\PGZsq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n}{password}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}correct horse\PGZsq{}}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{evil}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Sereal::Encoder}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{encode}\PG{p}{(}\PG{+w}{ }\PG{n+nb}{bless}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{user}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}mallory\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}Evil::Payload\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{set}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZdq{}sess:session:\PGZdl{}victim\PGZhy{}\PGZgt{}\PGZob{}sid\PGZcb{}\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{evil}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}EX\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{60}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{victim}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/whoami\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{401}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}record containing an object is discarded, not revived\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{logged}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} workers may flush after replying}
+
+\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{20}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{n+nb}{open}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{lf}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZlt{}\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{log}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}log: \PGZdl{}!\PGZdq{}}\PG{p}{;}
-\PG{+w}{    }\PG{k}{last}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{logged}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{grep}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s+sr}{/discarding undecodable session record/}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{\PGZlt{}\PGZdl{}lf\PGZgt{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{last}
+\PG{+w}{        }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{logged}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{grep}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s+sr}{/discarding undecodable session record/}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{\PGZlt{}\PGZdl{}lf\PGZgt{}}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{sleep}\PG{p}{(}\PG{l+m+mf}{0.1}\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}
-\PG{n}{check}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{logged}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}and the event is logged\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{logged}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}and the event is logged\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 
 \PG{n}{clear\PGZus{}namespaces}\PG{p}{(}\PG{p}{)}\PG{p}{;}
-\PG{n+nb}{printf}\PG{+w}{ }\PG{l+s}{\PGZdq{}Catalyst sessions: all checks passed (naive kept \PGZpc{}d of 8)\PGZbs{}n\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{naive}\PG{p}{;}
+\PG{n+nb}{printf}\PG{+w}{ }\PG{l+s}{\PGZdq{}Catalyst sessions: all checks passed (naive kept \PGZpc{}d of 8)\PGZbs{}n\PGZdq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{naive}\PG{p}{;}

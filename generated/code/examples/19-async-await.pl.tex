@@ -10,29 +10,32 @@
 
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{loop}\PG{+w}{  }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{IO::Async::Loop}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{mutex}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Future::Mutex}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{peak}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{balance}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{peak}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{balance}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 
 \PG{n}{async}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{request}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{id}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
 \PG{+w}{    }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{p}{;}
 \PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{peak}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{peak}\PG{p}{;}
-\PG{+w}{    }\PG{n}{await}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{loop}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{delay\PGZus{}future}\PG{p}{(}\PG{n}{after}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mf}{0.01}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nb}{rand}\PG{+w}{ }\PG{l+m+mf}{0.02}\PG{p}{)}\PG{p}{;}\PG{+w}{   }\PG{c+c1}{\PGZsh{} simulated I/O}
+\PG{+w}{    }\PG{n}{await}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{loop}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{delay\PGZus{}future}\PG{p}{(}\PG{+w}{ }\PG{n}{after}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mf}{0.01}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nb}{rand}\PG{+w}{ }\PG{l+m+mf}{0.02}\PG{+w}{ }\PG{p}{)}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} simulated I/O}
 
 \PG{+w}{    }\PG{c+c1}{\PGZsh{} One interpreter, yet this read\PGZhy{}modify\PGZhy{}write is still a race: another}
 \PG{+w}{    }\PG{c+c1}{\PGZsh{} request can run while this one is suspended at the inner await.}
-\PG{+w}{    }\PG{n}{await}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{mutex}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{enter}\PG{p}{(}\PG{n}{async}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{seen}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{balance}\PG{p}{;}
-\PG{+w}{        }\PG{n}{await}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{loop}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{delay\PGZus{}future}\PG{p}{(}\PG{n}{after}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mf}{0.001}\PG{p}{)}\PG{p}{;}
-\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{balance}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{seen}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
-\PG{+w}{    }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n}{await}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{mutex}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{enter}\PG{p}{(}
+\PG{+w}{        }\PG{n}{async}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{seen}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{balance}\PG{p}{;}
+\PG{+w}{            }\PG{n}{await}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{loop}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{delay\PGZus{}future}\PG{p}{(}\PG{+w}{ }\PG{n}{after}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mf}{0.001}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{            }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{balance}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{seen}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{o}{\PGZhy{}}\PG{o}{\PGZhy{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{active}\PG{p}{;}
 \PG{+w}{    }\PG{k}{return}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{all}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{fmap\PGZus{}void}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nb}{shift}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{k}{foreach}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{[}\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{40}\PG{p}{]}\PG{p}{,}\PG{+w}{ }\PG{n}{concurrent}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{5}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{all}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{fmap\PGZus{}void}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{n+nb}{shift}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{k}{foreach}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{[}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{40}\PG{+w}{ }\PG{p}{]}\PG{p}{,}
+\PG{+w}{    }\PG{n}{concurrent}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{5}\PG{p}{;}
 \PG{n+nv}{\PGZdl{}}\PG{n+nv}{loop}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{await}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{all}\PG{p}{)}\PG{p}{;}
-\PG{n+nv}{\PGZdl{}}\PG{n+nv}{all}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{get}\PG{p}{;}\PG{+w}{                                   }\PG{c+c1}{\PGZsh{} rethrows any failure}
+\PG{n+nv}{\PGZdl{}}\PG{n+nv}{all}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{get}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} rethrows any failure}
 
 \PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}concurrency bound violated: \PGZdl{}peak\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{peak}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{5}\PG{p}{;}
-\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lost update: \PGZdl{}balance\PGZbs{}n\PGZdq{}}\PG{+w}{           }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{balance}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{40}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lost update: \PGZdl{}balance\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{balance}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{40}\PG{p}{;}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}40 requests, peak=\PGZdl{}peak, balance=\PGZdl{}balance\PGZbs{}n\PGZdq{}}\PG{p}{;}

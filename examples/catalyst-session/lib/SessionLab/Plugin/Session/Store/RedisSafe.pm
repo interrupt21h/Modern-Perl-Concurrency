@@ -1,4 +1,5 @@
 package SessionLab::Plugin::Session::Store::RedisSafe;
+
 # Hardened Redis session store for Catalyst::Plugin::Session.
 #
 # Differences from Catalyst::Plugin::Session::Store::Redis 0.900:
@@ -18,26 +19,28 @@ use Sereal::Encoder;
 use Sereal::Decoder;
 use SessionLab::Redis;
 
-my $ENCODER = Sereal::Encoder->new({ croak_on_bless => 1 });
-my $DECODER = Sereal::Decoder->new({
-    refuse_objects       => 1,      # blessed data is rejected, never revived
-    max_recursion_depth  => 64,
-    max_num_hash_entries => 10_000,
-    max_num_array_entries => 10_000,
-});
+my $ENCODER = Sereal::Encoder->new( { croak_on_bless => 1 } );
+my $DECODER = Sereal::Decoder->new(
+    {
+        refuse_objects => 1,    # blessed data is rejected, never revived
+        max_recursion_depth   => 64,
+        max_num_hash_entries  => 10_000,
+        max_num_array_entries => 10_000,
+    }
+);
 
 sub _redis_key {
-    my ($c, $key) = @_;                    # $key: session:SID, expires:SID, flash:SID
-    return ($c->_session_plugin_config->{redis_prefix} // 'sess:') . $key;
+    my ( $c, $key ) = @_;    # $key: session:SID, expires:SID, flash:SID
+    return ( $c->_session_plugin_config->{redis_prefix} // 'sess:' ) . $key;
 }
 
 sub get_session_data {
-    my ($c, $key) = @_;
-    my $raw = SessionLab::Redis->handle->get(_redis_key($c, $key));
+    my ( $c, $key ) = @_;
+    my $raw = SessionLab::Redis->handle->get( _redis_key( $c, $key ) );
     return unless defined $raw;
     return $raw if $key =~ /^expires:/;    # plain epoch seconds
     my $data = eval { $DECODER->decode($raw) };
-    unless (defined $data) {
+    unless ( defined $data ) {
         $c->log->warn("discarding undecodable session record '$key': $@");
         return;
     }
@@ -45,21 +48,23 @@ sub get_session_data {
 }
 
 sub store_session_data {
-    my ($c, $key, $data) = @_;
+    my ( $c, $key, $data ) = @_;
+
     # Expire every record together with the session it belongs to.
     my $ttl = $c->session_expires - time;
     $ttl = 1 if $ttl < 1;
     my $value = $key =~ /^expires:/ ? $data : $ENCODER->encode($data);
-    SessionLab::Redis->handle->set(_redis_key($c, $key), $value, 'EX', $ttl);
+    SessionLab::Redis->handle->set( _redis_key( $c, $key ),
+        $value, 'EX', $ttl );
     return;
 }
 
 sub delete_session_data {
-    my ($c, $key) = @_;
-    SessionLab::Redis->handle->del(_redis_key($c, $key));
+    my ( $c, $key ) = @_;
+    SessionLab::Redis->handle->del( _redis_key( $c, $key ) );
     return;
 }
 
-sub delete_expired_sessions { }            # Redis expires keys itself
+sub delete_expired_sessions { }    # Redis expires keys itself
 
 1;

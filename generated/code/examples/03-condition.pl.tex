@@ -2,16 +2,20 @@
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{threads}\PG{p}{;}
 \PG{k}{use}\PG{+w}{ }\PG{n+nn}{threads::shared}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
-\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{workers}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{map}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nn}{threads}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{    }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{p}{)}\PG{p}{;}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{deadline}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{time}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mi}{10}\PG{p}{;}
-\PG{+w}{    }\PG{k}{until}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{signalled}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{cond\PGZus{}timedwait}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{deadline}\PG{p}{)}\PG{p}{;}
-\PG{+w}{        }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}startup timeout\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{signalled}\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{p}{;}
-\PG{+w}{    }\PG{p}{\PGZcb{}}
-\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
-\PG{p}{\PGZcb{}}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{o}{..}\PG{l+m+mi}{4}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{workers}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{map}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n+nn}{threads}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}
+\PG{+w}{        }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{p}{)}\PG{p}{;}
+\PG{+w}{            }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{deadline}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{time}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mi}{10}\PG{p}{;}
+\PG{+w}{            }\PG{k}{until}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{signalled}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{cond\PGZus{}timedwait}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{deadline}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{                }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}startup timeout\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{signalled}\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{p}{;}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{)}
+\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{4}\PG{p}{;}
 \PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}\PG{+w}{ }\PG{n}{cond\PGZus{}broadcast}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{p}{\PGZcb{}}
 \PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{@}\PG{n+nv}{workers}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}worker failed\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{join}\PG{p}{;}\PG{+w}{ }\PG{p}{\PGZcb{}}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}all ready\PGZbs{}n\PGZdq{}}\PG{p}{;}
