@@ -38,6 +38,31 @@ Designed for junior developers learning synchronization and experienced engineer
 | **Application architecture** | Moose and Catalyst object lifetimes, service-layer transactions, resumable batch processing, reliable integrations, migration and concurrency testing |
 | **Web applications and caches** | Catalyst sessions, API credentials, idempotency, rate limiting and Memcached CAS |
 
+## Continuously verified technical publishing
+
+Modern Perl Concurrency is a continuously verified technical reference that combines professional LaTeX typesetting, executable examples, automated testing and repeatable publication through GitHub Actions. The book and its supporting software are maintained as a unified engineering project.
+
+Rather than treating the PDF as a manually assembled manuscript, the project treats it as a versioned release artifact. Canonical example sources feed both the executable laboratory and the generated syntax-highlighted listings. The publication pipeline exercises concurrency invariants against disposable services, records benchmark observations and checks the compiled documents before release.
+
+```mermaid
+flowchart TD
+    A[Versioned repository] --> B[Canonical examples]
+    A --> C[LaTeX manuscript]
+    B --> D[Formatting and full laboratory suite]
+    D --> E[Verification records and benchmarks]
+    D --> F[Generated highlighted listings]
+    C --> G[LaTeX compilation]
+    F --> G
+    E --> G
+    G --> H[PDF preflight and rendered review pages]
+    H --> I[Versioned release and documentation portal]
+    E --> I
+```
+
+This approach is particularly useful for concurrency: examples can appear correct while hiding races, deadlocks or failures under contention. Automated invariant checks and deliberately reproduced failure scenarios provide inspectable evidence, not a formal proof of correctness or a substitute for independent review.
+
+Each successful publication includes a source snapshot, verification manifest, benchmark results, build log and checksums. The [workflow source](.github/workflows/tidy-handbook.yml) and [build history](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions) expose the process to readers. The architecture is also intended as a reusable model for technical publishing beyond Perl.
+
 ## Reading map
 
 | Part | Focus |
