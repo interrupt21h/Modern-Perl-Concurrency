@@ -33,9 +33,9 @@
 \definecolor{leaf}{HTML}{3D6F2E}
 
 \hypersetup{colorlinks=true,linkcolor=teal,urlcolor=teal,
-  pdftitle={Modern Perl Concurrency and Locking},
+  pdftitle={Modern Perl Concurrency},
   pdfauthor={Scott Muller},
-  pdfsubject={Engineering handbook, edition 2.1.1},
+  pdfsubject={Synchronization, Distributed Coordination and Application Architecture; engineering handbook, edition 2.1.1},
   pdfkeywords={Perl, concurrency, locking, MySQL, Redis, Valkey, Memcached}}
 
 % ---------------------------------------------------------------- layout
@@ -47,7 +47,7 @@
     \makebox[.27\headwidth][l]{\begin{adjustbox}{max width=.25\headwidth}\currentpart\end{adjustbox}}%
     \makebox[.65\headwidth][c]{\begin{adjustbox}{max width=.62\headwidth}\leftmark\end{adjustbox}}%
     \makebox[.08\headwidth][r]{\thepage}}}
-\fancyfoot[C]{\scriptsize\sffamily\color{muted}Modern Perl Concurrency and Locking \textperiodcentered{} Scott Muller}
+\fancyfoot[C]{\scriptsize\sffamily\color{muted}Modern Perl Concurrency \textperiodcentered{} Scott Muller}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\sffamily\color{muted}\thepage\quad\textperiodcentered\quad Scott Muller}\renewcommand{\headrulewidth}{0pt}}
 \raggedbottom
@@ -152,7 +152,7 @@
   \vspace{10pt}{\color{teal}\rule{\linewidth}{2pt}}\par
   \vspace{18pt}{\sffamily\bfseries\Huge\color{navy}\raggedright\hyphenpenalty=10000\exhyphenpenalty=10000 #2\par}
   \vspace{20pt}{\large #3\par}\vfill
-  {\small\sffamily\color{muted}Modern Perl Concurrency and Locking \textperiodcentered{} Edition 2.1.1}
+  {\small\sffamily\color{muted}Modern Perl Concurrency \textperiodcentered{} Edition 2.1.1}
   \clearpage}
 \begin{document}
 % ================================================================ title page
@@ -160,9 +160,10 @@
 \color{navy}\vspace*{0.45in}
 {\sffamily\bfseries\large ENGINEERING HANDBOOK\par}\vspace{0.25in}
 {\color{teal}\rule{\linewidth}{3pt}}\vspace{0.4in}
-{\Huge\sffamily\bfseries Modern Perl\\[8pt]Concurrency and Locking\par}
-\vspace{0.28in}{\Large\sffamily From \texttt{lock()} to fenced leases: threads, processes, event loops,\\
-MySQL and DBIx::Class, Redis and Valkey, Catalyst sessions and Memcached\par}
+{\Huge\sffamily\bfseries Modern Perl\\[8pt]Concurrency\par}
+\vspace{0.28in}{\Large\sffamily Synchronization, Distributed Coordination\\
+and Application Architecture\par}
+\medskip{\normalsize\sffamily\color{muted}Threads, processes, event loops, MySQL, DBIx::Class, Redis, Valkey, Catalyst and Memcached\par}
 \vspace{0.45in}
 \begin{center}\scalebox{1.12}{\input{figures/titleart}}\end{center}
 \vfill
@@ -179,7 +180,8 @@ Owner \& Independent Consultant, 21h Systems\\
 \thispagestyle{empty}
 \vspace*{\fill}
 {\small\sffamily
-\textbf{Modern Perl Concurrency and Locking}\\
+\textbf{Modern Perl Concurrency}\\
+Synchronization, Distributed Coordination and Application Architecture\\
 Engineering Handbook, Edition 2.1.1 (November 2026)\par\medskip
 \textbf{Scott Muller}\par
 Software Engineer, Matsch Systems\\

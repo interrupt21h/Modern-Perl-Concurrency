@@ -1,5 +1,9 @@
 # Changelog
 
+### Publication title
+
+- Adopt **Modern Perl Concurrency** as the title, with the subtitle *Synchronization, Distributed Coordination and Application Architecture*. Existing repository URLs and asset filenames remain unchanged. Historical editions retain their original titles.
+
 ## Edition 2.1.1 — publication polish
 
 - Repair index navigation, compact front matter and glossary, protect short listing headings, and improve figure placement and part titles.

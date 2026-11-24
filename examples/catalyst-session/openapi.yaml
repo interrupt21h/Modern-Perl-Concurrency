@@ -2,7 +2,7 @@ openapi: 3.2.0
 info:
   title: SessionLab API (laboratory)
   version: 1.2.0
-  summary: Credentials and request coordination on Redis, from the Modern Perl Concurrency and Locking handbook.
+  summary: Credentials and request coordination on Redis, from the Modern Perl Concurrency handbook.
   description: |
     Laboratory API exercised by examples/30-api-tokens.pl. Security schemes
     describe how a client authenticates; the server-side storage and

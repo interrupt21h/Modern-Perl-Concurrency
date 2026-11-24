@@ -44,8 +44,8 @@ page = f"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Modern Perl concurrency, locking and synchronization engineering handbook and executable laboratory.">
-<title>Modern Perl Concurrency and Locking</title>
+<meta name="description" content="Modern Perl Concurrency: Synchronization, Distributed Coordination and Application Architecture. Engineering handbook and executable laboratory.">
+<title>Modern Perl Concurrency</title>
 <style>
 :root {{color-scheme:light dark;--bg:#f5f7fa;--paper:#fff;--ink:#182839;--muted:#516579;--line:#dbe3e9;--accent:#08665f;--hero:#142c40}}
 *{{box-sizing:border-box}} body{{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,sans-serif}}
@@ -67,7 +67,8 @@ footer{{border-top:1px solid var(--line);padding:1.5rem 1.25rem;color:var(--mute
 <body>
 <header><div class="wrap">
 <div class="eyebrow">Engineering handbook / Edition 2.1.1</div>
-<h1>Modern Perl Concurrency and Locking</h1>
+<h1>Modern Perl Concurrency</h1>
+<p><strong>Synchronization, Distributed Coordination and Application Architecture</strong></p>
 <p><a href="{REPO}/releases/tag/v2.1.1">Stable edition</a> · <a href="verification.json">Current verification manifest</a> · <a href="benchmark-results.txt">Measured benchmark trials</a></p>
 <p>A six-part engineering reference for local synchronization, persistent state, distributed coordination and production application architecture. Includes a recoverable processing capstone and complete laboratory appendices.</p>
 <p><strong>Scott Muller</strong> · <a href="mailto:scott@21h.io">scott@21h.io</a><br>Software Engineer, Matsch Systems<br>Owner &amp; Independent Consultant, 21h Systems</p>
@@ -81,7 +82,7 @@ footer{{border-top:1px solid var(--line);padding:1.5rem 1.25rem;color:var(--mute
 <section class="panel"><h2>Printable cheat sheet</h2><p>Two illustrated pages for quick reference: local Perl synchronization and database/distributed coordination. Print double-sided on US Letter.</p><a href="perl-concurrency-cheat-sheet.pdf">Open PDF</a> · <a href="perl-concurrency-cheat-sheet.pdf" download>Download PDF</a> · <a href="cheat-sheet.tex" download>LaTeX source</a></section>
 <section class="panel"><h2>Contents</h2><ol>{chapter_html}</ol></section>
 <section class="panel"><h2>Source examples</h2><p>Source links point to the exact release commit. Use isolated services for the laboratory.</p><ul class="examples">{example_html}</ul><p><a href="{esc(REPO)}/tree/{SHA}/examples/catalyst-session">Catalyst application source</a></p></section>
-</main><footer><div class="wrap">Modern Perl Concurrency and Locking · <a href="{esc(REPO)}">Project repository</a> · <a href="{esc(REPO)}/releases">All releases</a></div></footer>
+</main><footer><div class="wrap">Modern Perl Concurrency · <a href="{esc(REPO)}">Project repository</a> · <a href="{esc(REPO)}/releases">All releases</a></div></footer>
 </body></html>"""
 (OUT / "index.html").write_text(page, encoding="utf-8")
 print(f"Created portal with {len(examples)} source links: {OUT}")

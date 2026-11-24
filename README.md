@@ -1,4 +1,6 @@
-# Modern Perl Concurrency and Locking
+# Modern Perl Concurrency
+
+*Synchronization, Distributed Coordination and Application Architecture*
 
 **An illustrated engineering handbook and executable laboratory for Perl developers.**
 

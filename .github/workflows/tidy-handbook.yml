@@ -137,12 +137,12 @@ jobs:
           set -euo pipefail
           gh release create "$RELEASE_TAG" dist/modern-perl-concurrency.pdf dist/perl-concurrency-cheat-sheet.pdf dist/cheat-sheet.tex dist/formatted-source.tar.gz dist/SHA256SUMS dist/tidy-build.txt dist/verification.json dist/benchmark-results.txt \
             --target "$PUBLISHED_SHA" \
-            --title "Modern Perl Concurrency and Locking — Edition 2.1.1 (build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT})" \
+            --title "Modern Perl Concurrency — Edition 2.1.1 (build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT})" \
             --notes "Formatted and rebuilt by CI from commit $PUBLISHED_SHA. See tidy-build.txt for the executed and skipped tests. Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           # The edition tag is immutable once published; later CI builds remain versioned.
           if ! gh release view v2.1.1 >/dev/null 2>&1; then
             gh release create v2.1.1 dist/modern-perl-concurrency.pdf dist/perl-concurrency-cheat-sheet.pdf dist/cheat-sheet.tex dist/formatted-source.tar.gz dist/SHA256SUMS dist/tidy-build.txt dist/verification.json dist/benchmark-results.txt \
-              --target "$PUBLISHED_SHA" --title "Modern Perl Concurrency and Locking — Edition 2.1.1" \
+              --target "$PUBLISHED_SHA" --title "Modern Perl Concurrency — Edition 2.1.1" \
               --notes "Stable edition snapshot. Automated verification: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. See verification.json and SHA256SUMS for provenance. Independent peer review is not implied."
           fi
       - name: Build static handbook portal
