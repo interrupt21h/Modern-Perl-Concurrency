@@ -1,0 +1,71 @@
+\chapter{Capstone: recoverable measurement processing}\label{ch:capstone}
+\chapterbrief{Combine bounded admission, process workers, durable claims, transactional results and replay-safe delivery.}
+\index{Capstone}\index{Backpressure}\index{Batch processing}\index{Transactional outbox}
+This synthetic application receives a stream of measurement records. It
+validates each source identity, computes a deterministic transformation,
+commits results with an outbox record, and delivers each effect into a
+separate database. SQLite makes the laboratory portable; it is not a
+substitute for the MySQL row-locking examples.
+
+\section{Architecture and invariants}
+\begin{figure}[!htbp]\centering
+\begin{tikzpicture}[node distance=7mm]
+\node[box,text width=10cm] (a) {Input stream: stable record ID and value};
+\node[okbox,below=of a,text width=10cm] (b) {Bounded admission: validate identity and stage jobs};
+\node[box,below left=8mm and 0mm of b.south,anchor=north east,text width=4.3cm] (c) {Worker A\\claim and compute};
+\node[box,below right=8mm and 0mm of b.south,anchor=north west,text width=4.3cm] (d) {Worker B\\claim and compute};
+\node[okbox,below=8mm of $(c.south)!0.5!(d.south)$,text width=10cm] (e) {One transaction: result, completion and outbox event};
+\node[box,below left=8mm and 0mm of e.south,anchor=north east,text width=4.3cm] (f) {Aggregate\\committed results};
+\node[okbox,below right=8mm and 0mm of e.south,anchor=north west,text width=4.3cm] (g) {Relay to independent\\deduplicating destination};
+\draw[arr](a)--(b); \draw[arr](b)--(c); \draw[arr](b)--(d);
+\draw[arr](c)--(e); \draw[arr](d)--(e); \draw[arr](e)--(f); \draw[arr](e)--(g);
+\end{tikzpicture}
+\caption{Admission bounds unprocessed records; effects and progress commit together. Delivery is independently recoverable.}
+\end{figure}
+\strategy{capstone}{Replay-safe processing pipeline}{A warehouse records incoming packages and work tickets, then records each completed package and its shipping instruction together.}{input can repeat, workers can fail and delivery crosses a transaction boundary.}{durable staging costs more than recovery is worth.}{DBI, DBD::SQLite, forked workers, durable attempt IDs and unique constraints.}
+The application enforces four invariants: identical input identities
+cannot represent different values; a stale claim cannot finish a new
+attempt; a completed result and its delivery intent are atomic; the
+destination stores at most one effect per stable event ID. The source
+can remain pending after a successful remote commit, so acknowledgement
+is not equivalent to delivery.
+
+\section{Admission, processing and aggregation}
+Ingest a bounded batch at a time, then drain it with a fixed worker pool.
+The input is generated incrementally, rather than loaded as an unbounded
+array. A production file adapter should use a stable manifest and record
+offset. Publish completed files with rename within the same filesystem,
+with file and directory synchronization if crash durability is required
+[79]. Atomic rename alone is not a durability guarantee.
+Use a short database transaction to claim work, compute outside it,
+then conditionally commit the matching attempt. SQLite immediate
+transactions serialize writers [77,78]. On InnoDB replace this claim
+with indexed locking reads and \code{SKIP LOCKED}; retry engine-specific
+deadlocks. Never hold a transaction across a remote call.
+
+\section{Failure injection and recovery}
+\begin{longtable}{L{.33\linewidth}L{.59\linewidth}}
+\toprule Injected condition & Expected result \\ \midrule\endhead
+Worker exits after claim & Expired attempt can be reclaimed.\\
+Old worker completes late & Conditional completion rejects it.\\
+Duplicate input & Existing payload retained; mismatch rejected.\\
+Destination commits before source ack & Retry stable event ID; no extra effect.\\
+Re-run completed input & Existing committed results remain unchanged.\\
+\bottomrule
+\end{longtable}
+The laboratory advances the recorded expiry explicitly to avoid
+sleep-based races. Real deployments require a consistent time source,
+bounded lease renewal, explicit retry/dead-letter policy and supervisor
+restart behavior. This fixture uses finite generated work and no external
+network. It demonstrates the protocol rather than a production scheduler
+or exactly-once transport. Its admission bound applies to processing
+jobs, not the entire outbox backlog; a deployed system should also bound
+or throttle delivery backlog independently.
+
+\section{Run and inspect the laboratory}
+\CodeFile{bash}{snippets/capstone-run.sh}{Run the self-verifying capstone and its independent tests}
+The complete implementation appears in Appendix~\ref{app:capstone}.
+For production, partition by the resource whose updates must be ordered,
+bound queue depth and worker connection budgets, and expose queue age,
+attempt counts and outbox lag. Report throughput only with the dataset,
+hardware, worker count and measured contention documented.

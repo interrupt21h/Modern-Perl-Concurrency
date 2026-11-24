@@ -42,7 +42,7 @@
 \newcommand{\currentpart}{Handbook}
 \renewcommand{\chaptermark}[1]{\markboth{#1}{}}
 \fancyhead[L]{\scriptsize\sffamily\color{muted}\currentpart}
-\fancyhead[C]{\scriptsize\sffamily\color{muted}\leftmark}
+\fancyhead[C]{\scriptsize\sffamily\color{muted}\begin{adjustbox}{max width=.55\linewidth}\leftmark\end{adjustbox}}
 \fancyhead[R]{\small\sffamily\color{muted}\thepage}
 \fancyfoot[C]{\scriptsize\sffamily\color{muted}Modern Perl Concurrency and Locking \textperiodcentered{} Scott Muller}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -187,7 +187,7 @@ Contact: \href{mailto:scott@21h.io}{scott@21h.io}.\par
 \color{muted}
 Documentation baseline: Perl 5.44; MySQL 8.4 LTS and 9.7 LTS; Redis 7.2--8.4; Valkey 8.1--9.0; Catalyst 5.90; DBIx::Class 0.0828.\\
 Verification environment: threaded Perl 5.38.2, MySQL 8.0.46, Redis 7.0.15 and Memcached 1.6.24 on Linux.\par\medskip
-The original laboratory verification record is retained in Appendix~\ref{ch:refs}. The application-architecture laboratories are separately identified in the verification chapter. Current release logs distinguish executed tests from optional skips.
+The original laboratory verification record is retained in Appendix~\ref{ch:refs}. The application-architecture laboratories are separately identified in the verification chapter. Current release logs distinguish executed tests from optional skips; full publication requires the configured laboratories.
 Examples that create, flush or delete data must be run only against disposable, isolated services.\par}
 \clearpage
 
@@ -904,7 +904,7 @@ Primary documentation was consulted on November 24, 2026. Perl documentation res
 19 & Concurrency bound respected; no lost update with \code{Future::Mutex} \\
 \bottomrule\end{longtable}
 \section{Application architecture laboratories}
-Examples 32--35 use independently constructed synthetic data. Example 32 checks PID-local Moose resource ownership; 33 checks transaction rollback and duplicate-request behavior with DBIx::Class and SQLite; 34 checks durable source/outbox consistency and replay against a separate SQLite destination; 35 forces a lost-update interleaving and verifies the corrected critical section. SQLite tests demonstrate application transaction boundaries, not MySQL row-lock or isolation semantics. Consult the release build log for actual test results and skipped dependencies.
+Examples 32--39 use independently constructed synthetic data. Example 32 checks PID-local Moose resource ownership; 33 checks transaction rollback and duplicate-request behavior with DBIx::Class and SQLite; 34 checks durable source/outbox consistency and replay against a separate SQLite destination; 35 forces a lost-update interleaving and verifies the corrected critical section. SQLite tests demonstrate application transaction boundaries, not MySQL row-lock or isolation semantics. Examples 36--39 cover replay-safe processing, savepoints, classified retry/cancellation and contention measurement. Consult the release build log for actual test results and skipped dependencies.
 
 \section{References}
 \small

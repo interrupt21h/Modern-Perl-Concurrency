@@ -103,3 +103,24 @@ Read this the way you would read production data: waiting (3~ms at the median) d
 % ================================================================ glossary
 
 
+
+\section{Repeatable contention measurement}
+\index{Benchmarking}
+Example 39 compares one lock against independent striped counters using
+three trials of each at four workers. It validates the final count in
+every trial and reports elapsed wall time, including thread creation
+and join. This is not a pure lock-latency benchmark or proof of linear
+scaling. Record interpreter version, CPU, workload, worker count and
+scheduler conditions. Warm workers before timing for more stable
+microbenchmarks; vary the contention distribution and report variation
+and tail latency rather than only a mean. The full benchmark is in
+Appendix~\ref{app:capstone}.
+\section{Connection pool exhaustion}
+\index{Connection pools}
+A pool is a semaphore around a finite set of live resources. When all
+slots are busy, bound the number and duration of waiters rather than
+allocating more connections. Never hold a checked-out connection while
+waiting for a second slot unless the pool contract explicitly reserves
+enough capacity. Separate admission timeout, query timeout and total
+operation deadline. Export active, idle and waiting counts, and record
+which operations retain a handle during external I/O.

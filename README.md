@@ -135,7 +135,7 @@ behavior it is meant to demonstrate.
 
 ## Application architecture laboratories
 
-Examples 32–35 use synthetic data and disposable local resources. Install `libmoose-perl`, `libdbix-class-perl`, and `libdbd-sqlite3-perl` on Debian/Ubuntu to enable the new optional tests. SQLite examples verify transaction and replay contracts, not MySQL locking semantics.
+Examples 32–39 use synthetic data and disposable local resources. Install `libmoose-perl`, `libdbix-class-perl`, and `libdbd-sqlite3-perl` on Debian/Ubuntu to enable the new optional tests. SQLite examples verify transaction and replay contracts, not MySQL locking semantics.
 
 | Example | Invariant |
 | --- | --- |
@@ -143,6 +143,10 @@ Examples 32–35 use synthetic data and disposable local resources. Install `lib
 | 33 | Layered DBIx::Class operation rolls back as a unit |
 | 34 | Replay after ambiguous delivery produces one durable effect |
 | 35 | Deterministic lost update reproduced and corrected |
+
+## Processing capstone
+
+The capstone in `examples/36-processing-capstone.pl` uses disposable SQLite databases and bounded work admission. It exercises worker termination, reclaim, replay, conditional completion and duplicate-safe delivery. Examples 37–39 cover savepoints, cancellation and benchmark trials. See Part V and the laboratory appendix.
 
 ## Catalyst laboratory
 
@@ -256,3 +260,7 @@ Owner & Independent Consultant, 21h Systems
 *This work is an independent technical publication. The views and recommendations expressed herein are solely those of the author and do not necessarily reflect those of his employer or affiliated organizations. Professional affiliations do not imply institutional endorsement.*
 
 © 2026 Scott Muller.
+
+### Release verification
+
+The publishing workflow provisions disposable MySQL, Redis, Valkey and Memcached services and installs the full module set. `REQUIRE_FULL_SUITE=1` makes skipped laboratories fatal. Full-page rendered review artifacts are available from CI. PDF preflight checks final LaTeX references, overflow and extracted word bounds; visual inspection remains a separate editorial task.

@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+"""Fail publication for unresolved references, overflow or off-page text."""
+import re
+import subprocess
+import sys
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+pdf, log = map(Path, sys.argv[1:])
+text = log.read_text(errors="replace")
+bad = re.findall(r"^.*(?:Overfull \\[hv]box|There were undefined references|multiply defined|Label\(s\) may have changed|Rerun to get cross-references right).*$", text, re.M)
+if bad:
+    raise SystemExit("\n".join(bad))
+xml = subprocess.check_output(["pdftotext", "-bbox", str(pdf), "-"])
+root = ET.fromstring(xml)
+pages = root.findall(".//{*}page")
+if not pages:
+    raise SystemExit("No PDF pages")
+for i, page in enumerate(pages, 1):
+    width = float(page.attrib["width"])
+    height = float(page.attrib["height"])
+    for word in page.findall("{*}word"):
+        x0, y0, x1, y1 = (float(word.attrib[k]) for k in
+            ("xMin", "yMin", "xMax", "yMax"))
+        if min(x0, y0) < -1 or x1 > width + 1 or y1 > height + 1:
+            raise SystemExit(f"{pdf}: off-page word on page {i}: {word.text}")
+        if "\ufffd" in (word.text or ""):
+            raise SystemExit(f"{pdf}: replacement glyph on page {i}")
+print(f"PDF preflight: {pdf}, {len(pages)} pages, no unresolved references or off-page text")

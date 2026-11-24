@@ -69,3 +69,11 @@ Test correctness with invariants, not timing assumptions. Start competing worker
 \CodeFile{bash}{snippets/guide-10.sh}{Laboratory regression suite}
 \tip{Make races reproducible before fixing them. The laboratory widens race windows with a delay parameter (\code{delay=0.3}) and fires requests from forked processes; a race that fails every run is one you can prove fixed.}
 
+
+\section{A Test2 integration fixture}
+The Test2 fixture in Appendix~\ref{app:capstone} runs separate child
+processes and checks exit status and declared invariants. Temporary
+databases are created by the capstone, so multiple instances do not
+share state. Run it with \code{prove} or the optional
+\code{yath test -j2 examples/t/} runner [80]. The integration suite runs
+service-backed examples serially where namespaces are shared.

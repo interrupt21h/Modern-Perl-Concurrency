@@ -1,0 +1,63 @@
+\chapter{Example catalog and API lookup}\label{app:catalog}
+All executable examples check their invariants. Example 15 is a
+protocol transcript, not a program. The table links to each printed
+listing and names its primary prerequisites; the README describes
+installation and disposable service setup.
+\begin{longtable}{L{.07\linewidth}L{.43\linewidth}L{.33\linewidth}L{.08\linewidth}}
+\toprule No. & Source and expected invariant & Requirements & Page\\ \midrule\endhead
+01 & \nolinkurl{01-mutex.pl}\newline Scoped mutex & Threaded Perl & \pageref{listing:examples/01-mutex.pl}\\
+02 & \nolinkurl{02-semaphore.pl}\newline Permit bound & Threaded Perl & \pageref{listing:examples/02-semaphore.pl}\\
+03 & \nolinkurl{03-condition.pl}\newline Predicate rendezvous & Threaded Perl & \pageref{listing:examples/03-condition.pl}\\
+04 & \nolinkurl{04-queue.pl}\newline Work queue & Threaded Perl & \pageref{listing:examples/04-queue.pl}\\
+05 & \nolinkurl{05-rwlock.pl}\newline Educational reader/writer lock & Threaded Perl & \pageref{listing:examples/05-rwlock.pl}\\
+06 & \nolinkurl{06-flock.pl}\newline File lock & Unix & \pageref{listing:examples/06-flock.pl}\\
+07 & \nolinkurl{07-sysv.pl}\newline System V semaphore & Linux IPC & \pageref{listing:examples/07-sysv.pl}\\
+08 & \nolinkurl{08-pipe.pl}\newline Pipe IPC & Unix & \pageref{listing:examples/08-pipe.pl}\\
+09 & \nolinkurl{09-barrier.pl}\newline Educational barrier & Threaded Perl & \pageref{listing:examples/09-barrier.pl}\\
+10 & \nolinkurl{10-mysql-advisory.pl}\newline Named locks & MySQL, DBI & \pageref{listing:examples/10-mysql-advisory.pl}\\
+11 & \nolinkurl{11-mysql-transfer.pl}\newline Conserved transfer & MySQL, DBI & \pageref{listing:examples/11-mysql-transfer.pl}\\
+12 & \nolinkurl{12-mysql-queue.pl}\newline Queue claims & MySQL, DBI & \pageref{listing:examples/12-mysql-queue.pl}\\
+13 & \nolinkurl{13-redis-lease.pl}\newline Lease owner checks & Redis client & \pageref{listing:examples/13-redis-lease.pl}\\
+14 & \nolinkurl{14-memcached-lease.pl}\newline Cache CAS & Memcached client & \pageref{listing:examples/14-memcached-lease.pl}\\
+15 & \nolinkurl{15-memcached-meta.txt}\newline Meta transcript & Memcached protocol & \pageref{listing:examples/15-memcached-meta.txt}\\
+16 & \nolinkurl{16-redis-semaphore.pl}\newline Distributed permits & Redis client & \pageref{listing:examples/16-redis-semaphore.pl}\\
+17 & \nolinkurl{17-redis-stream-worker.pl}\newline Stream recovery & Redis 6.2+ & \pageref{listing:examples/17-redis-stream-worker.pl}\\
+18 & \nolinkurl{18-fenced-write.pl}\newline Fenced destination & Redis, MySQL & \pageref{listing:examples/18-fenced-write.pl}\\
+19 & \nolinkurl{19-async-await.pl}\newline Async mutex & Future, IO::Async & \pageref{listing:examples/19-async-await.pl}\\
+20 & \nolinkurl{20-scope-release.pl}\newline Cleanup guard & Perl & \pageref{listing:examples/20-scope-release.pl}\\
+21 & \nolinkurl{21-futex-mutex.c}\newline Native mutex & Linux, C compiler & \pageref{listing:examples/21-futex-mutex.c}\\
+22 & \nolinkurl{22-config-snapshot.pl}\newline Immutable snapshot & Threaded Perl & \pageref{listing:examples/22-config-snapshot.pl}\\
+23 & \nolinkurl{23-lock-striping.pl}\newline Striped locks & Threaded Perl & \pageref{listing:examples/23-lock-striping.pl}\\
+24 & \nolinkurl{24-try-defer.pl}\newline Experimental cleanup & Perl 5.36+ & \pageref{listing:examples/24-try-defer.pl}\\
+25 & \nolinkurl{25-flock-deadline.pl}\newline Bounded file lock & Linux & \pageref{listing:examples/25-flock-deadline.pl}\\
+26 & \nolinkurl{26-lock-metrics.pl}\newline Wait/hold metrics & Threaded Perl & \pageref{listing:examples/26-lock-metrics.pl}\\
+27 & \nolinkurl{27-mce-loop.pl}\newline Parallel process loop & MCE & \pageref{listing:examples/27-mce-loop.pl}\\
+28 & \nolinkurl{28-catalyst-sessions.pl}\newline Session integration & Catalyst, Redis & \pageref{listing:examples/28-catalyst-sessions.pl}\\
+29 & \nolinkurl{29-dbic-locking.pl}\newline ORM locking & DBIx::Class, MySQL & \pageref{listing:examples/29-dbic-locking.pl}\\
+30 & \nolinkurl{30-api-tokens.pl}\newline API integration & Catalyst, Redis, JWT & \pageref{listing:examples/30-api-tokens.pl}\\
+31 & \nolinkurl{31-redis-watch-lease.pl}\newline WATCH lease & Redis client & \pageref{listing:examples/31-redis-watch-lease.pl}\\
+32 & \nolinkurl{32-worker-lifecycle.pl}\newline Worker ownership & Moose & \pageref{listing:examples/32-worker-lifecycle.pl}\\
+33 & \nolinkurl{33-layered-transaction.pl}\newline Rollback composition & DBIx::Class, SQLite & \pageref{listing:examples/33-layered-transaction.pl}\\
+34 & \nolinkurl{34-replay-outbox.pl}\newline Duplicate-safe delivery & DBI, SQLite & \pageref{listing:examples/34-replay-outbox.pl}\\
+35 & \nolinkurl{35-deterministic-race.pl}\newline Forced lost update & Threaded Perl & \pageref{listing:examples/35-deterministic-race.pl}\\
+36 & \nolinkurl{36-processing-capstone.pl}\newline Recoverable pipeline & DBI, SQLite & \pageref{listing:examples/36-processing-capstone.pl}\\
+37 & \nolinkurl{37-savepoints.pl}\newline Nested transactions & DBIx::Class, SQLite/MySQL & \pageref{listing:examples/37-savepoints.pl}\\
+38 & \nolinkurl{38-retry-cancel.pl}\newline Classified retries & Perl & \pageref{listing:examples/38-retry-cancel.pl}\\
+39 & \nolinkurl{39-contention-benchmark.pl}\newline Contention trials & Threaded Perl & \pageref{listing:examples/39-contention-benchmark.pl}\\
+\bottomrule
+\end{longtable}
+\section{Frequently consulted APIs}
+The alphabetical index includes an API group. These links provide
+entry points for frequently consulted operations.
+\begin{longtable}{L{.32\linewidth}L{.59\linewidth}}
+\toprule API & Relevant material\\ \midrule\endhead
+\code{lock}, \code{threads::shared} & Shared state (example 01, p.~\pageref{listing:examples/01-mutex.pl})\\
+\code{Thread::Queue} & Work distribution (example 04, p.~\pageref{listing:examples/04-queue.pl})\\
+\code{flock} & Process locking (example 06, p.~\pageref{listing:examples/06-flock.pl})\\
+\code{txn_do}, \code{auto_savepoint} & Layered transactions (Chapter~\ref{ch:enterprise-transactions})\\
+\code{FOR UPDATE}, \code{SKIP LOCKED} & Database work queues (Section~\ref{sec:dbqueue})\\
+\code{WATCH}, \code{MULTI}, \code{EXEC} & Owner-checked lease (example 31, p.~\pageref{listing:examples/31-redis-watch-lease.pl})\\
+\code{XAUTOCLAIM} & Consumer groups (Section~\ref{sec:streams})\\
+\code{Future}, \code{await} & Event loops (Section~\ref{sec:async})\\
+\bottomrule
+\end{longtable}

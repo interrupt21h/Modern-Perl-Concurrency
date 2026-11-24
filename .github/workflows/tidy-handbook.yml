@@ -11,35 +11,80 @@ concurrency:
 jobs:
   tidy:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 55
     permissions:
       contents: write
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: disposable-root
+          MYSQL_DATABASE: concurrency_lab
+          MYSQL_USER: lab
+          MYSQL_PASSWORD: disposable-lab
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+      valkey:
+        image: valkey/valkey:8.1
+        ports:
+          - 6379/tcp
+        options: >-
+          --health-cmd="valkey-cli ping"
+          --health-interval=5s --health-timeout=5s --health-retries=20
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools and isolated Redis
         run: |
           sudo apt-get update
-          sudo apt-get install -y cpanminus make gcc latexmk texlive-latex-extra texlive-pictures texlive-fonts-recommended lmodern python3-venv redis-server libredis-perl poppler-utils libmoose-perl libdbix-class-perl libdbd-sqlite3-perl
+          sudo apt-get install -y cpanminus make gcc latexmk texlive-latex-extra texlive-pictures texlive-fonts-recommended lmodern python3-venv redis-server libredis-perl poppler-utils libmoose-perl libdbix-class-perl libdbd-sqlite3-perl libdbd-mysql-perl mysql-client memcached libcache-memcached-fast-perl libmce-perl libfuture-asyncawait-perl libio-async-perl libfuture-perl libcatalyst-perl libcatalyst-plugin-session-perl libcatalyst-plugin-session-state-cookie-perl libsereal-perl starman libcrypt-jwt-perl libyaml-libyaml-perl libtest2-suite-perl
           sudo cpanm SHANCOCK/Perl-Tidy-20260826.tar.gz
+          sudo cpanm --notest Future::Mutex Test2::Harness
           perltidy --version
           python3 -m venv .venv
           .venv/bin/pip install -r requirements-docs.txt
           sudo systemctl start redis-server
           redis-cli ping
+          sudo systemctl start memcached
+          /usr/bin/perl -MFuture::Mutex -MTest2::V0 -e1
       - name: Format, check, test and rebuild
         shell: bash
         env:
           REDIS_SERVER: 127.0.0.1:6379
+          MEMCACHED_SERVER: 127.0.0.1:11211
+          DB_DSN: dbi:mysql:database=concurrency_lab;host=127.0.0.1;port=${{ job.services.mysql.ports[3306] }}
+          DB_USER: lab
+          DB_PASS: disposable-lab
+          MYSQL_PORT: ${{ job.services.mysql.ports[3306] }}
+          VALKEY_SERVER: 127.0.0.1:${{ job.services.valkey.ports[6379] }}
+          REQUIRE_FULL_SUITE: 1
+          NO_PROXY: localhost,127.0.0.1
+          no_proxy: localhost,127.0.0.1
         run: |
           set -euo pipefail
           export PATH="$PWD/.venv/bin:$PATH"
           {
             make tidy
             make tidy-check
+            export MYSQL_PWD="$DB_PASS"
+            mysql --protocol=TCP -h 127.0.0.1 -P "$MYSQL_PORT" -u "$DB_USER" concurrency_lab < examples/schema.sql
             sh run-tests.sh
+            env -u DB_DSN -u DB_USER -u DB_PASS perl examples/37-savepoints.pl
+            prove -v examples/t/processing.t
+            yath test -j2 examples/t/
+            # Fresh Valkey service and reset destination for fenced writes.
+            mysql --protocol=TCP -h 127.0.0.1 -P "$MYSQL_PORT" -u "$DB_USER" concurrency_lab < examples/schema.sql
+            for example in 13-redis-lease.pl 16-redis-semaphore.pl 17-redis-stream-worker.pl 18-fenced-write.pl 31-redis-watch-lease.pl 28-catalyst-sessions.pl 30-api-tokens.pl; do
+              REDIS_SERVER="$VALKEY_SERVER" timeout 90 perl "examples/$example"
+            done
             make pdf
+            python3 scripts/pdf-preflight.py guide.pdf guide.log
+            python3 scripts/render-review.py guide.pdf review
             latexmk -pdf -interaction=nonstopmode -halt-on-error -file-line-error cheat-sheet.tex
             test "$(pdfinfo cheat-sheet.pdf | awk '/^Pages:/ {print $2}')" = 2
+            python3 scripts/pdf-preflight.py cheat-sheet.pdf cheat-sheet.log
           } 2>&1 | tee tidy-build.txt
           git diff -- examples snippets > tidy-source.diff
           test -s guide.pdf
@@ -53,7 +98,7 @@ jobs:
             git commit -m 'Apply verified Perl::Tidy formatting and regenerate listings'
           fi
           echo "PUBLISHED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-          echo "RELEASE_TAG=v2.0-build.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=v2.1-build.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
       - name: Package formatted source and PDF
         run: |
           set -euo pipefail
@@ -69,6 +114,12 @@ jobs:
           name: tidied-perl-handbook
           path: dist/
           if-no-files-found: error
+      - name: Upload rendered review pages
+        uses: actions/upload-artifact@v4
+        with:
+          name: handbook-visual-review
+          path: review/
+          if-no-files-found: error
       - name: Persist validated formatting
         if: github.ref == 'refs/heads/main'
         run: |
@@ -82,7 +133,7 @@ jobs:
           set -euo pipefail
           gh release create "$RELEASE_TAG" dist/modern-perl-concurrency.pdf dist/perl-concurrency-cheat-sheet.pdf dist/cheat-sheet.tex dist/formatted-source.tar.gz dist/SHA256SUMS dist/tidy-build.txt \
             --target "$PUBLISHED_SHA" \
-            --title "Modern Perl Concurrency and Locking — Edition 2.0 (build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT})" \
+            --title "Modern Perl Concurrency and Locking — Edition 2.1 (build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT})" \
             --notes "Formatted and rebuilt by CI from commit $PUBLISHED_SHA. See tidy-build.txt for the executed and skipped tests. Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - name: Build static handbook portal
         if: github.ref == 'refs/heads/main'

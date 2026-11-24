@@ -107,4 +107,17 @@ if perl -MDBI -MDBD::SQLite -e1 2>/dev/null; then
 else skipped 34-replay-outbox.pl 'needs DBI and DBD::SQLite'; fi
 run 35-deterministic-race.pl
 
+if perl -MDBI -MDBD::SQLite -e1 2>/dev/null; then
+    run 36-processing-capstone.pl
+else skipped 36-processing-capstone.pl 'needs DBI and DBD::SQLite'; fi
+if perl -MDBIx::Class -MDBD::SQLite -e1 2>/dev/null; then
+    run 37-savepoints.pl
+else skipped 37-savepoints.pl 'needs DBIx::Class and DBD::SQLite'; fi
+run 38-retry-cancel.pl
+run 39-contention-benchmark.pl
+
 printf '\n%d passed, %d skipped\n' "$pass" "$skip"
+if [ "${REQUIRE_FULL_SUITE:-0}" = 1 ] && [ "$skip" -ne 0 ]; then
+    echo 'Full-suite mode rejects skipped laboratories' >&2
+    exit 1
+fi

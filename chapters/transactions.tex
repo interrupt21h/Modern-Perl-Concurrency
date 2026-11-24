@@ -67,3 +67,20 @@ self-contained; the MySQL chapter covers InnoDB-specific lock semantics.
 If the computation depends on mutable database state, validate its version
 again inside the transaction before committing.}
 
+
+\section{Savepoints and retry boundaries}
+\index{API!auto_savepoint}\index{Savepoints}
+Enable \code{auto_savepoint} only with a supported storage driver and
+test the nested failure contract [75]. An inner successful operation is
+not durable until the outermost transaction commits. A failed savepoint
+can be handled locally only when the driver and ORM have actually rolled
+back to it. Example 37 runs against SQLite by default, or a disposable
+MySQL DSN when configured (Appendix~\ref{app:capstone}). It tests
+partial rollback and outer rollback of a successful inner call.
+
+\section{Reusable retry policy}
+Example 38 separates confirmed conflicts from unknown outcomes and checks
+a monotonic deadline and cooperative cancellation between attempts.
+Driver-specific code must classify errors before entering this helper;
+a deadlock may permit a retry, whereas an ambiguous commit requires
+reconciliation. Do not retry arbitrary exceptions or remote effects.
