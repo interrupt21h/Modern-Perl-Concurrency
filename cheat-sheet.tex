@@ -1,137 +1,107 @@
-\documentclass[10pt,letterpaper]{article}
-\usepackage[margin=.44in,headheight=12pt,footskip=17pt]{geometry}
+\documentclass[10pt,letterpaper,landscape]{article}
+\usepackage[margin=0pt]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage{lmodern, microtype, xcolor, tikz, array, tabularx, ragged2e, fancyhdr}
-\usetikzlibrary{arrows.meta,positioning}
-\usepackage[hidelinks]{hyperref}
-\hypersetup{pdftitle={Perl Concurrency and Locking - Cheat Sheet},pdfauthor={Scott Muller},pdfsubject={Companion to Modern Perl Concurrency and Locking}}
-\definecolor{navy}{HTML}{20394D}
-\definecolor{teal}{HTML}{156B68}
-\definecolor{pale}{HTML}{EFF4F5}
-\definecolor{warn}{HTML}{944725}
-\definecolor{line}{HTML}{B8C9CD}
-\renewcommand{\familydefault}{\sfdefault}
-\setlength{\parindent}{0pt}\setlength{\parskip}{4pt}
-\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.17}
-\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
-\fancyfoot[L]{\fontsize{8}{9}\selectfont\color{navy} Modern Perl Concurrency and Locking\enspace /\enspace Companion to Edition 1.3}
-\fancyfoot[R]{\fontsize{8}{9}\selectfont\color{navy}\thepage\ / 2}
-\newcommand{\code}[1]{\texttt{#1}}
-\newcommand{\sect}[1]{\par\vspace{4pt}{\color{teal}\bfseries\fontsize{11}{13}\selectfont #1}\par\vspace{1pt}{\color{line}\hrule}\vspace{2pt}}
-\newcommand{\entry}[2]{\textbf{#1}\enspace #2\par}
-\newcommand{\alert}[1]{\par\noindent{\color{warn}\bfseries Watch out:} #1\par}
-\newcommand{\heading}[2]{\noindent{\color{teal}\bfseries\fontsize{9}{11}\selectfont CHEAT SHEET\enspace /\enspace #1}\par{\color{navy}\bfseries\fontsize{23}{25}\selectfont #2}\par\vspace{3pt}{\color{navy}\rule{\linewidth}{1.2pt}}\par}
-\newcommand{\band}[1]{\noindent\colorbox{pale}{\parbox{\dimexpr\linewidth-2\fboxsep}{#1}}\par}
-\tikzset{nodebox/.style={draw=line,fill=pale,rounded corners=2pt,align=center,inner sep=5pt,font=\fontsize{9}{10}\selectfont},arr/.style={-{Stealth[length=2mm]},thick,draw=teal}}
-\begin{document}\fontsize{10}{12}\selectfont\RaggedRight
-\heading{01 / LOCAL CONCURRENCY}{Perl concurrency \& locking}
-{\small Scott Muller\enspace $\cdot$\enspace \href{mailto:scott@21h.io}{scott@21h.io}\par
-Software Engineer, Matsch Systems\enspace $\cdot$\enspace Owner, 21h Systems (consulting)\par}
-\band{\textbf{Start with the invariant, not the lock.} What must remain true? Who can change it? Prefer a queue or single owner over shared mutable state; use a constraint at the protected resource when correctness matters.}
-\begin{center}
-\begin{tikzpicture}
-\node[nodebox,text width=2.05in] (a) {\textbf{One event loop}\\ I/O tasks; interleave at awaits\\\code{IO::Async}, \code{Future::Mutex}};
-\node[nodebox,text width=2.05in,right=7pt of a] (b) {\textbf{Interpreter threads}\\ Separate interpreters; explicit sharing\\\code{threads::shared}, \code{lock()}};
-\node[nodebox,text width=2.05in,right=7pt of b] (c) {\textbf{Processes / workers}\\ Separate address spaces; IPC\\\code{fork}, MCE, \code{flock}};
-\node[font=\fontsize{8}{9}\selectfont,below=3pt of b] {Choose by workload and coordination scope, not by number of workers.};
-\end{tikzpicture}
-\end{center}\vspace{-5pt}
-\noindent\begin{minipage}[t]{.485\linewidth}
-\sect{1 / Choose the execution model}
-\entry{Async / event loop}{Many network requests, timers; no blocking calls on the loop. State may change across an \code{await}.}
-\entry{Ithreads}{Existing shared-state code or fixed worker pools. Load \code{threads} before \code{threads::shared}; interpreter cloning has memory cost. Discouraged for new designs.}
-\entry{Fork / MCE}{CPU-heavy batches, isolation and bounded worker pools. Open DBI handles and sockets in the worker; do not reuse inherited connections.}
-\sect{2 / Match the primitive to the job}
-\begin{tabularx}{\linewidth}{@{}>{\bfseries\RaggedRight\arraybackslash}p{.30\linewidth} >{\RaggedRight\arraybackslash}X@{}}
-Mutex & One owner; protect a compound update.\\
-Semaphore & N permits; cap simultaneous work, not requests/sec.\\
-Condition & Wait until a predicate is true; recheck after wake.\\
-Barrier & All workers meet before the next phase.\\
-Queue & Transfer ownership; bound backlog for backpressure.\\
-RW lock & Many readers OR one writer; fairness matters.\\
-Futex / atomic & Native implementation building blocks, not Perl scalar locks.\\
-\end{tabularx}
-\sect{3 / Mutex: avoid lost updates}
-\begin{center}\begin{tikzpicture}[x=.96cm,y=.48cm,font=\scriptsize]
-\node[anchor=east] at (0,2) {A}; \node[anchor=east] at (0,1) {B};
-\draw[gray!60] (0,2)--(7.1,2);\draw[gray!60] (0,1)--(7.1,1);
-\draw[fill=pale,draw=teal] (.25,1.65) rectangle (3.2,2.35);\node at (1.72,2) {lock / update / exit};
-\draw[dashed,draw=warn] (.6,1)--(3.3,1);\node[above] at (1.8,1) {wait};
-\draw[fill=pale,draw=teal] (3.4,.65) rectangle (6.35,1.35);\node at (4.87,1) {lock / update / exit};
-\draw[arr] (0,.25)--(7.1,.25) node[right]{time};
-\end{tikzpicture}\end{center}\vspace{-4pt}
-\band{\texttt{\small use threads;\\use threads::shared;\\my \$n :shared = 0;\\\{ lock(\$n); ++\$n; \}}\\[-1pt]\textit{Excerpt: declare shared state before workers.}}
-\alert{Every participant must lock the same stable shared variable. Container locks are not recursive locks on contents. Scope exit releases \code{lock()}.}
-\end{minipage}\hfill\begin{minipage}[t]{.485\linewidth}
-\sect{4 / Core Perl quick reference}
-\entry{\code{threads::shared}}{\code{lock(\$gate)}; \code{shared\_clone} for nested data. No built-in timed \code{lock()}.}
-\entry{\code{Thread::Semaphore}}{\code{new(3)}, \code{down}, \code{up}; balance permits on error. Use \code{down\_timed} for a deadline.}
-\entry{\code{Thread::Queue}}{\code{enqueue}, \code{dequeue}, \code{end}; consumers drain then stop. Use a bounded queue when producers can outrun consumers.}
-\entry{\code{cond\_wait}}{Hold the predicate's lock, wait inside a \code{while} loop; notifier changes state under the same lock and signals/broadcasts.}
-\entry{\code{Future::Mutex}}{Serialize logical critical sections across suspension points; do not block the event loop.}
-\sect{5 / Cross-process coordination}
-\entry{\code{flock}}{Cooperating processes on one host: \code{LOCK\_EX} for writers, \code{LOCK\_SH} for readers, \code{LOCK\_NB} for nonblocking attempts. Use a dedicated stable lock file.}
-\entry{\code{IPC::Semaphore}}{System V kernel permits shared by processes; manage creation, crash recovery and removal explicitly.}
-\entry{Pipes / sockets}{Prefer sending work to one owner instead of coordinating writes to shared memory.}
-\alert{A Perl thread lock is not a process lock. After \code{fork}, inherited file descriptions can share a \code{flock}; open separately per worker.}
-\sect{6 / Design habits that prevent bugs}
-\entry{Order}{Acquire multiple locks in one global order; release on every exit path.}
-\entry{Duration}{Keep critical sections short. Avoid network I/O, sleeps and unbounded waits while holding a lock.}
-\entry{Lifecycle}{Join workers; check failures. Stop admission, drain queues and shut down cleanly.}
-\entry{Observability}{Measure wait time, hold time, timeout rate, queue depth; test forced interleavings and failures.}
-\band{\textbf{Debugging shortcuts}\par\code{perl -V:useithreads}\par\code{ps -eLf}\enspace /\enspace \code{lslocks}\par\code{strace -f -e trace=futex,flock -p PID}\par\textit{Attach tracing only with authorization; it adds overhead.}}
-\end{minipage}
-\newpage
-\heading{02 / SHARED SERVICES}{Database \& distributed locks}
-\band{\textbf{Correctness vs. efficiency.} A duplicate cache refresh wastes work; a duplicate charge corrupts state. For the latter, enforce uniqueness, an atomic conditional update, or fencing at the destination. A lease alone is not a correctness guarantee.}
-\begin{center}\begin{tikzpicture}
-\node[nodebox,text width=1.9in] (a) {\textbf{Worker A}\par lease expires; A pauses};
-\node[nodebox,text width=1.9in,right=8pt of a] (b) {\textbf{Worker B}\par acquires newer fence 42};
-\node[nodebox,text width=2.45in,right=8pt of b] (c) {\textbf{Destination}\par accepts fence 42; rejects stale 41};
-\draw[arr] (a)--(b);\draw[arr] (b)--(c);
-\end{tikzpicture}\end{center}\vspace{-5pt}
-\noindent\begin{minipage}[t]{.485\linewidth}
-\sect{7 / MySQL + DBI / DBIx::Class}
-\entry{Atomic update}{First choice for counters and guards. Check affected rows. A unique key prevents duplicate effects.}
-\band{\texttt{UPDATE account\\SET cents = cents - 100\\WHERE id = 1 AND cents >= 100;}\\\textit{Require one affected row.}}
-\entry{Pessimistic}{In a transaction, \code{SELECT ... FOR UPDATE} locks matching index records/ranges. Keep transactions short and indexed.}
-\entry{Optimistic}{Version column in \code{WHERE}; increment it on update; retry or surface a conflict when zero rows change.}
-\entry{Advisory}{\code{GET\_LOCK(name, timeout)} / \code{RELEASE\_LOCK(name)}; connection-owned, not transaction-owned. Check return values.}
-\entry{Work queue}{\code{FOR UPDATE SKIP LOCKED} for claiming independent jobs; commit claims promptly. Use visibility deadlines, attempt IDs and idempotent effects.}
-\entry{DBIx::Class}{Use \code{txn\_do} or \code{txn\_scope\_guard}; explicitly retry complete deadlocked transactions with bounded backoff.}
-\alert{InnoDB may lock ranges, not just one row. Deadlocks are normal; rollback before retry. A network failure can leave commit outcome unknown.}
-\sect{8 / Memcached: cache efficiency only}
-\entry{Claim}{\code{add(key, owner, ttl)} succeeds only when absent.}
-\entry{Release}{\code{gets} + owner check + \code{cas} short-lived tombstone, or let expire. Never unconditionally delete a successor's entry.}
-\entry{Limitations}{Eviction, expiry, restart and rehash can invalidate ownership. No durable fencing; CAS IDs are not fence tokens.}
-\sect{9 / Sessions and HTTP requests}
-\entry{Prefer atomic state}{Session load/modify/save races across requests. Store counters/cart updates separately or serialize carefully.}
-\entry{Idempotency}{Bind a key to request identity and payload; store result or pending state. A lock alone does not prevent repeat effects after a crash.}
-\end{minipage}\hfill\begin{minipage}[t]{.485\linewidth}
-\sect{10 / Redis / Valkey: owner-checked leases}
-\band{\texttt{SET key token NX PX 10000}\\Acquire with a unique random owner token and TTL (milliseconds). Check success.}
-\entry{Release / renew}{Compare the stored token and modify it atomically. Never use separate \code{GET} then \code{DEL}.}
-\entry{Native commands}{Redis 8.4+: \code{DELEX ... IFEQ}; Valkey 9.0+: \code{DELIFEQ}. Conditional \code{SET ... IFEQ ... PX} renews on Redis 8.4+ / Valkey 8.1+.}
-\entry{Perl transactions}{\code{WATCH key}, read owner, \code{MULTI}, queue update, \code{EXEC}. Retry confirmed conflicts only, using an exclusive connection.}
-\entry{Lua invoked by Perl}{Server-side atomic check/update with \code{EVALSHA} or \code{EVAL}; not a separate application language. Cluster keys must share a slot.}
-\begin{center}\begin{tikzpicture}[node distance=5pt]
-\node[nodebox,text width=1.15in] (p) {Perl worker};
-\node[nodebox,text width=1.55in,right=of p] (r) {Redis atomic check\\then update};
-\draw[arr] (p)--(r);\end{tikzpicture}\end{center}\vspace{-3pt}
-\entry{Fencing}{Assign monotonically increasing generations and reject stale generations at the protected resource. Preserve counter ordering across failures.}
-\entry{Semaphore / queue}{Atomic permit bookkeeping with expiry; prefer Streams consumer groups for distributed jobs (acknowledge only after effect; reclaim abandoned work).}
-\alert{TTL expiry does not stop a worker. An ambiguous renewal is not permission to continue. Replication and failover may lose lease state.}
-\sect{11 / Decision shortcut}
-\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}p{.39\linewidth}>{\RaggedRight\arraybackslash}X@{}}
-\textbf{Need} & \textbf{Prefer}\\\hline
-Shared durable data & DB constraint / transaction\\
-Distributed duplicate work & Redis lease + bounded retry\\
-Cache regeneration & Memcached add/CAS\\
-Cross-host correctness & Authoritative coordinator + destination fencing\\
-Durable job delivery & DB queue or durable broker; idempotency\\
-\end{tabularx}
-\band{\textbf{Before shipping:} define owner, scope, deadline, lock order, cleanup, crash recovery, stale-writer policy and invariant tests.}
-\end{minipage}
-\vfill
-{\fontsize{8}{9}\selectfont\color{navy} Read the full handbook for complete runnable programs, version notes and laboratory verification. Code on this sheet is illustrative, not standalone.\quad Scott Muller $\cdot$ \href{mailto:scott@21h.io}{scott@21h.io}.}
+\usepackage{lmodern,microtype,xcolor,tikz,hyperref}
+\usetikzlibrary{arrows.meta,calc}
+\hypersetup{hidelinks,pdftitle={Modern Perl Concurrency and Locking - Illustrated Quick Reference},pdfauthor={Scott Muller}}
+\renewcommand\familydefault{\sfdefault}
+\hyphenpenalty=10000 \exhyphenpenalty=10000
+\pagestyle{empty}
+\definecolor{ink}{HTML}{172F40}
+\definecolor{muted}{HTML}{4D626F}
+\definecolor{teal}{HTML}{176B66}
+\definecolor{active}{HTML}{E2F1EB}
+\definecolor{wait}{HTML}{F9E9DF}
+\definecolor{edge}{HTML}{A8B9C2}
+\definecolor{rust}{HTML}{9A4428}
+\definecolor{light}{HTML}{F3F6F8}
+\definecolor{blue}{HTML}{325C85}
+\definecolor{pblue}{HTML}{E5EEF6}
+\newcommand{\api}[1]{{\ttfamily #1}}
+\newcommand{\lab}[1]{{\fontsize{8.3}{9.3}\selectfont\bfseries #1}}
+\newcommand{\diagram}[1]{\begin{tikzpicture}[x=1pt,y=1pt,font=\fontsize{8.3}{9.3}\selectfont,text=ink,>=Stealth, line width=.65pt,every node/.style={anchor=center,inner sep=2pt}]
+\path[use as bounding box] (0,0) rectangle (160,44);
+#1\end{tikzpicture}}
+\tikzset{arr/.style={-{Stealth[length=4pt,width=4pt]},draw=teal,line width=.85pt},badarr/.style={-{Stealth[length=4pt,width=4pt]},draw=rust,dashed,line width=.8pt},box/.style={draw=teal,fill=active,rounded corners=2pt,minimum height=15pt,inner xsep=4pt,inner ysep=2pt,align=center},neutral/.style={box,draw=edge,fill=light},blocked/.style={box,draw=rust,fill=wait,dashed},bluebox/.style={box,draw=blue,fill=pblue},smalllabel/.style={font=\fontsize{7.7}{8.5}\selectfont,text=muted}}
+\newcommand{\Dasync}{\diagram{\foreach \x/\t in {19/A,56/B,93/A,130/C}{\node[box,minimum width=28pt] at (\x,23) {\t};}\foreach \x in {33,70,107}{\draw[arr] (\x,23)--++(8,0);}\node[smalllabel] at (80,5){one loop; tasks yield and resume};\node[smalllabel] at (80,40){execution order $\rightarrow$};}}
+\newcommand{\Dthreads}{\diagram{\foreach \y/\t in {34/T1,22/T2,10/T3}{\node[neutral,minimum height=10pt,inner sep=1pt,minimum width=24pt] (n\t) at (17,\y){\t};\draw[arr] (n\t.east)--(92,22);}\node[box,minimum width=62pt,minimum height=24pt] at (124,22){shared state};}}
+\newcommand{\Dfork}{\diagram{\node[neutral] (p) at (28,22){parent};\node[bluebox] (a) at (113,33){child A};\node[bluebox] (b) at (113,10){child B};\draw[arr] (p.east)--(a.west);\draw[arr] (p.east)--(b.west);\node[smalllabel] at (69,39){fork};}}
+\newcommand{\Dmutex}{\diagram{\node[anchor=east] at (15,31){A};\node[anchor=east] at (15,14){B};\draw[edge] (19,31)--(157,31);\draw[edge] (19,14)--(157,14);\draw[fill=active,draw=teal,rounded corners=2pt] (23,24) rectangle (82,38);\node at (52,31){holds lock};\draw[badarr] (26,14)--(84,14);\node[smalllabel,above] at (54,14){wait};\draw[fill=active,draw=teal,rounded corners=2pt] (89,7) rectangle (153,21);\node at (121,14){holds lock};}}
+\newcommand{\Dsem}{\diagram{\foreach \x/\t in {17/1,52/2,87/3}{\node[box,minimum width=28pt] at (\x,24){\t};}\node[blocked,minimum width=40pt] at (137,24){wait};\node[smalllabel] at (52,6){3 permits held};\node[smalllabel] at (137,6){4th task};}}
+\newcommand{\Dcond}{\diagram{\node[blocked] (w) at (26,24){wait};\node[box] (s) at (81,24){signal};\node[bluebox] (r) at (135,24){recheck};\draw[arr] (s.east)--(r.west);\draw[badarr] (r.south) -- (135,4)--(26,4)--(w.south);\node[smalllabel,fill=white,inner sep=1pt] at (80,4){if still false};\node[smalllabel] at (79,40){predicate + same mutex};}}
+\newcommand{\Dqueue}{\diagram{\node[neutral] (p) at (17,23){P};\foreach \x/\t in {49/1,74/2,99/3}{\node[box,minimum width=21pt] at (\x,23){\t};}\node[neutral] (c) at (142,23){C};\draw[arr] (p.east)--(37,23);\draw[arr] (111,23)--(c.west);\node[smalllabel] at (80,5){producer $\to$ jobs $\to$ consumer};}}
+\newcommand{\Dbarrier}{\diagram{\foreach \y/\t/\x in {34/A/53,22/B/76,10/C/100}{\node[anchor=east] at (13,\y){\t};\draw[arr] (18,\y)--(\x,\y);\draw[rust,dashed] (\x,\y)--(104,\y);\draw[arr] (106,\y)--(155,\y);}\draw[blue,line width=1.2pt] (105,3)--(105,41);\node[smalllabel,fill=white,inner sep=1pt] at (104,41){all arrive};}}
+\newcommand{\Drw}{\diagram{\node[box] at (25,25){R1};\node[box] at (59,25){R2};\node[font=\bfseries,text=muted] at (88,25){OR};\node[bluebox,minimum width=39pt] at (130,25){W};\node[smalllabel] at (42,6){shared};\node[smalllabel] at (130,6){exclusive};}}
+\newcommand{\Dflock}{\diagram{\node[neutral] (a) at (24,33){proc A};\node[neutral] (b) at (24,10){proc B};\node[box,minimum width=60pt,minimum height=24pt] (f) at (126,22){lock file};\draw[arr] (a.east)--(f.west|-a.center);\draw[badarr] (b.east)--(f.west|-b.center);\node[smalllabel] at (73,40){holds};\node[smalllabel] at (73,3){waits};}}
+\newcommand{\Dsysv}{\diagram{\node[neutral] (a) at (22,32){proc A};\node[neutral] (b) at (22,11){proc B};\node[bluebox,minimum width=70pt,minimum height=27pt] (k) at (123,22){kernel permits};\draw[arr] (a.east)--(k.west|-a.center);\draw[arr] (b.east)--(k.west|-b.center);\node[smalllabel] at (66,41){semop};}}
+\newcommand{\Dfutex}{\diagram{\node[box] (a) at (38,32){atomic word};\node[bluebox] (k) at (122,32){kernel wait};\draw[badarr] (a.east)--(k.west);\node[smalllabel] at (80,16){contended: sleep / wake};\node[smalllabel] at (80,4){uncontended: user space};}}
+\newcommand{\Datomic}{\diagram{\node[neutral] (a) at (25,24){row: 5};\node[box] (b) at (129,24){row: 4};\draw[arr] (a.east)--(b.west);\node[smalllabel] at (80,39){UPDATE ... WHERE n > 0};\node[smalllabel] at (80,5){one statement; check affected rows};}}
+\newcommand{\Dpess}{\diagram{\node[box] (a) at (24,31){txn A};\node[blocked] (b) at (24,10){txn B};\node[bluebox,minimum width=62pt,minimum height=25pt] (r) at (125,21){row lock};\draw[arr] (a.east)--(r.west|-a.center);\draw[badarr] (b.east)--(r.west|-b.center);\node[smalllabel] at (80,40){until commit};}}
+\newcommand{\Dopt}{\diagram{\node[neutral] (a) at (24,24){v=7};\node[box] (b) at (135,34){v=8};\node[blocked] (c) at (135,10){0 rows};\draw[arr] (a.east)--(b.west);\draw[badarr] (a.east)--(c.west);\node[smalllabel,fill=white,inner sep=1pt] at (78,41){match};\node[smalllabel,fill=white,inner sep=1pt] at (78,3){conflict};}}
+\newcommand{\Dadvisory}{\diagram{\node[neutral] (a) at (25,32){conn A};\node[neutral] (b) at (25,10){conn B};\node[box,minimum width=64pt,minimum height=25pt] (k) at (124,22){named lock};\draw[arr] (a.east)--(k.west|-a.center);\draw[badarr] (b.east)--(k.west|-b.center);}}
+\newcommand{\Dskip}{\diagram{\node[blocked,minimum width=38pt] at (23,28){job 1};\node[box,minimum width=38pt] at (80,28){job 2};\node[neutral,minimum width=38pt] at (137,28){job 3};\draw[badarr] (23,13)--(80,13);\draw[arr] (80,13)--(80,20);\node[smalllabel] at (42,3){skip held};\node[smalllabel] at (117,3){claim free};}}
+\newcommand{\Dlease}{\diagram{\node[neutral] (a) at (22,25){Perl};\node[box,minimum width=76pt] (b) at (119,25){token + TTL};\draw[arr] (a.east)--(b.west);\node[smalllabel] at (80,40){SET NX PX};\node[smalllabel] at (80,5){expiry frees key, not worker};}}
+\newcommand{\Dwatch}{\diagram{\foreach \x/\t in {23/WATCH,79/MULTI,137/EXEC}{\node[box,minimum width=40pt] at (\x,25){\t};}\draw[arr] (44,25)--(58,25);\draw[arr] (100,25)--(116,25);\node[smalllabel] at (80,40){read owner before MULTI};\node[smalllabel] at (80,5){changed key? abort + retry};}}
+\newcommand{\Dlua}{\diagram{\node[neutral] (a) at (25,24){Perl};\node[bluebox,minimum width=88pt,minimum height=27pt] (b) at (115,24){Redis: compare\\then modify};\draw[arr] (a.east)--(b.west);\node[smalllabel] at (61,42){EVAL};\node[smalllabel] at (80,4){one atomic server operation};}}
+\newcommand{\Dfence}{\diagram{\node[blocked] (a) at (26,32){41 stale};\node[box] (b) at (26,10){42 new};\node[bluebox,minimum width=63pt,minimum height=26pt] (d) at (126,22){destination};\draw[badarr] (a.east)--(d.west|-a.center);\draw[arr] (b.east)--(d.west|-b.center);\node[smalllabel] at (79,41){reject};\node[smalllabel] at (79,3){accept};}}
+\newcommand{\Ddistributed}{\diagram{\foreach \x/\t in {20/1,56/2,92/3}{\node[box,minimum width=27pt] at (\x,28){\t};}\node[blocked] at (137,28){wait};\node[smalllabel] at (80,11){atomic permit set + expiry};\node[smalllabel] at (80,1){jobs: claim $\to$ effect $\to$ ACK};}}
+\newcommand{\Dmem}{\diagram{\node[neutral] (a) at (23,24){add};\node[box] (b) at (81,24){owned};\node[blocked] (c) at (138,24){gone};\draw[arr] (a.east)--(b.west);\draw[badarr] (b.east)--(c.west);\node[smalllabel] at (80,5){expiry / eviction / restart};}}
+\newcommand{\Didem}{\diagram{\node[neutral] (a) at (22,32){req A};\node[neutral] (b) at (22,10){retry};\node[bluebox,minimum height=27pt,minimum width=76pt] (d) at (118,22){same key\\saved result};\draw[arr] (a.east)--(d.west|-a.center);\draw[arr] (b.east)--(d.west|-b.center);}}
+
+% Absolute placement: 4 columns x 3 rows, no automatic column flow.
+% Page coordinates are measured in PDF points, from the top left.
+\newcommand{\card}[7]{% x,y,index,title,diagram,description,API/pitfall
+\begin{scope}[shift={(#1,-#2)}]
+\draw[rounded corners=3pt,draw=edge,fill=white,line width=.55pt] (0,0) rectangle (178,-139);
+\fill[teal] (0,-3) rectangle (3,-23);
+\node[anchor=west,inner sep=0pt,font=\fontsize{10.4}{12}\selectfont\bfseries,text=ink] at (9,-13){#4};
+\node[anchor=east,inner sep=0pt,font=\fontsize{7.4}{8}\selectfont,text=muted] at (169,-13){#3};
+\draw[edge!70,line width=.4pt] (8,-24)--(170,-24);
+\node[anchor=north west,inner sep=0pt] at (9,-30){#5};
+\node[anchor=north west,inner sep=0pt,text width=160pt,align=left,font=\fontsize{9.2}{10.6}\selectfont,text=ink] at (9,-80){#6};
+\node[anchor=south west,inner sep=0pt,text width=160pt,align=left,font=\fontsize{8.5}{9.7}\selectfont,text=teal] at (9,-132){#7};
+\end{scope}}
+\newcommand{\pagehead}[3]{%
+\node[anchor=north west,inner sep=0pt,font=\fontsize{8.5}{10}\selectfont\bfseries,text=teal] at (28,-20){MODERN PERL CONCURRENCY AND LOCKING \quad / \quad ILLUSTRATED QUICK REFERENCE};
+\node[anchor=north east,inner sep=0pt,font=\fontsize{9}{10}\selectfont\bfseries,text=muted] at (764,-20){#1 / 2};
+\node[anchor=north west,inner sep=0pt,font=\fontsize{23}{25}\selectfont\bfseries,text=ink] at (28,-34){#2};
+\node[anchor=north west,inner sep=0pt,font=\fontsize{9}{10}\selectfont,text=muted] at (28,-65){Scott Muller \enspace $\cdot$ \enspace \href{mailto:scott@21h.io}{scott@21h.io} \enspace $\cdot$ \enspace Software Engineer, Matsch Systems \enspace $\cdot$ \enspace Owner, 21h Systems (consulting)};
+\fill[light,rounded corners=2pt] (28,-81) rectangle (764,-106);
+\node[anchor=west,text width=720pt,align=left,inner sep=0pt,font=\fontsize{9.2}{10.6}\selectfont,text=ink] at (36,-93.5){#3};}
+\newcommand{\pagefoot}[1]{\draw[edge,line width=.5pt] (28,-560)--(764,-560);\node[anchor=north west,inner sep=0pt,text width=736pt,align=left,font=\fontsize{8.6}{10}\selectfont,text=ink] at (28,-566){#1};\node[anchor=south west,inner sep=0pt,font=\fontsize{8}{9}\selectfont,text=muted] at (28,-597){\href{https://interrupt21h.github.io/Modern-Perl-Concurrency/}{Full handbook, runnable examples and references: interrupt21h.github.io/Modern-Perl-Concurrency/}};\node[anchor=south east,inner sep=0pt,font=\fontsize{8}{9}\selectfont,text=muted] at (764,-597){Edition 1.3 companion \quad / \quad Print at actual size};}
+\begin{document}
+\noindent\begin{tikzpicture}[remember picture,overlay,x=1bp,y=1bp]
+\begin{scope}[shift={(current page.north west)}]
+\pagehead{1}{Local execution \& synchronization}{\textbf{Choose scope first:} async for I/O, fork/pools for CPU isolation, shared-memory primitives only for genuinely shared state. Solid arrows = progress; dashed arrows = wait, rejection or retry.}
+\card{28}{114}{01}{Async event loop}{\Dasync}{Many I/O tasks interleave at suspension points; state can change across an await. Never block the loop.}{\api{IO::Async}, \api{Future::Mutex}}
+\card{214}{114}{02}{Interpreter threads}{\Dthreads}{Perl clones interpreters; data sharing is explicit. Use a fixed pool for existing threaded code.}{\api{threads}, \api{threads::shared}}
+\card{400}{114}{03}{Fork / worker pool}{\Dfork}{Separate address spaces. Good for CPU work and isolation. Open connections in each worker.}{\api{fork}, \api{MCE::Loop}}
+\card{586}{114}{04}{Mutex}{\Dmutex}{One owner protects a compound update. All workers must lock the same shared variable.}{\api{lock(\$gate)}; scope releases}
+\card{28}{261}{05}{Semaphore}{\Dsem}{N permits cap simultaneous work, not requests per second. Balance acquire and release.}{\api{Thread::Semaphore}: down / up}
+\card{214}{261}{06}{Condition variable}{\Dcond}{Wait with predicate lock held; wait releases and reacquires it. Signal under lock; recheck in a loop.}{\api{cond\_wait}, \api{cond\_signal}}
+\card{400}{261}{07}{Queue}{\Dqueue}{Transfer jobs to consumers instead of sharing mutable data. Bound backlog; drain on shutdown.}{\api{Thread::Queue}: enqueue / dequeue}
+\card{586}{261}{08}{Barrier}{\Dbarrier}{Workers cannot enter the next phase until all arrive. A failed worker can stall everyone.}{Shared count + condition variable}
+\card{28}{408}{09}{Reader / writer lock}{\Drw}{Many readers or one exclusive writer. Consider immutable snapshots; avoid writer starvation.}{Custom shared-state protocol}
+\card{214}{408}{10}{File lock}{\Dflock}{Cooperating processes use a stable lock file. Open it independently after fork. Check success.}{\api{flock}: LOCK\_EX, LOCK\_SH, LOCK\_NB}
+\card{400}{408}{11}{System V semaphore}{\Dsysv}{Kernel-managed permits across processes. Plan initialization, crash handling and removal.}{\api{IPC::Semaphore}; \api{semop}}
+\card{586}{408}{12}{Atomics / futex}{\Dfutex}{Native synchronization building blocks. A Perl scalar is not a C atomic; do not emulate with polling.}{Native C / XS; Linux futex}
+\pagefoot{\textbf{Before shipping:} name the invariant; use one global lock order; keep critical sections short; check worker errors; release on every path; test forced interleavings and measure wait/hold time.}
+\end{scope}\end{tikzpicture}\null\newpage
+\noindent\begin{tikzpicture}[remember picture,overlay,x=1bp,y=1bp]
+\begin{scope}[shift={(current page.north west)}]
+\pagehead{2}{Database \& distributed coordination}{\textbf{Correctness vs. efficiency:} duplicate refreshes waste work; duplicate charges corrupt state. Enforce durable invariants at the destination. A cache lease alone is not a correctness guarantee.}
+\card{28}{114}{13}{Atomic SQL update}{\Datomic}{Put the invariant in the WHERE clause; check affected rows. Use unique keys to prevent duplicate effects.}{DBI / DBIx::Class conditional update}
+\card{214}{114}{14}{Pessimistic row lock}{\Dpess}{Lock indexed records in a transaction. Range locks may occur; retry whole deadlocked transactions.}{\api{SELECT ... FOR UPDATE}}
+\card{400}{114}{15}{Optimistic versioning}{\Dopt}{Read a version, then update only if it still matches. Increment version; zero rows means conflict.}{\api{WHERE version = ?}}
+\card{586}{114}{16}{MySQL advisory lock}{\Dadvisory}{Named lock belongs to the connection, not the transaction. Check results and release explicitly.}{\api{GET\_LOCK} / \api{RELEASE\_LOCK}}
+\card{28}{261}{17}{SQL work queue}{\Dskip}{Claim free jobs without waiting for held rows. Commit claim promptly; use attempt IDs and recovery.}{\api{FOR UPDATE SKIP LOCKED}}
+\card{214}{261}{18}{Redis / Valkey lease}{\Dlease}{Use a unique owner token and TTL. Renew or release only by atomic owner check; never GET then DEL.}{\api{SET key token NX PX ttl}}
+\card{400}{261}{19}{Optimistic Redis txn}{\Dwatch}{WATCH, read owner, MULTI, queue change, EXEC. Dedicated connection; retry confirmed conflicts only.}{Perl \api{Redis} client; WATCH / EXEC}
+\card{586}{261}{20}{Redis server script}{\Dlua}{Perl invokes an atomic compare-and-change operation. Same hash slot for cluster keys.}{\api{EVALSHA} / \api{EVAL}; Lua inside Redis}
+\card{28}{408}{21}{Fencing token}{\Dfence}{Issue durable, increasing generations. The destination rejects stale writes; expiry cannot stop a worker.}{Destination-enforced generation check}
+\card{214}{408}{22}{Distributed permits / jobs}{\Ddistributed}{Atomically count permits with expiry. For Streams jobs, reclaim abandoned work and ACK after effect.}{Redis semaphore / Streams groups}
+\card{400}{408}{23}{Memcached add / CAS}{\Dmem}{Best-effort cache stampede control. Owner-check then CAS a tombstone, or let expire. Never delete a successor.}{\api{add}, \api{gets}, \api{cas}; or let expire}
+\card{586}{408}{24}{Sessions / idempotency}{\Didem}{Concurrent requests can lose session updates. Persist a request key, payload identity and outcome.}{Atomic state; unique key / saved result}
+\pagefoot{\textbf{Before shipping:} define owner, deadline, retry budget, crash recovery and stale-writer policy. A network failure can leave commit outcome unknown; do not blindly repeat side effects.}
+\end{scope}\end{tikzpicture}\null
 \end{document}
