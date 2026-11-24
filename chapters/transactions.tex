@@ -57,6 +57,13 @@ Lost commit response & Reconcile by durable operation ID; do not assume rollback
 \bottomrule
 \end{longtable}
 
+\needspace{6\baselineskip}\section{Reusable retry policy}
+Example 38 separates confirmed conflicts from unknown outcomes and checks
+a monotonic deadline and cooperative cancellation between attempts.
+Driver-specific code must classify errors before entering this helper;
+a deadlock may permit a retry, whereas an ambiguous commit requires
+reconciliation. Do not retry arbitrary exceptions or remote effects.
+
 \section{Laboratory: a reservation and its audit record}
 The example below deliberately fails between a stock decrement and an audit
 insert, verifies rollback, then verifies successful commit and duplicate
@@ -88,9 +95,3 @@ verifies that both the outer and inner writes disappear on rollback.
 Do not assume an ORM transaction-depth counter proves an engine
 transaction has started; test the exact driver and transaction pattern.}
 
-\needspace{6\baselineskip}\section{Reusable retry policy}
-Example 38 separates confirmed conflicts from unknown outcomes and checks
-a monotonic deadline and cooperative cancellation between attempts.
-Driver-specific code must classify errors before entering this helper;
-a deadlock may permit a retry, whereas an ambiguous commit requires
-reconciliation. Do not retry arbitrary exceptions or remote effects.

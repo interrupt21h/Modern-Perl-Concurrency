@@ -333,9 +333,9 @@ Choose the scope of the invariant before choosing a primitive. A mutex in one pr
 
 \tip{Keep a lock register: one table in the design notes (or one module in the code) that lists every lock, what it protects, its scope, its timeout and its acquisition order. Most deadlocks and orphaned leases come from locks nobody knew existed.}
 
-\section{Selecting a coordination mechanism}\label{sec:select}
+\needspace{26\baselineskip}\section{Selecting a coordination mechanism}\label{sec:select}
 Two questions decide the mechanism: \emph{who participates}, and \emph{what a violation costs}. A lock taken for \emph{efficiency} prevents duplicated work; an occasional violation wastes resources but corrupts nothing. A lock taken for \emph{correctness} protects an invariant; a violation corrupts state, double-charges a customer or emits a duplicate filing [43]. For correctness across hosts, prefer destination-enforced constraints (unique keys, conditional updates, version columns); use locks only to reduce conflicts.
-\begin{figure}[!htbp]\centering\begin{adjustbox}{max width=.79\linewidth}\input{figures/decide}\end{adjustbox}\caption{Selecting a coordination mechanism. Start from the resource, not from the lock.}\label{fig:decide}\end{figure}
+\begin{figure}[H]\centering\begin{adjustbox}{max width=.79\linewidth}\input{figures/decide}\end{adjustbox}\caption{Selecting a coordination mechanism. Start from the resource, not from the lock.}\label{fig:decide}\end{figure}
 \begin{longtable}{L{.20\linewidth}L{.34\linewidth}L{.38\linewidth}}
 \toprule Participants & Efficiency (duplicates tolerable) & Correctness (violation corrupts state) \\ \midrule\endhead
 Tasks in one event loop & \code{Future::Mutex}; bounded \code{fmap} & Same, plus invariant tests across \code{await} points \\
@@ -649,7 +649,7 @@ Perl's \code{alarm} does interrupt a blocking \code{flock}: with \texttt{local \
 
 \tip{Open database and Redis connections lazily in each process and check the PID before reuse, as \code{SessionLab::Redis} does. With DBI, set \code{AutoInactiveDestroy} so a child's exit cannot close the parent's connection.}
 
-\section{Preforking web servers}
+\needspace{25\baselineskip}\section{Preforking web servers}
 Starman, Gazelle, Hypnotoad and uWSGI serve requests from a pool of forked workers (Figure~\ref{fig:prefork}). Each worker is a separate process with its own interpreter, so a Perl variable, a \code{lock} or an in-memory cache in one worker is invisible to the others, and to other pods and cron jobs. Anything that must be coordinated between requests belongs in Redis, the database or, for a single host, a file lock. Chapter~\ref{ch:catalyst} applies this to Catalyst sessions.
 \begin{figure}[H]\centering
 \begin{adjustbox}{max width=.85\linewidth}\input{figures/prefork}\end{adjustbox}
