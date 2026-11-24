@@ -41,9 +41,11 @@
 \pagestyle{fancy}\fancyhf{}
 \newcommand{\currentpart}{Handbook}
 \renewcommand{\chaptermark}[1]{\markboth{#1}{}}
-\fancyhead[L]{\scriptsize\sffamily\color{muted}\currentpart}
-\fancyhead[C]{\scriptsize\sffamily\color{muted}\begin{adjustbox}{max width=.55\linewidth}\leftmark\end{adjustbox}}
-\fancyhead[R]{\small\sffamily\color{muted}\thepage}
+\fancyhead[L]{\scriptsize\sffamily\color{muted}%
+  \makebox[\headwidth][l]{%
+    \makebox[.27\headwidth][l]{\begin{adjustbox}{max width=.25\headwidth}\currentpart\end{adjustbox}}%
+    \makebox[.65\headwidth][c]{\begin{adjustbox}{max width=.62\headwidth}\leftmark\end{adjustbox}}%
+    \makebox[.08\headwidth][r]{\thepage}}}
 \fancyfoot[C]{\scriptsize\sffamily\color{muted}Modern Perl Concurrency and Locking \textperiodcentered{} Scott Muller}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\sffamily\color{muted}\thepage\quad\textperiodcentered\quad Scott Muller}\renewcommand{\headrulewidth}{0pt}}
@@ -988,6 +990,8 @@ Examples 32--39 use independently constructed synthetic data. Example 32 checks 
 \refdoc{[78] SQLite WAL and concurrency}{https://www.sqlite.org/wal.html}
 \refdoc{[79] Linux rename semantics}{https://man7.org/linux/man-pages/man2/rename.2.html}
 \refdoc{[80] Test2::V0}{https://metacpan.org/pod/Test2::V0}
+\refdoc{[81] SQLite savepoint and release semantics}{https://www.sqlite.org/lang_savepoint.html}
+\refdoc{[82] DBD::SQLite transaction semantics}{https://metacpan.org/pod/DBD::SQLite}
 
 
 \clearpage

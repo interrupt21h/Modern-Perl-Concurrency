@@ -78,6 +78,15 @@ back to it. Example 37 runs against SQLite by default, or a disposable
 MySQL DSN when configured (Appendix~\ref{app:capstone}). It tests
 partial rollback and outer rollback of a successful inner call.
 
+\warn{With DBD::SQLite, an outer DBI transaction may defer issuing its
+engine-level BEGIN until database work occurs. If SAVEPOINT is the
+first transaction-control statement seen by SQLite, releasing that
+outermost savepoint commits it [81,82]. In this laboratory the outer
+operation writes a row before invoking the nested transaction, then
+verifies that both the outer and inner writes disappear on rollback.
+Do not assume an ORM transaction-depth counter proves an engine
+transaction has started; test the exact driver and transaction pattern.}
+
 \section{Reusable retry policy}
 Example 38 separates confirmed conflicts from unknown outcomes and checks
 a monotonic deadline and cooperative cancellation between attempts.

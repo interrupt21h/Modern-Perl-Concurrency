@@ -44,12 +44,17 @@ die "savepoint invariant"
     unless $rows->count == 2 && !$rows->find(2);
 my $ok = eval {
     $schema->txn_do(sub {
+        # Materialize the outer DBI transaction with real work before
+        # the nested SAVEPOINT (SQLite may defer issuing BEGIN).
+        $rows->create({ id => 5 });
         $schema->txn_do(sub { $rows->create({ id => 4 }) });
         die "outer rollback\n";
     });
     1;
 };
 die "outer rollback invariant"
-    if $ok || $@ !~ /outer rollback/ || $rows->find(4);
+    if $ok || $@ !~ /outer rollback/;
+die "outer transaction leaked a row"
+    if $rows->find(4) || $rows->find(5) || $rows->count != 2;
 $dbh->do('DROP TABLE lab_savepoint');
 print "nested rollback and outer commit ownership verified\n";
