@@ -24,7 +24,7 @@ def command(*cmd):
     return subprocess.check_output(cmd, text=True, timeout=20).strip()
 
 def module(name):
-    return command("perl", "-M" + name, "-e", f"print ${name}::VERSION")
+    return command("perl", "-m" + name, "-e", f"print ${name}::VERSION")
 
 def tex(value):
     substitutions = {"\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$", "#": r"\#", "_": r"\_", "{": r"\{", "}": r"\}", "~": r"\textasciitilde{}", "^": r"\textasciicircum{}"}

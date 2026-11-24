@@ -327,13 +327,13 @@ Core facilities include \code{threads}, \code{threads::shared}, \code{Thread::Qu
 Prefer a pinned, tested dependency set (for example a \code{cpanfile} with \code{carton} or a vendored \code{local::lib}) to assumptions based on a module's age.
 \CodeFile{bash}{snippets/guide-01.sh}{Inspect the runtime}
 
-\section{Ownership and scope}
+\clearpage\section{Ownership and scope}
 Choose the scope of the invariant before choosing a primitive. A mutex in one process cannot prevent a separate cron job from updating a row. A database advisory lock does not serialize an uncooperative client. A queue delivers items but does not itself make external effects exactly-once. Document the resource identity, participants, lifecycle, failure behavior and acquisition order for each synchronization domain.
-\fig{scope}{Coordination scopes. Each wider scope must assume every failure mode of the narrower ones, plus its own.}
+\begin{figure}[H]\centering\begin{adjustbox}{max width=\linewidth}\input{figures/scope}\end{adjustbox}\caption{Coordination scopes. Each wider scope must assume every failure mode of the narrower ones, plus its own.}\label{fig:scope}\end{figure}
 
 \tip{Keep a lock register: one table in the design notes (or one module in the code) that lists every lock, what it protects, its scope, its timeout and its acquisition order. Most deadlocks and orphaned leases come from locks nobody knew existed.}
 
-\needspace{26\baselineskip}\section{Selecting a coordination mechanism}\label{sec:select}
+\clearpage\section{Selecting a coordination mechanism}\label{sec:select}
 Two questions decide the mechanism: \emph{who participates}, and \emph{what a violation costs}. A lock taken for \emph{efficiency} prevents duplicated work; an occasional violation wastes resources but corrupts nothing. A lock taken for \emph{correctness} protects an invariant; a violation corrupts state, double-charges a customer or emits a duplicate filing [43]. For correctness across hosts, prefer destination-enforced constraints (unique keys, conditional updates, version columns); use locks only to reduce conflicts.
 \begin{figure}[H]\centering\begin{adjustbox}{max width=.79\linewidth}\input{figures/decide}\end{adjustbox}\caption{Selecting a coordination mechanism. Start from the resource, not from the lock.}\label{fig:decide}\end{figure}
 \begin{longtable}{L{.20\linewidth}L{.34\linewidth}L{.38\linewidth}}
