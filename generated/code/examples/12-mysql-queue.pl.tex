@@ -1,0 +1,106 @@
+\PG{c+ch}{\PGZsh{}!/usr/bin/env perl}
+\PG{c+c1}{\PGZsh{} Lease\PGZhy{}based work queue: SKIP LOCKED claim, owner + attempt fencing,}
+\PG{c+c1}{\PGZsh{} heartbeat, conditional completion and an idempotent effect in one commit.}
+\PG{c+c1}{\PGZsh{} Run several copies concurrently; each exits when nothing is claimable.}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{strict}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{DBI}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{JSON::PP}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{encode\PGZus{}json decode\PGZus{}json}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Sys::Hostname}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{hostname}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Time::HiRes}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{sleep}\PG{l+s+sx}{)}\PG{p}{;}
+
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{LEASE\PGZus{}SECONDS}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{30}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{DBI}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{connect}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{DB\PGZus{}DSN}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{DB\PGZus{}USER}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{DB\PGZus{}PASS}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n}{RaiseError}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{n}{PrintError}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{n}{AutoCommit}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{    }\PG{n}{mysql\PGZus{}auto\PGZus{}reconnect}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}
+\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{do}\PG{p}{(}\PG{l+s}{\PGZsq{}SET SESSION innodb\PGZus{}lock\PGZus{}wait\PGZus{}timeout = 5\PGZsq{}}\PG{p}{)}\PG{p}{;}
+
+\PG{c+c1}{\PGZsh{} Owner identity is diagnostic; the attempt number is the fencing token.}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{owner}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{substr}\PG{p}{(}\PG{n+nb}{sprintf}\PG{p}{(}\PG{l+s}{\PGZsq{}\PGZpc{}s:\PGZpc{}d:\PGZpc{}04x\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{hostname}\PG{p}{(}\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}\PGZdl{}}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{rand}\PG{+w}{ }\PG{l+m+mh}{0xffff}\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{64}\PG{p}{)}\PG{p}{;}
+
+\PG{c+c1}{\PGZsh{} Run \PGZdl{}code in a transaction; retry deadlock and lock\PGZhy{}wait victims only.}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{with\PGZus{}txn}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{code}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{for}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{attempt}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{5}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{result}\PG{p}{;}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{begin\PGZus{}work}\PG{p}{;}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{result}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{code}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{(}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{commit}\PG{p}{;}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{n+nb}{wantarray}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{result}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{result}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{;}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{err}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{errno}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{p}{(}\PG{n+nv+vg}{\PGZdl{}@}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{err}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{rollback}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{AutoCommit}\PG{p}{\PGZcb{}}\PG{p}{;}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}rollback failed; discard connection: \PGZdl{}err\PGZdq{}}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{die}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{err}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{errno}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1213}\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{errno}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1205}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{attempt}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{l+m+mi}{5}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{sleep}\PG{p}{(}\PG{l+m+mf}{0.01}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{l+m+mi}{2}\PG{+w}{ }\PG{o}{**}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{attempt}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nb}{rand}\PG{+w}{ }\PG{l+m+mf}{0.02}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{\PGZcb{}}
+
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{claim}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{while}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{1}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{with\PGZus{}txn}\PG{p}{(}\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{row}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{selectrow\PGZus{}hashref}\PG{p}{(}\PG{l+s+sx}{q\PGZob{}}
+\PG{l+s+sx}{                SELECT id, payload, attempt, max\PGZus{}attempts FROM job}
+\PG{l+s+sx}{                WHERE state = \PGZsq{}pending\PGZsq{} AND visible\PGZus{}at \PGZlt{}= UTC\PGZus{}TIMESTAMP(6)}
+\PG{l+s+sx}{                ORDER BY visible\PGZus{}at, id LIMIT 1}
+\PG{l+s+sx}{                FOR UPDATE SKIP LOCKED}\PG{l+s+sx}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{            }\PG{k}{return}\PG{+w}{ }\PG{n+nb}{undef}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{row}\PG{p}{;}
+\PG{+w}{            }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{row}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{attempt}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{\PGZgt{}=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{row}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{max\PGZus{}attempts}\PG{p}{\PGZcb{}}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{do}\PG{p}{(}\PG{l+s+sx}{q\PGZob{}}\PG{l+s+sx}{UPDATE job SET state = \PGZsq{}dead\PGZsq{}, owner = NULL}
+\PG{l+s+sx}{                    WHERE id = ?}\PG{l+s+sx}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{row}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{id}\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{                }\PG{k}{return}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{dead}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{do}\PG{p}{(}\PG{l+s+sx}{q\PGZob{}}\PG{l+s+sx}{UPDATE job SET owner = ?, attempt = attempt + 1,}
+\PG{l+s+sx}{                visible\PGZus{}at = UTC\PGZus{}TIMESTAMP(6) + INTERVAL ? SECOND}
+\PG{l+s+sx}{                WHERE id = ?}\PG{l+s+sx}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{owner}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{LEASE\PGZus{}SECONDS}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{row}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{id}\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{            }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{row}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{attempt}\PG{p}{\PGZcb{}}\PG{o}{+}\PG{o}{+}\PG{p}{;}
+\PG{+w}{            }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{row}\PG{p}{;}
+\PG{+w}{        }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{dead}\PG{p}{\PGZcb{}}\PG{p}{;}\PG{+w}{   }\PG{c+c1}{\PGZsh{} dead\PGZhy{}lettered: look again}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{\PGZcb{}}
+
+\PG{c+c1}{\PGZsh{} Heartbeat: extend only if this worker still holds this exact attempt.}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{extend}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{do}\PG{p}{(}\PG{l+s+sx}{q\PGZob{}}\PG{l+s+sx}{UPDATE job}
+\PG{l+s+sx}{        SET visible\PGZus{}at = UTC\PGZus{}TIMESTAMP(6) + INTERVAL ? SECOND}
+\PG{l+s+sx}{        WHERE id = ? AND state = \PGZsq{}pending\PGZsq{} AND owner = ? AND attempt = ?}\PG{l+s+sx}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{LEASE\PGZus{}SECONDS}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{id}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{owner}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{attempt}\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{c+c1}{\PGZsh{} Completion and effect commit together, or not at all.}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{complete}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{result}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n}{with\PGZus{}txn}\PG{p}{(}\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{do}\PG{p}{(}\PG{l+s+sx}{q\PGZob{}}\PG{l+s+sx}{UPDATE job SET state = \PGZsq{}done\PGZsq{}, owner = NULL}
+\PG{l+s+sx}{            WHERE id = ? AND state = \PGZsq{}pending\PGZsq{} AND owner = ? AND attempt = ?}\PG{l+s+sx}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{id}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{owner}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{attempt}\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}\PG{+w}{                   }\PG{c+c1}{\PGZsh{} lease lost: no effect}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{do}\PG{p}{(}\PG{l+s}{\PGZsq{}INSERT INTO job\PGZus{}effect (job\PGZus{}id, attempt, result) VALUES (?, ?, ?)\PGZsq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{id}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{attempt}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n}{encode\PGZus{}json}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{result}\PG{p}{)}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{c+c1}{\PGZsh{} Release for retry with backoff; also conditional on the attempt.}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{fail}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{error}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{do}\PG{p}{(}\PG{l+s+sx}{q\PGZob{}}\PG{l+s+sx}{UPDATE job SET owner = NULL, last\PGZus{}error = ?,}
+\PG{l+s+sx}{        visible\PGZus{}at = UTC\PGZus{}TIMESTAMP(6) + INTERVAL ? SECOND}
+\PG{l+s+sx}{        WHERE id = ? AND state = \PGZsq{}pending\PGZsq{} AND owner = ? AND attempt = ?}\PG{l+s+sx}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{substr}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{error}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{255}\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{2}\PG{+w}{ }\PG{o}{**}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{attempt}\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{id}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{owner}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{attempt}\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{completed}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{lost}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{p}{;}
+\PG{k}{while}\PG{+w}{ }\PG{p}{(}\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{claim}\PG{p}{(}\PG{p}{)}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{result}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{decode\PGZus{}json}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{payload}\PG{p}{\PGZcb{}}\PG{p}{)}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{n}\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{        }\PG{n}{extend}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lease lost before work\PGZbs{}n\PGZdq{}}\PG{p}{;}\PG{+w}{   }\PG{c+c1}{\PGZsh{} heartbeat demo}
+\PG{+w}{        }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{n}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{p}{,}\PG{+w}{ }\PG{n}{square}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{o}{!}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{result}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{fail}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{p}{,}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{k}{next}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{n}{complete}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{result}\PG{p}{)}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{completed}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{lost}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{disconnect}\PG{p}{;}
+\PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}worker \PGZdl{}\PGZdl{} completed=\PGZdl{}completed lost=\PGZdl{}lost\PGZbs{}n\PGZdq{}}\PG{p}{;}

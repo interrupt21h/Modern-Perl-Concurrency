@@ -1,0 +1,26 @@
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{strict}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{threads}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{threads::shared}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{arrived}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{generation}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{parties}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{4}\PG{p}{;}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{barrier}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{g}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{generation}\PG{p}{;}
+\PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{arrived}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{parties}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{arrived}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{+w}{        }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{generation}\PG{p}{;}
+\PG{+w}{        }\PG{n}{cond\PGZus{}broadcast}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{k}{else}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{cond\PGZus{}wait}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{gate}\PG{p}{)}\PG{+w}{ }\PG{k}{while}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{generation}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{g}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{\PGZcb{}}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{t}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{map}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nn}{threads}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n}{barrier}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{k}{for}\PG{+w}{ }\PG{l+m+mi}{1}\PG{o}{..}\PG{l+m+mi}{20}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{p}{\PGZcb{}}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{o}{..}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{parties}\PG{p}{;}
+\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{@}\PG{n+nv}{t}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}failed\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{join}\PG{p}{;}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}wrong generation\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{generation}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{20}\PG{p}{;}
+\PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}20 phases completed\PGZbs{}n\PGZdq{}}\PG{p}{;}

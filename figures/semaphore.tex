@@ -1,0 +1,16 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[draw=teal,fill=teal!6,rounded corners=3pt,minimum width=5.0cm,minimum height=4.5cm] (pool) at (8.4,0.15) {};
+\node[font=\sffamily\small\bfseries,text=teal] at (8.4,2.0) {Thread::Semaphore->new(3)};
+\foreach \i/\y/\st/\who in {1/1.2/badbox/{permit 1: worker 1},2/0.2/badbox/{permit 2: worker 2},3/-0.8/okbox/{permit 3: worker 3}} {
+  \node[\st,minimum width=3.6cm] (p\i) at (8.4,\y) {\who};}
+\node[box,minimum width=2.9cm] (w1) at (0,1.2) {worker 1};
+\node[box,minimum width=2.9cm] (w2) at (0,0.2) {worker 2};
+\node[box,minimum width=2.9cm] (w3) at (0,-0.8) {worker 3};
+\node[box,minimum width=2.9cm,fill=white] (w4) at (0,-1.8) {worker 4};
+\draw[badarr] (w1) -- node[lbl,above]{holding since earlier down()} (p1);
+\draw[badarr] (w2) -- node[lbl,above]{holding} (p2);
+\draw[arr] (w3) -- node[lbl,above]{down() takes the last permit} (p3);
+\draw[thinarr,dashed] (w4.east) -- node[lbl,above]{down() blocks until someone calls up()} (6.2,-1.8);
+\node[lbl,text=teal] at (8.4,-1.6) {count = 0: no permits free};
+\node[okbox,text width=3.6cm] at (13.4,0.15) {at most three workers inside, whoever they are};
+\end{tikzpicture}

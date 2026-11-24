@@ -1,0 +1,133 @@
+Modern Perl Concurrency and Locking — Edition 1.2 verification record
+Created and written by Scott Muller
+Date: 2026-11-24
+Host: Linux x86_64 (Ubuntu 24.04), threaded Perl 5.38.2
+Services: MySQL 8.0.46, Redis 7.0.15, Memcached 1.6.24 (disposable, 127.0.0.1)
+Toolchain: GCC (example 21), MCE 1.889, DBIx::Class 0.082843, Catalyst 5.90131, Catalyst::Plugin::Session 0.43,
+           Session::State::Cookie 0.18, Sereal 5.004, Starman 0.4017,
+           Crypt::JWT 0.035, YAML::XS 0.89, openapi-spec-validator 0.9.0 (OpenAPI document)
+Modules: DBI 1.643, DBD::mysql 4.052, Redis 2.000, Cache::Memcached::Fast 0.28,
+         IO::Async 0.803, Future::AsyncAwait 0.66
+
+== ./run-tests.sh (full suite; repeated 3 consecutive times after the final change, all passed) ==
+01-mutex.pl                      ok   40000
+02-semaphore.pl                  ok   peak=3
+03-condition.pl                  ok   all ready
+04-queue.pl                      ok   100 jobs completed
+05-rwlock.pl                     ok   value=1000
+06-flock.pl                      ok   400
+07-sysv.pl                       ok   permits restored
+08-pipe.pl                       ok   sum=5050
+09-barrier.pl                    ok   20 phases completed
+20-scope-release.pl              ok   lock released on exception and on explicit release
+22-config-snapshot.pl            ok   500 versions published, 1021 consistent snapshots read
+23-lock-striping.pl              ok   19605 transfers, 26272 consistent audits, total=64000
+25-flock-deadline.pl             ok   timed out after 0.20s; acquired 0.70s after holder locked; shared OK
+26-lock-metrics.pl               ok   contended acquisitions: 98%
+24-try-defer.pl                  ok   try/catch/defer released the lock on return, exception and nesting
+27-mce-loop.pl                   ok   sum of squares 1..200000 = 2666686666700000 from 40 chunks across 4 workers
+21-futex-mutex.c                 ok   counter=8000000 expected=8000000 slow-path=5.17%
+19-async-await.pl                ok   40 requests, peak=5, balance=40
+10-mysql-advisory.pl             ok   advisory lock acquired, verified and released
+11-mysql-transfer.pl             ok   transfers=1 declined=0
+12-mysql-queue.pl                ok   worker 1696 completed=20 lost=0
+29-dbic-locking.pl               ok   skip locked: 20 jobs claimed by 2 workers (10 + 10), none twice
+13-redis-lease.pl                ok   4 leases, no overlap, fences 9 < 10 < 11 < 12
+16-redis-semaphore.pl            ok   10 holders, peak=3 (limit 3)
+17-redis-stream-worker.pl        ok   200 jobs, each effect applied once, consumers: c2,c3,c4
+18-fenced-write.pl               ok   fence 5 rejected after fence 6; row keeps B's write
+28-catalyst-sessions.pl          ok   Catalyst sessions: all checks passed (naive kept 3 of 8)
+30-api-tokens.pl                 ok   API tokens: all checks passed (naive refresh left 3 live tokens)
+14-memcached-lease.pl            ok   4 refreshes serialized (best effort)
+
+29 passed, 0 skipped
+
+28 passed, 0 skipped
+
+== Additional scenario tests ==
+11-mysql-transfer.pl  4 concurrent processes x 100 opposing transfers:
+                      total balance 20000 preserved; no retry budget exhausted.
+12-mysql-queue.pl     4 concurrent workers, 220 jobs: 220 done, 220 effects,
+                      all at attempt 1. Expired lease reclaimed at attempt 2;
+                      exhausted job dead-lettered; stale-owner completion
+                      matched 0 rows.
+13/16 under ACL       Passed as least-privilege user "lease-worker"; FLUSHALL
+                      and out-of-namespace keys refused with NOPERM. Commands
+                      inside scripts confirmed checked against the caller's ACL.
+17                    Crashed consumer c1 left 10 pending entries; reclaimed
+                      by c2 via XAUTOCLAIM; 200 effects, each applied once.
+18                    Fence counter deleted to simulate Redis data loss:
+                      writes rejected (fails safe), as documented.
+19 without mutex      Same program without Future::Mutex: lost 8 of 40 updates.
+15 transcript         Replayed via raw socket: HD, NS, VA, HD, EX (stale CAS), HD.
+21 futex mutex        Also built with -fsanitize=thread: no data races reported.
+                      strace of example 01: 54 futex calls for 40,000 lock().
+28 Catalyst lab        29 checks under Starman (4 workers), repeated 5+3 runs: naive session
+                      update kept 3 of 8 every run; atomic and locked 8 of 8; 6 concurrent
+                      payments -> one 201; SIGKILL after charge -> retry 409, no double charge,
+                      pending key TTL 120 s; forged Sereal object refused and logged.
+29 DBIx::Class        200 opposing transfers (txn_do + FOR UPDATE) preserved total; 80/80
+                      optimistic edits kept (~180-210 conflicts retried); 20 seeded jobs drained
+                      by 2 workers with FOR UPDATE SKIP LOCKED, none twice. txn_do retry policy
+                      and SQLMaker::MySQL lock clauses confirmed from source.
+lock() semantics      lock on element / unshared var dies; lock($ref) follows one level;
+                      locks advisory; cond_wait without lock dies (Perl 5.38).
+fork/locks            flock shared with child via OFD; fcntl lock not inherited; closing any
+                      fd to the file drops fcntl locks; alarm interrupts blocking flock (1.0 s).
+InnoDB locks          performance_schema.data_locks: range on secondary index under RR ->
+                      next-key (10,20], (20,30]; RC -> record only; equality miss -> gap;
+                      PK range executed as covering-index full scan locked all + supremum.
+NOWAIT                Confirmed ERROR 3572 on a row locked by another session.
+
+== Not exercised ==
+Redis 8.4 DELEX / SET IFEQ and Valkey 8.1 / 9.0 SET IFEQ / DELIFEQ (documented
+from primary sources; server versions unavailable). MySQL 8.4 / 9.7, Perl
+5.40+ (try/catch without experimental warnings), Redis::Fast,
+Net::Async::Redis, DBD::MariaDB, Redis Cluster, Sentinel and TLS were not
+available on the verification host. OpenAPI::Modern was not installed (the OpenAPI document was validated with
+openapi-spec-validator instead). Asymmetric JWT algorithms, JWKS rotation, DPoP
+and RFC 9421 message signatures are documented only. No throughput benchmarks
+are claimed.
+
+== examples/30-api-tokens.pl (full output) ==
+API keys
+  ok  key issued once, with a scannable prefix
+  ok  credential responses are marked no-store
+  ok  Redis stores the SHA-256, keyed by hash
+  ok  plaintext key appears nowhere in Redis
+  ok  key expires (TTL 7776000 s)
+  ok  valid key accepted, altered key refused
+  ok  per-key limit: 10 allowed, then 429
+  ok  RateLimit-Policy / RateLimit headers in draft-11 syntax ("perkey";r=0;t=60)
+Access tokens (JWT)
+  ok  bearer token accepted
+  ok  alg "none" refused
+  ok  correctly signed token without exp refused (verify_exp => 1)
+  ok  correctly signed token without typ "at+jwt" refused (RFC 9068 explicit typing)
+  ok  ... and the same claims with the right typ are accepted (control)
+Refresh-token rotation: 6 simultaneous refreshes of one token
+  ok  naive read-then-write FORKED the family: 3 live refresh tokens
+  ok  atomic rotation: all six callers succeed
+  ok  exactly one rotation; five duplicates replayed within the grace window
+  ok  all six got the same successor; one live token
+Reuse detection
+  ok  normal rotation continues the chain
+  ok  old token presented after the grace window: reuse detected
+  ok  whole family revoked: even the newest refresh token is refused
+  ok  access tokens of the revoked family stop working immediately
+Logout and revocation
+  ok  logout
+  ok  same access token refused after logout
+  ok  denylist entry lives only until the token's exp (300 s)
+  ok  refresh token of the logged-out family refused
+Signed requests
+  ok  valid signature accepted
+  ok  identical replay refused (nonce already used)
+  ok  stale timestamp refused
+  ok  forged signature refused ...
+  ok  ... without consuming the nonce of the real client
+OpenAPI document
+  ok  document declares OpenAPI 3.2.0
+  ok  every tested route is documented
+  ok  every operation states its security requirement explicitly
+API tokens: all checks passed (naive refresh left 3 live tokens)

@@ -1,0 +1,7 @@
+\PG{k}{SHOW}\PG{+w}{ }\PG{n}{ENGINE}\PG{+w}{ }\PG{n}{INNODB}\PG{+w}{ }\PG{n}{STATUS}\PG{p}{;}
+\PG{k}{SELECT}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{k}{FROM}\PG{+w}{ }\PG{n}{performance\PGZus{}schema}\PG{p}{.}\PG{n}{data\PGZus{}lock\PGZus{}waits}\PG{p}{;}
+\PG{k}{SELECT}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{k}{FROM}\PG{+w}{ }\PG{n}{performance\PGZus{}schema}\PG{p}{.}\PG{n}{data\PGZus{}locks}\PG{p}{;}
+\PG{k}{SELECT}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{k}{FROM}\PG{+w}{ }\PG{n}{performance\PGZus{}schema}\PG{p}{.}\PG{n}{metadata\PGZus{}locks}
+\PG{+w}{ }\PG{k}{WHERE}\PG{+w}{ }\PG{n}{LOCK\PGZus{}STATUS}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}PENDING\PGZsq{}}\PG{p}{;}
+\PG{k}{SELECT}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{k}{FROM}\PG{+w}{ }\PG{n}{sys}\PG{p}{.}\PG{n}{innodb\PGZus{}lock\PGZus{}waits}\PG{p}{;}
+\PG{k}{SELECT}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{k}{FROM}\PG{+w}{ }\PG{n}{performance\PGZus{}schema}\PG{p}{.}\PG{n}{processlist}\PG{p}{;}\PG{+w}{  }\PG{c+c1}{\PGZhy{}\PGZhy{} avoids the global mutex}

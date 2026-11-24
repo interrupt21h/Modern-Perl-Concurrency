@@ -1,0 +1,85 @@
+\PG{c+ch}{\PGZsh{}!/usr/bin/env perl}
+\PG{c+c1}{\PGZsh{} Best\PGZhy{}effort Memcached lease for cache\PGZhy{}refresh coalescing: add\PGZhy{}if\PGZhy{}absent,}
+\PG{c+c1}{\PGZsh{} owner\PGZhy{}checked CAS tombstone release. Distinguishes contention from backend}
+\PG{c+c1}{\PGZsh{} failure. Never use this as the sole guard for correctness\PGZhy{}critical work.}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{strict}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Cache::Memcached::Fast}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{File::Temp}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{tempfile}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{POSIX}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{\PGZus{}exit}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Time::HiRes}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{clock\PGZus{}gettime CLOCK\PGZus{}MONOTONIC sleep}\PG{l+s+sx}{)}\PG{p}{;}
+
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{SERVER}\PG{+w}{  }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{MEMCACHED\PGZus{}SERVER}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}127.0.0.1:11211\PGZsq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{KEY}\PG{+w}{     }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZsq{}lease:demo:refresh\PGZsq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{TTL}\PG{+w}{     }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{10}\PG{p}{;}\PG{+w}{            }\PG{c+c1}{\PGZsh{} seconds; Memcached expiry has 1 s granularity}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{WORKERS}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{4}\PG{p}{;}
+
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{now}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{clock\PGZus{}gettime}\PG{p}{(}\PG{n}{CLOCK\PGZus{}MONOTONIC}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{token}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n+nb}{open}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZlt{}:raw\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/dev/urandom\PGZsq{}}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}urandom: \PGZdl{}!\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{read}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bytes}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{16}\PG{p}{)}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{16}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}short random read\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nb}{unpack}\PG{+w}{ }\PG{l+s}{\PGZsq{}H*\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bytes}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{worker}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{trace\PGZus{}fh}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{m}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Cache::Memcached::Fast}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{servers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{[}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{SERVER}\PG{p}{]}\PG{p}{,}\PG{+w}{        }\PG{c+c1}{\PGZsh{} one fixed server: no rehashing}
+\PG{+w}{        }\PG{n}{connect\PGZus{}timeout}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{n}{io\PGZus{}timeout}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{n}{max\PGZus{}failures}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}
+\PG{+w}{    }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{owner}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{token}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{valid\PGZus{}until}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{errors}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stop}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mi}{10}\PG{p}{;}
+\PG{+w}{    }\PG{k}{while}\PG{+w}{ }\PG{p}{(}\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stop}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{start}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{added}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{m}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{add}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{KEY}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{owner}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{TTL}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{added}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{c+c1}{\PGZsh{} 1 s expiry granularity plus skew: keep a generous margin.}
+\PG{+w}{            }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{valid\PGZus{}until}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{start}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{TTL}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{;}
+\PG{+w}{            }\PG{k}{last}\PG{p}{;}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{errors}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nb}{defined}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{added}\PG{p}{;}\PG{+w}{     }\PG{c+c1}{\PGZsh{} undef = backend error}
+\PG{+w}{        }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}memcached unavailable\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{errors}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZgt{}=}\PG{+w}{ }\PG{l+m+mi}{5}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{sleep}\PG{p}{(}\PG{l+m+mf}{0.025}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nb}{rand}\PG{+w}{ }\PG{l+m+mf}{0.075}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lease unavailable\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nb}{defined}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{valid\PGZus{}until}\PG{p}{;}
+
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{entered}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lease budget exhausted\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZgt{}=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{valid\PGZus{}until}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{sleep}\PG{p}{(}\PG{l+m+mf}{0.1}\PG{p}{)}\PG{p}{;}\PG{+w}{                          }\PG{c+c1}{\PGZsh{} bounded cache refresh}
+\PG{+w}{        }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{err}\PG{+w}{  }\PG{o}{=}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{left}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{syswrite}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{trace\PGZus{}fh}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{sprintf}\PG{p}{(}\PG{l+s}{\PGZdq{}\PGZpc{}.6f \PGZpc{}.6f\PGZbs{}n\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{entered}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{left}\PG{p}{)}\PG{p}{;}
+
+\PG{+w}{    }\PG{c+c1}{\PGZsh{} Classic protocol has no conditional delete: CAS\PGZhy{}replace our own entry}
+\PG{+w}{    }\PG{c+c1}{\PGZsh{} with a short tombstone. A changed CAS means someone else owns it now.}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{entry}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{m}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{gets}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{KEY}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{entry}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{entry}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{[}\PG{l+m+mi}{1}\PG{p}{]}\PG{+w}{ }\PG{o+ow}{eq}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{owner}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{m}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{cas}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{KEY}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{entry}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}released\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}
+\PG{+w}{            }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{warn}\PG{+w}{ }\PG{l+s}{\PGZdq{}conditional release failed\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{err}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{trace\PGZus{}fh}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{trace}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{tempfile}\PG{p}{(}\PG{n}{UNLINK}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{pids}\PG{p}{;}
+\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{WORKERS}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n+nb}{defined}\PG{p}{(}\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{fork}\PG{p}{(}\PG{p}{)}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}fork: \PGZdl{}!\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{o}{!}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{worker}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{trace\PGZus{}fh}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{warn}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{;}
+\PG{+w}{        }\PG{n}{\PGZus{}exit}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{n+nb}{push}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{pids}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{@}\PG{n+nv}{pids}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{waitpid}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}worker failed\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}?}\PG{+w}{ }\PG{p}{\PGZcb{}}
+
+\PG{n+nb}{open}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{in}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZlt{}\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{trace}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}trace: \PGZdl{}!\PGZdq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{spans}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{sort}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{a}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{l+s+sr}{\PGZlt{}=\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{b}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n+nb}{map}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{p}{[}\PG{n+nb}{split}\PG{p}{]}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{\PGZlt{}\PGZdl{}in\PGZgt{}}\PG{p}{;}
+\PG{k}{for}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{i}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{n+nv}{\PGZdl{}\PGZsh{}}\PG{n+nv}{spans}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}overlapping leases\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{spans}\PG{p}{[}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{i}\PG{p}{]}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{spans}\PG{p}{[}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{i}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{]}\PG{p}{[}\PG{l+m+mi}{1}\PG{p}{]}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+\PG{n+nb}{printf}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZpc{}d refreshes serialized (best effort)\PGZbs{}n\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{scalar}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{spans}\PG{p}{;}

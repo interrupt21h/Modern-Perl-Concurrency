@@ -1,0 +1,14 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\foreach \y/\t in {2.0/{Writer A},0.6/{Writer B}} {\node[anchor=east,font=\sffamily\small] at (1.6,\y) {\t}; \draw[lane] (1.7,\y) -- (17.8,\y);}
+\node[box,fill=white] at (2.9,2.0) {read v = 7};
+\node[box,fill=white] at (4.3,0.6) {read v = 7};
+\draw[waitspan] (4.0,2.0) -- (6.4,2.0); \node[lbl,above] at (5.2,2.15) {thinks, no lock held};
+\draw[waitspan] (5.4,0.6) -- (10.4,0.6); \node[lbl,above] at (7.9,0.75) {thinks, no lock held};
+\node[okbox,font=\sffamily\footnotesize] (ua) at (8.5,2.0) {UPDATE ... WHERE v = 7};
+\node[lbl,text=teal,anchor=west,fill=white,inner sep=1pt] at (10.9,2.0) {1 row: saved as v = 8};
+\node[badbox,font=\sffamily\footnotesize] (ub) at (12.2,0.6) {UPDATE ... WHERE v = 7};
+\node[lbl,text=rust,anchor=north] at (12.2,0.2) {0 rows: someone else won};
+\node[box,fill=white,font=\sffamily\footnotesize] (re) at (16.4,0.6) {re-read v = 8, retry};
+\draw[thinarr] (ub) -- (re);
+\node[lbl,anchor=north] at (8.6,-0.55) {no row stays locked while a user thinks; a conflict costs one re-read and retry};
+\end{tikzpicture}

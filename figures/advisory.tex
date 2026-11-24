@@ -1,0 +1,13 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[box,minimum width=3.0cm] (s1) at (0,0.8) {session 41\\\footnotesize pinned connection};
+\node[box,minimum width=3.0cm] (s2) at (0,-0.8) {session 57};
+\node[okbox,minimum width=4.6cm,minimum height=2.5cm] (srv) at (7.4,0) {};
+\node[font=\sffamily\small\bfseries,text=teal] at (7.4,0.85) {MySQL server};
+\node[box,fill=white,font=\sffamily\footnotesize] at (7.4,0.1) {'app:billing:42'};
+\node[lbl] at (7.4,-0.6) {owner: session 41};
+\draw[arr] (s1.east) -- node[lbl,above]{GET\_LOCK(name, 5)} node[lbl,below,text=teal]{returns 1} (srv.west |- s1.east);
+\draw[thinarr,dashed] (s2.east) -- node[lbl,above]{GET\_LOCK(name, 5)} node[lbl,below,text=rust]{returns 0 after 5 s} (srv.west |- s2.east);
+\node[box,text width=4.4cm] (n1) at (13.6,0.8) {survives COMMIT and ROLLBACK; held until RELEASE\_LOCK};
+\node[badbox,text width=4.4cm] (n2) at (13.6,-0.9) {disconnect or reconnect: lock silently gone while code may still run};
+\draw[thinarr] (srv.east |- n1) -- (n1.west); \draw[badarr] (srv.east |- n2) -- (n2.west);
+\end{tikzpicture}

@@ -1,0 +1,22 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[font=\sffamily\small\bfseries,text=navy,anchor=west] at (-1.6,1.15) {Issue (once, inside an authenticated session)};
+\node[box,text width=2.5cm] (g) at (0,0) {CSPRNG\\\scriptsize 32 random bytes};
+\node[okbox,text width=3.0cm] (k) at (4.1,0) {slk\_9f3c\dots e1\\\scriptsize shown to the user once};
+\node[box,text width=2.1cm] (h) at (8.0,0) {SHA-256};
+\node[box,text width=4.0cm,fill=white] (r) at (12.3,0) {\texttt{HSET apikey:}\textit{hash}\\\scriptsize user, created; EXPIRE 90 days};
+\draw[arr] (g) -- (k); \draw[arr] (k) -- (h); \draw[arr] (h) -- (r);
+\node[lbl,below=1mm of k] {prefix makes leaked keys\\findable by secret scanners};
+\node[lbl,below=1mm of r] {Redis never sees the key itself};
+%
+\node[font=\sffamily\small\bfseries,text=navy,anchor=west] at (-1.6,-1.95) {Every request};
+\node[box,text width=2.5cm] (x) at (0,-3.1) {X-API-Key\\\scriptsize header};
+\node[box,text width=2.1cm] (h2) at (4.1,-3.1) {SHA-256};
+\node[box,text width=3.0cm,fill=white] (q) at (8.0,-3.1) {\texttt{HGET apikey:}\textit{hash}\\\texttt{user}};
+\node[decision] (d) at (12.3,-3.1) {found?};
+\node[okbox] (ok) at (15.4,-3.1) {principal};
+\node[badbox] (no) at (12.3,-4.8) {401};
+\draw[arr] (x) -- (h2); \draw[arr] (h2) -- (q); \draw[arr] (q) -- (d);
+\draw[arr] (d) -- node[lbl,above]{yes} (ok);
+\draw[badarr] (d) -- node[lbl,right]{no} (no);
+\node[lbl,anchor=west,text width=8.6cm,align=left] at (-1.6,-4.8) {256 random bits need no salt and no slow hash: a single SHA-256 is\\one cheap lookup per request, and a stolen dump reveals only hashes.};
+\end{tikzpicture}

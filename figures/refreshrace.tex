@@ -1,0 +1,21 @@
+\begin{tikzpicture}[x=1cm,y=1cm,req/.style={box,fill=white,font=\sffamily\scriptsize,text width=2.25cm,inner xsep=3pt}]
+\node[font=\sffamily\small\bfseries,text=rust,anchor=west] at (-1.35,0.9) {Naive: read, decide, write as separate commands};
+\foreach \i/\y in {1/0,2/-0.85,3/-1.7} {
+  \node[req] (t\i) at (0,\y) {tab \i\ sends T0};
+  \node[box,fill=white,font=\sffamily\scriptsize,text width=2.4cm] (r\i) at (3.6,\y) {HGET: T0 active};
+  \node[badbox,font=\sffamily\scriptsize,text width=2.6cm] (m\i) at (7.2,\y) {mint random T1-\i};
+  \draw[thinarr] (t\i) -- (r\i); \draw[thinarr] (r\i) -- (m\i);}
+\node[badbox,text width=3.6cm,font=\sffamily\scriptsize] (bad) at (11.6,-0.85) {three live refresh tokens:\\the family has forked; one\\stolen copy is now invisible};
+\draw[badarr] (m2) -- (bad);
+\node[lbl,text=rust] at (3.6,-2.35) {all three reads happen before any write};
+%
+\node[font=\sffamily\small\bfseries,text=teal,anchor=west] at (-1.35,-3.0) {Atomic: one Lua script per refresh, successor = HMAC(key, T0)};
+\foreach \i/\y/\o in {1/-4.3/{rotated: T0 used, T1 active},2/-5.15/{replay (in grace): T1 again},3/-6.0/{replay (in grace): T1 again}} {
+  \node[req] (a\i) at (0,\y) {tab \i\ sends T0};
+  \node[okbox,font=\sffamily\scriptsize,text width=5.7cm] (o\i) at (5.4,\y) {\o};
+  \draw[thinarr] (a\i) -- (o\i);}
+\draw[span] (2.3,-3.75) -- (8.5,-3.75);
+\node[lbl,anchor=south] at (5.4,-3.7) {Redis runs the three scripts one after another};
+\node[okbox,text width=3.6cm,font=\sffamily\scriptsize] (good) at (11.6,-5.15) {one live token; every tab\\holds the same T1 and\\carries on normally};
+\draw[arr] (o2) -- (good);
+\end{tikzpicture}

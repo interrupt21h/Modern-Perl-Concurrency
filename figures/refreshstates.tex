@@ -1,0 +1,14 @@
+\begin{tikzpicture}[node distance=36mm]
+\node[state,fill=teal!10,minimum size=16mm] (a) {active};
+\node[state,right=of a,minimum size=16mm] (u) {used\\\scriptsize successor\\[-2pt]\scriptsize recorded};
+\node[state,right=of u,draw=rust,fill=rust!8,minimum size=16mm] (r) {family\\revoked};
+\node[state,fill=white,below=21mm of u,minimum size=16mm] (n) {successor\\active};
+\node[state,fill=white,draw=muted,text=muted,below=21mm of a,minimum size=16mm] (e) {expired};
+\draw[arr] (a) -- node[lbl,above]{presented once:\\rotate atomically} (u);
+\draw[arr] (u) -- node[lbl,right,pos=0.45]{successor issued;\\it starts its own cycle} (n);
+\draw[thinarr,loop above,looseness=5] (u) to node[lbl,above]{presented again within grace window:\\replay the same successor} (u);
+\draw[badarr] (u) -- node[lbl,above]{presented after\\grace window:\\reuse detected} (r);
+\draw[badarr] (n.east) -| node[lbl,right,pos=0.75]{logout, password change,\\admin revocation:\\DEL rtfam:\{fam\}} (r.south);
+\draw[thinarr,dashed] (a) -- node[lbl,left]{unused for\\its whole TTL} (e);
+\node[lbl,text width=13cm] at ($(n.south)+(0,-1.1)$) {Every token in a family shares the hash tag \{fam\}, so the rotation script can touch the old token, the new token and the family record in one Redis Cluster slot. Deleting rtfam:\{fam\} invalidates every refresh token and every access token that carries the family ID.};
+\end{tikzpicture}

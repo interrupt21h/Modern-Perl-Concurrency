@@ -1,0 +1,6 @@
+cpanm\PG{+w}{ }Redis\PG{+w}{ }Cache::Memcached::Fast\PG{+w}{ }Future::AsyncAwait\PG{+w}{ }IO::Async
+\PG{c+c1}{\PGZsh{} On an isolated development host, as an unprivileged user:}
+redis\PGZhy{}server\PG{+w}{ }\PGZhy{}\PGZhy{}bind\PG{+w}{ }\PG{l+m}{127}.0.0.1\PG{+w}{ }\PGZhy{}\PGZhy{}port\PG{+w}{ }\PG{l+m}{6379}\PG{+w}{ }\PGZhy{}\PGZhy{}save\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}\PGZsq{}}\PG{+w}{ }\PGZhy{}\PGZhy{}appendonly\PG{+w}{ }no\PG{+w}{ }\PG{p}{\PGZam{}}
+memcached\PG{+w}{ }\PGZhy{}l\PG{+w}{ }\PG{l+m}{127}.0.0.1\PG{+w}{ }\PGZhy{}p\PG{+w}{ }\PG{l+m}{11211}\PG{+w}{ }\PGZhy{}U\PG{+w}{ }\PG{l+m}{0}\PG{+w}{ }\PG{p}{\PGZam{}}
+\PG{n+nb}{export}\PG{+w}{ }\PG{n+nv}{REDIS\PGZus{}SERVER}\PG{o}{=}\PG{l+m}{127}.0.0.1:6379\PG{+w}{ }\PG{n+nv}{MEMCACHED\PGZus{}SERVER}\PG{o}{=}\PG{l+m}{127}.0.0.1:11211
+./run\PGZhy{}tests.sh

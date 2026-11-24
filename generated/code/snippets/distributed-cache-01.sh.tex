@@ -1,0 +1,9 @@
+\PG{n+nv}{TOKEN}\PG{o}{=}\PG{k}{\PGZdl{}(}openssl\PG{+w}{ }rand\PG{+w}{ }\PGZhy{}hex\PG{+w}{ }\PG{l+m}{16}\PG{k}{)}\PG{+w}{                          }\PG{c+c1}{\PGZsh{} unique per acquisition}
+redis\PGZhy{}cli\PG{+w}{ }SET\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}lease:\PGZob{}report\PGZcb{}\PGZsq{}}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}}\PG{n+nv}{\PGZdl{}TOKEN}\PG{l+s+s2}{\PGZdq{}}\PG{+w}{ }NX\PG{+w}{ }PX\PG{+w}{ }\PG{l+m}{10000}\PG{+w}{      }\PG{c+c1}{\PGZsh{} acquire}
+redis\PGZhy{}cli\PG{+w}{ }EVAL\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}if redis.call(\PGZsq{}GET\PGZsq{},KEYS[1]) == ARGV[1] then \PGZbs{}}
+\PG{l+s+s2}{  return redis.call(\PGZsq{}DEL\PGZsq{},KEYS[1]) else return 0 end\PGZdq{}}\PG{+w}{ }\PG{l+s+se}{\PGZbs{}}
+\PG{+w}{  }\PG{l+m}{1}\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}lease:\PGZob{}report\PGZcb{}\PGZsq{}}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}}\PG{n+nv}{\PGZdl{}TOKEN}\PG{l+s+s2}{\PGZdq{}}\PG{+w}{                            }\PG{c+c1}{\PGZsh{} release, any version}
+redis\PGZhy{}cli\PG{+w}{ }DELEX\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}lease:\PGZob{}report\PGZcb{}\PGZsq{}}\PG{+w}{ }IFEQ\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}}\PG{n+nv}{\PGZdl{}TOKEN}\PG{l+s+s2}{\PGZdq{}}\PG{+w}{           }\PG{c+c1}{\PGZsh{} release, Redis 8.4+}
+redis\PGZhy{}cli\PG{+w}{ }DELIFEQ\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}lease:\PGZob{}report\PGZcb{}\PGZsq{}}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}}\PG{n+nv}{\PGZdl{}TOKEN}\PG{l+s+s2}{\PGZdq{}}\PG{+w}{              }\PG{c+c1}{\PGZsh{} release, Valkey 9.0+}
+redis\PGZhy{}cli\PG{+w}{ }SET\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}lease:\PGZob{}report\PGZcb{}\PGZsq{}}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}}\PG{n+nv}{\PGZdl{}TOKEN}\PG{l+s+s2}{\PGZdq{}}\PG{+w}{ }IFEQ\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}}\PG{n+nv}{\PGZdl{}TOKEN}\PG{l+s+s2}{\PGZdq{}}\PG{+w}{ }PX\PG{+w}{ }\PG{l+m}{10000}
+\PG{+w}{                                       }\PG{c+c1}{\PGZsh{} renew, Redis 8.4+ / Valkey 8.1+}

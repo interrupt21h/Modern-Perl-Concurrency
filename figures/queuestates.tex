@@ -1,0 +1,11 @@
+\begin{tikzpicture}[node distance=30mm]
+\node[state,fill=white,minimum size=17mm] (p) {pending\\\scriptsize visible\_at\\[-2pt]\scriptsize $\le$ now};
+\node[state,right=of p,minimum size=17mm] (l) {leased\\\scriptsize owner, attempt};
+\node[state,right=of l,fill=teal!10] (d) {done};
+\node[state,below=14mm of p,fill=rust!8] (x) {dead};
+\draw[arr] (p) to[bend left=20] node[lbl,above]{claim: SKIP LOCKED,\\attempt + 1, lease set} (l);
+\draw[badarr] (l) to[bend left=20] node[lbl,below]{lease expired, or fail()\\with backoff} (p);
+\draw[arr] (l) -- node[lbl,above]{complete: owner\\and attempt match} (d);
+\draw[badarr] (p) -- node[lbl,right]{attempt $\ge$ max} (x);
+\draw[thinarr,loop above,looseness=5] (l) to node[lbl,above]{heartbeat extends lease} (l);
+\end{tikzpicture}

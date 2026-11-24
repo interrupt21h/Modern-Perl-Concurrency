@@ -1,0 +1,12 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\foreach \x/\n in {0/Client A,4/Primary,8/Replica,12/Client B} {
+  \node[box,minimum width=2.4cm] at (\x,0) {\n}; \draw[lane] (\x,-0.4) -- (\x,-5.7);}
+\draw[arr] (0,-1.0) -- node[lbl,above]{SET lease A NX PX} (4,-1.0);
+\draw[arr] (4,-1.5) -- node[lbl,above]{OK: A holds the lock} (0,-1.5);
+\node[badbox] at (4,-2.15) {crashes before replicating};
+\draw[badarr,dashed] (4,-2.8) -- node[lbl,below,text=rust]{replication never sent} (8,-2.8);
+\node[okbox] at (8,-3.65) {promoted to primary\\\footnotesize (no lease key)};
+\draw[arr] (12,-4.75) -- node[lbl,above]{SET lease B NX PX} (8,-4.75);
+\draw[arr] (8,-5.3) -- node[lbl,above]{OK: B holds the lock} (12,-5.3);
+\node[badbox,text width=13cm] at (6,-6.25) {A and B both believe they hold the lease. WAIT / WAITAOF narrow this window; only destination-enforced fencing closes it.};
+\end{tikzpicture}

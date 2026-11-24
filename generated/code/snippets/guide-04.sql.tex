@@ -1,0 +1,4 @@
+\PG{k}{START}\PG{+w}{ }\PG{k}{TRANSACTION}\PG{p}{;}
+\PG{k}{SELECT}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{k}{FROM}\PG{+w}{ }\PG{n}{account}\PG{+w}{ }\PG{k}{WHERE}\PG{+w}{ }\PG{n}{id}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{k}{FOR}\PG{+w}{ }\PG{k}{UPDATE}\PG{p}{;}
+\PG{k}{UPDATE}\PG{+w}{ }\PG{n}{account}\PG{+w}{ }\PG{k}{SET}\PG{+w}{ }\PG{n}{cents}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{cents}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mi}{100}\PG{+w}{ }\PG{k}{WHERE}\PG{+w}{ }\PG{n}{id}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{k}{COMMIT}\PG{p}{;}

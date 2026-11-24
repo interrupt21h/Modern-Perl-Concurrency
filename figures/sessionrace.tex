@@ -1,0 +1,11 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\foreach \x/\n in {0/{Request A (worker 1)},5/Redis,10/{Request B (worker 3)}} {
+  \node[box,minimum width=3.4cm] at (\x,0) {\n}; \draw[lane] (\x,-0.4) -- (\x,-5.0);}
+\draw[arr] (0,-0.9) -- node[lbl,above]{GET session: cart = \{\}} (5,-0.9);
+\draw[arr] (10,-1.5) -- node[lbl,above]{GET session: cart = \{\}} (5,-1.5);
+\node[box,fill=white] at (0,-2.2) {cart.apple = 1};
+\node[box,fill=white] at (10,-2.2) {cart.pear = 1};
+\draw[arr] (0,-3.0) -- node[lbl,above]{SET session \{apple: 1\}} (5,-3.0);
+\draw[badarr] (10,-3.7) -- node[lbl,above,text=rust]{SET session \{pear: 1\}} (5,-3.7);
+\node[badbox,text width=11cm] at (5,-4.55) {Last writer wins: A's apple is gone. No error, no log line.};
+\end{tikzpicture}

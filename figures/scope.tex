@@ -1,0 +1,17 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\def\step{1.02}\def\top{5.45}
+\foreach \i/\shade in {0/14,1/0,2/14,3/0,4/14} {
+  \fill[paper!\shade!white] (0.3*\i,0.12*\i) rectangle (14.6-0.3*\i,\top-\step*\i);
+  \draw[navy!70,rounded corners=2pt] (0.3*\i,0.12*\i) rectangle (14.6-0.3*\i,\top-\step*\i);
+}
+\foreach \i/\who/\how in {
+  0/{Hosts without a shared database}/{Redis or Valkey lease for efficiency; consensus store plus fencing for correctness},
+  1/{Hosts sharing a MySQL database}/{InnoDB transactions and constraints, SKIP LOCKED queues, GET\_LOCK},
+  2/{Processes on one host}/{flock, System V semaphores, pipes, a single writer process},
+  3/{Threads in one interpreter process}/{lock(), cond\_wait, Thread::Queue, Thread::Semaphore},
+  4/{Tasks in one event loop}/{Future::Mutex, bounded fmap\_void, single-owner state}} {
+  \node[anchor=west,font=\sffamily\small\bfseries,text=navy] at (0.3*\i+0.2,\top-\step*\i-0.3) {\who};
+  \node[anchor=west,font=\sffamily\footnotesize,text=muted] at (0.3*\i+0.2,\top-\step*\i-0.68) {\how};
+}
+\draw[arr] (14.95,1.0) -- node[lbl,right,text width=1.7cm,align=left]{wider\\scope:\\more\\failure\\modes and\\latency} (14.95,5.2);
+\end{tikzpicture}

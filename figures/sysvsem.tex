@@ -1,0 +1,11 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[okbox,minimum width=4.6cm,minimum height=2.1cm] (k) at (6,0) {};
+\node[font=\sffamily\small\bfseries,text=teal] at (6,0.6) {kernel semaphore set};
+\node[lbl] at (6,0.0) {value = 2 (permits)};
+\node[lbl] at (6,-0.5) {survives the creating process};
+\foreach \i/\y in {1/1.2,2/0,3/-1.2} {\node[box,minimum width=3.0cm] (c\i) at (0,\y) {child \i\\\footnotesize op(0, -1, SEM\_UNDO)};
+  \draw[arr] (c\i.east) -- (k.west |- c\i.east);}
+\node[box,text width=3.9cm] (undo) at (11.6,0.8) {SEM\_UNDO: the kernel returns a crashed child's permit};
+\node[badbox,text width=3.9cm] (orph) at (11.6,-0.9) {not undone: a half-written file; a set nobody removes (ipcs -s)};
+\draw[thinarr] (k.east) -- (undo.west); \draw[badarr] (k.east) -- (orph.west);
+\end{tikzpicture}

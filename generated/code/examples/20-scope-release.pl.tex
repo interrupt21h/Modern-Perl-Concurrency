@@ -1,0 +1,51 @@
+\PG{c+ch}{\PGZsh{}!/usr/bin/env perl}
+\PG{c+c1}{\PGZsh{} Release on every exit path: a scope guard owns the lock handle, so an}
+\PG{c+c1}{\PGZsh{} exception inside the critical section still releases the flock.}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{strict}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Fcntl}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{:DEFAULT :flock}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{File::Temp}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{tempdir}\PG{l+s+sx}{)}\PG{p}{;}
+
+\PG{k}{package}\PG{+w}{ }\PG{n+nn}{LockGuard}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Fcntl}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{:DEFAULT :flock}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{acquire}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{class}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{sysopen}\PG{p}{(}\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n}{O\PGZus{}CREAT}\PG{+w}{ }\PG{o}{|}\PG{+w}{ }\PG{n}{O\PGZus{}RDWR}\PG{p}{,}\PG{+w}{ }\PG{l+m+mo}{0600}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}open: \PGZdl{}!\PGZdq{}}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{flock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n}{LOCK\PGZus{}EX}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}flock: \PGZdl{}!\PGZdq{}}\PG{p}{;}
+\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{n+nb}{bless}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{fh}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n}{pid}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}\PGZdl{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{class}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{release}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{self}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{delete}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{self}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{fh}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{k}{return}\PG{p}{;}\PG{+w}{   }\PG{c+c1}{\PGZsh{} idempotent}
+\PG{+w}{        }\PG{n+nb}{close}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{warn}\PG{+w}{ }\PG{l+s}{\PGZdq{}close: \PGZdl{}!\PGZdq{}}\PG{p}{;}\PG{+w}{          }\PG{c+c1}{\PGZsh{} closing drops the flock}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{c+c1}{\PGZsh{} Only the creating process releases: a forked child inherits the open}
+\PG{+w}{    }\PG{c+c1}{\PGZsh{} file description, and its exit must not drop the parent\PGZsq{}s lock.}
+\PG{+w}{    }\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{DESTROY}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{self}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{self}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{release}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{self}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{pid}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}\PGZdl{}}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{p}{\PGZcb{}}
+
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{tempdir}\PG{p}{(}\PG{n}{CLEANUP}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{l+s}{\PGZsq{}/demo.lock\PGZsq{}}\PG{p}{;}
+
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{locked\PGZus{}ok\PGZus{}without\PGZus{}waiting}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n+nb}{sysopen}\PG{p}{(}\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{probe}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n}{O\PGZus{}CREAT}\PG{+w}{ }\PG{o}{|}\PG{+w}{ }\PG{n}{O\PGZus{}RDWR}\PG{p}{,}\PG{+w}{ }\PG{l+m+mo}{0600}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}open: \PGZdl{}!\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{got}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{flock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{probe}\PG{p}{,}\PG{+w}{ }\PG{n}{LOCK\PGZus{}EX}\PG{+w}{ }\PG{o}{|}\PG{+w}{ }\PG{n}{LOCK\PGZus{}NB}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{close}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{probe}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{got}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{c+c1}{\PGZsh{} 1. Exception inside the critical section.}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{guard}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{LockGuard}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{acquire}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}simulated failure\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}expected the failure to propagate\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{+w}{ }\PG{o+ow}{ne}\PG{+w}{ }\PG{l+s}{\PGZdq{}simulated failure\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lock leaked after exception\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n}{locked\PGZus{}ok\PGZus{}without\PGZus{}waiting}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+
+\PG{c+c1}{\PGZsh{} 2. While held, an independent open file description must be refused.}
+\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{guard}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{LockGuard}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{acquire}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}exclusion failed\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n}{locked\PGZus{}ok\PGZus{}without\PGZus{}waiting}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{guard}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{release}\PG{p}{;}\PG{+w}{                              }\PG{c+c1}{\PGZsh{} explicit early release}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}explicit release failed\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n}{locked\PGZus{}ok\PGZus{}without\PGZus{}waiting}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+\PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}lock released on exception and on explicit release\PGZbs{}n\PGZdq{}}\PG{p}{;}

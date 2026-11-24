@@ -1,0 +1,10 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\draw[thick,navy,-{Latex}] (0,0) -- (14.6,0) node[right,lbl]{time};
+\draw[navy,fill=paper] (0.3,0) rectangle (7.3,2.9); \node[lbl,anchor=north west] at (0.35,2.85) {window 1: 60 s, key ratelimit:login:bob};
+\draw[navy,fill=white] (7.3,0) rectangle (14.3,2.9); \node[lbl,anchor=north west] at (7.35,2.85) {window 2: counter expired, starts again at 1};
+\foreach \i/\x in {1/1.0,2/1.9,3/2.8,4/3.7,5/4.6} {\fill[teal] (\x,0) rectangle ++(0.5,0.3*\i); \node[lbl,above] at (\x+0.25,0.3*\i) {\i};}
+\foreach \i/\x in {6/5.5,7/6.4} {\fill[rust] (\x,0) rectangle ++(0.5,0.3*\i); \node[lbl,above,text=rust] at (\x+0.25,0.3*\i) {\i};}
+\draw[dashed,rust] (0.3,1.65) -- (7.3,1.65); \node[lbl,text=rust,anchor=south west] at (0.4,1.7) {limit 5: attempts 6 and 7 get 429};
+\fill[teal] (8.0,0) rectangle ++(0.5,0.3); \node[lbl,above] at (8.25,0.3) {1};
+\node[lbl,anchor=north,text width=13cm] at (7.3,-0.25) {INCR and the first PEXPIRE run in one script: a crash can never leave a counter without its expiry (a permanent lockout)};
+\end{tikzpicture}

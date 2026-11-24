@@ -1,0 +1,47 @@
+\PG{c+ch}{\PGZsh{}!/usr/bin/env perl}
+\PG{c+c1}{\PGZsh{} MCE process pool: chunked parallel work, per\PGZhy{}worker setup and gathered}
+\PG{c+c1}{\PGZsh{} results, verified against a closed\PGZhy{}form answer.}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{strict}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{MCE::Loop}\PG{p}{;}
+
+\PG{c+c1}{\PGZsh{} Kept small enough that every intermediate value is an exact integer:}
+\PG{c+c1}{\PGZsh{} Perl numbers lose precision above 2**53 once they become floating point.}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{N}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{200\PGZus{}000}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{worker\PGZus{}resource}\PG{p}{;}\PG{+w}{                 }\PG{c+c1}{\PGZsh{} per\PGZhy{}worker state, created after fork}
+
+\PG{n+nn}{MCE::Loop}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{init}\PG{p}{(}
+\PG{+w}{    }\PG{n}{max\PGZus{}workers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{4}\PG{p}{,}
+\PG{+w}{    }\PG{n}{chunk\PGZus{}size}\PG{+w}{  }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{5\PGZus{}000}\PG{p}{,}
+\PG{+w}{    }\PG{c+c1}{\PGZsh{} Runs once in each worker after fork: open DB/Redis connections here,}
+\PG{+w}{    }\PG{c+c1}{\PGZsh{} never in the parent.}
+\PG{+w}{    }\PG{n}{user\PGZus{}begin}\PG{+w}{  }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{worker\PGZus{}resource}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZdq{}connection\PGZhy{}for\PGZhy{}\PGZdl{}\PGZdl{}\PGZdq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{user\PGZus{}end}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{undef}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{worker\PGZus{}resource}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{p}{)}\PG{p}{;}
+
+\PG{c+c1}{\PGZsh{} mce\PGZus{}loop\PGZus{}s iterates a numeric sequence without building the list in memory.}
+\PG{c+c1}{\PGZsh{} Each chunk is summed locally; one gather per chunk keeps IPC cheap.}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{parts}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{mce\PGZus{}loop\PGZus{}s}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{mce}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{chunk\PGZus{}ref}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{chunk\PGZus{}id}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}worker setup missing\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{worker\PGZus{}resource}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sum}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sum}\PG{+w}{ }\PG{o}{+=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{+w}{ }\PG{k}{for}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{chunk\PGZus{}ref}\PG{p}{;}
+\PG{+w}{    }\PG{n+nn}{MCE}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{gather}\PG{p}{(}\PG{p}{[}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{chunk\PGZus{}id}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{scalar}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{chunk\PGZus{}ref}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sum}\PG{p}{,}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}\PGZdl{}}\PG{+w}{ }\PG{p}{]}\PG{p}{)}\PG{p}{;}
+\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{N}\PG{p}{;}
+
+\PG{n+nn}{MCE::Loop}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{finish}\PG{p}{;}
+
+\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{count}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sum}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{pids}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{chunks}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{p}{;}
+\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{@}\PG{n+nv}{parts}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{id}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}chunk \PGZdl{}id gathered twice\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{chunks}\PG{p}{\PGZob{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{id}\PG{p}{\PGZcb{}}\PG{o}{+}\PG{o}{+}\PG{p}{;}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{count}\PG{+w}{ }\PG{o}{+=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{p}{;}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sum}\PG{+w}{   }\PG{o}{+=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{s}\PG{p}{;}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pids}\PG{p}{\PGZob{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{p}{\PGZcb{}}\PG{o}{+}\PG{o}{+}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{expected}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{N}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{N}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{2}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{N}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{+w}{ }\PG{o}{/}\PG{+w}{ }\PG{l+m+mi}{6}\PG{p}{;}\PG{+w}{   }\PG{c+c1}{\PGZsh{} sum of squares 1..N}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}result exceeds exact integer range\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{expected}\PG{+w}{ }\PG{o}{\PGZgt{}=}\PG{+w}{ }\PG{l+m+mi}{2}\PG{o}{**}\PG{l+m+mi}{53}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}missing items: \PGZdl{}count\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{count}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{N}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}wrong sum: \PGZdl{}sum\PGZbs{}n\PGZdq{}}\PG{+w}{       }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sum}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{expected}\PG{p}{;}
+\PG{n+nb}{printf}\PG{+w}{ }\PG{l+s}{\PGZdq{}sum of squares 1..\PGZpc{}d = \PGZpc{}d from \PGZpc{}d chunks across \PGZpc{}d workers\PGZbs{}n\PGZdq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{N}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sum}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{scalar}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{parts}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{scalar}\PG{+w}{ }\PG{n+nb}{keys}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{pids}\PG{p}{;}

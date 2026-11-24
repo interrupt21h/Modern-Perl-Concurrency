@@ -1,0 +1,15 @@
+\begin{tikzpicture}[node distance=6mm]
+\foreach \x/\name in {0/main, 5.2/thread 1, 10.4/thread 2} {
+  \node[box,minimum width=4.6cm,minimum height=2.4cm,anchor=north west] (i\x) at (\x,0) {};
+  \node[font=\sffamily\small\bfseries,text=navy,anchor=north west] at (\x+0.15,-0.12) {Interpreter: \name};
+  \node[lbl,anchor=north west,align=left,text width=4.3cm] at (\x+0.15,-0.62)
+    {private copy of every lexical, global and loaded module; objects cloned at thread creation};
+}
+\node[okbox,minimum width=15cm,minimum height=1.3cm,anchor=north west] (sh) at (0,-3.2) {};
+\node[font=\sffamily\small\bfseries,text=teal,anchor=north west] at (0.15,-3.3) {Shared store (threads::shared)};
+\node[lbl,anchor=north west,align=left] at (0.15,-3.8)
+  {only variables declared :shared or passed through share / shared\_clone; every access is internally serialized};
+\foreach \x in {2.3,7.5,12.7} \draw[arr,<->] (\x,-2.4) -- node[lbl,right]{lock(), cond\_wait} (\x,-3.2);
+\node[badbox,anchor=north west,text width=14.5cm] at (0,-4.85)
+  {Never shared: DBI handles, sockets, Redis connections and most XS objects. Create them inside the thread that uses them.};
+\end{tikzpicture}

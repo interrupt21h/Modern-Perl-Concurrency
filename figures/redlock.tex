@@ -1,0 +1,10 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[box,minimum width=2.6cm] (c) at (0,0) {client\\\footnotesize same token, TTL 10 s};
+\foreach \i/\y/\st/\r in {1/2.0/okbox/OK,2/1.0/okbox/OK,3/0.0/okbox/OK,4/-1.0/badbox/{timeout},5/-2.0/badbox/{held by other}} {
+  \node[\st,minimum width=2.6cm] (m\i) at (6.2,\y) {primary \i};
+  \draw[thinarr] (c.east) -- node[lbl,above,pos=0.72,fill=white,inner sep=1pt]{\r} (m\i.west);}
+\node[okbox,text width=4.8cm] (v) at (12.3,0.6) {3 of 5 = majority, acquired within the validity window (TTL minus elapsed minus drift)};
+\node[badbox,text width=4.8cm] (w) at (12.3,-1.25) {safety still assumes bounded pauses and clock drift: fence the destination anyway};
+\draw[arr] (m2.east) ++(0.2,0) -- (v.west);
+\draw[badarr] (m4.east) ++(0.2,0) -- (w.west);
+\end{tikzpicture}

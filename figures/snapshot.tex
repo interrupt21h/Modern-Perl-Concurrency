@@ -1,0 +1,17 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[box,minimum width=2.6cm] (wr) at (0,1.3) {writer};
+\node[box,fill=white,text width=3.4cm] (build) at (4.1,1.3) {1. build version 8\\privately, then\\shared\_clone (no lock)};
+\node[okbox,minimum width=2.6cm] (swap) at (8.4,1.3) {2. lock; swap\\one reference};
+\draw[arr] (wr) -- (build); \draw[arr] (build) -- (swap);
+\node[box,minimum width=2.4cm] (ref) at (8.4,-0.3) {\$config};
+\draw[arr] (swap) -- (ref);
+\node[box,fill=white,minimum width=2.6cm] (v7) at (12.6,0.55) {version 7\\\footnotesize never modified};
+\node[okbox,minimum width=2.6cm] (v8) at (12.6,-1.15) {version 8\\\footnotesize never modified};
+\draw[thinarr,dashed] (ref.east) -- node[lbl,above,sloped]{before} (v7.west);
+\draw[arr] (ref.east) -- node[lbl,below,sloped]{after} (v8.west);
+\node[box,minimum width=2.6cm] (rd1) at (0,-0.3) {reader A};
+\node[box,minimum width=2.6cm] (rd2) at (0,-1.5) {reader B};
+\draw[thinarr] (rd1) -- node[lbl,above]{lock; copy ref; unlock} (ref);
+\draw[thinarr] (rd2.east) to[out=0,in=200] (ref.south west);
+\node[lbl,anchor=north] at (6.3,-1.95) {a reader keeps whichever version it grabbed; it is never half-updated};
+\end{tikzpicture}

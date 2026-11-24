@@ -1,0 +1,10 @@
+\begin{tikzpicture}[node distance=44mm]
+\node[state,minimum size=16mm,fill=white] (free) {free\\\scriptsize no key};
+\node[state,right=of free,minimum size=19mm,fill=teal!10] (held) {held\\\scriptsize token, fence $n$,\\[-2pt]\scriptsize TTL running};
+\node[badbox,right=22mm of held,text width=4.1cm] (zombie) {holder may still be running after expiry: only fencing stops its writes};
+\draw[arr] (free) to[bend left=18] node[lbl,above]{SET key token NX PX ttl\\(+ INCR fence, one script)} (held);
+\draw[arr] (held) to[bend left=18] node[lbl,below]{owner-checked release\\(script, DELEX, DELIFEQ)} (free);
+\draw[badarr,dashed] (held) to[out=-60,in=-120,looseness=0.9] node[lbl,below,text=rust]{TTL expires (pause, partition, crash)} (free);
+\draw[thinarr,loop above,looseness=5] (held) to node[lbl,above]{owner-checked renewal every TTL/3} (held);
+\draw[badarr,dashed] (held) -- (zombie);
+\end{tikzpicture}

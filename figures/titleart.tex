@@ -1,0 +1,16 @@
+\begin{tikzpicture}[x=1cm,y=1cm,font=\sffamily\small]
+% workers
+\foreach \i/\y in {1/1.5,2/0.5,3/-0.5,4/-1.5} {
+  \node[box,minimum width=2.3cm] (w\i) at (0,\y) {worker \i};}
+\node[lbl] at (0,-2.3) {threads, processes, pods};
+% coordination layer
+\node[draw=teal,fill=teal!8,rounded corners=3pt,minimum width=5.2cm,minimum height=4.0cm] (co) at (5.3,0) {};
+\node[font=\sffamily\small\bfseries,text=teal] at (5.3,1.6) {coordination};
+\foreach \t/\y in {{lock() / Future::Mutex}/0.85,{flock / semaphores}/0.15,{transactions / SKIP LOCKED}/-0.55,{leases + fencing tokens}/-1.25} {
+  \node[box,fill=white,minimum width=4.6cm,minimum height=5.5mm,font=\sffamily\footnotesize] at (5.3,\y) {\t};}
+\foreach \i in {1,2,3,4} \draw[arr] (w\i.east) -- (co.west |- w\i.east);
+% resources
+\node[box,minimum width=2.9cm,minimum height=1.1cm] (r1) at (10.7,0.9) {shared state\\\footnotesize rows, files, keys};
+\node[okbox,minimum width=2.9cm,minimum height=1.1cm] (r2) at (10.7,-0.9) {fenced resource\\\footnotesize rejects stale writers};
+\draw[arr] (co.east |- r1) -- (r1.west); \draw[arr] (co.east |- r2) -- (r2.west);
+\end{tikzpicture}

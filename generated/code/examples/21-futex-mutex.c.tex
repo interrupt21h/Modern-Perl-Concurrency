@@ -1,0 +1,100 @@
+\PG{c+cm}{/*}
+\PG{c+cm}{ * Three\PGZhy{}state futex mutex (U. Drepper, \PGZdq{}Futexes Are Tricky\PGZdq{}, mutex 3),}
+\PG{c+cm}{ * written with C11 atomics. This is what sits underneath pthread mutexes}
+\PG{c+cm}{ * and therefore underneath Perl\PGZsq{}s lock(): a user\PGZhy{}space fast path and a}
+\PG{c+cm}{ * kernel slow path that is entered only under contention.}
+\PG{c+cm}{ *}
+\PG{c+cm}{ *   state 0 = unlocked}
+\PG{c+cm}{ *   state 1 = locked, no waiters}
+\PG{c+cm}{ *   state 2 = locked, waiters possible}
+\PG{c+cm}{ *}
+\PG{c+cm}{ * Build and run:  cc \PGZhy{}O2 \PGZhy{}Wall \PGZhy{}Wextra \PGZhy{}pthread 21\PGZhy{}futex\PGZhy{}mutex.c \PGZhy{}o futex\PGZhy{}mutex}
+\PG{c+cm}{ *                 ./futex\PGZhy{}mutex}
+\PG{c+cm}{ * Linux only. For study: production code should use pthread\PGZus{}mutex\PGZus{}t.}
+\PG{c+cm}{ */}
+\PG{c+cp}{\PGZsh{}}\PG{c+cp}{define \PGZus{}GNU\PGZus{}SOURCE}
+\PG{c+cp}{\PGZsh{}}\PG{c+cp}{include}\PG{+w}{ }\PG{c+cpf}{\PGZlt{}linux/futex.h\PGZgt{}}
+\PG{c+cp}{\PGZsh{}}\PG{c+cp}{include}\PG{+w}{ }\PG{c+cpf}{\PGZlt{}pthread.h\PGZgt{}}
+\PG{c+cp}{\PGZsh{}}\PG{c+cp}{include}\PG{+w}{ }\PG{c+cpf}{\PGZlt{}stdatomic.h\PGZgt{}}
+\PG{c+cp}{\PGZsh{}}\PG{c+cp}{include}\PG{+w}{ }\PG{c+cpf}{\PGZlt{}stdint.h\PGZgt{}}
+\PG{c+cp}{\PGZsh{}}\PG{c+cp}{include}\PG{+w}{ }\PG{c+cpf}{\PGZlt{}stdio.h\PGZgt{}}
+\PG{c+cp}{\PGZsh{}}\PG{c+cp}{include}\PG{+w}{ }\PG{c+cpf}{\PGZlt{}sys/syscall.h\PGZgt{}}
+\PG{c+cp}{\PGZsh{}}\PG{c+cp}{include}\PG{+w}{ }\PG{c+cpf}{\PGZlt{}unistd.h\PGZgt{}}
+
+\PG{c+cp}{\PGZsh{}}\PG{c+cp}{define THREADS    8}
+\PG{c+cp}{\PGZsh{}}\PG{c+cp}{define ITERATIONS 1000000L}
+
+\PG{k}{typedef}\PG{+w}{ }\PG{k}{struct}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{k+kt}{\PGZus{}Atomic}\PG{+w}{ }\PG{k+kt}{uint32\PGZus{}t}\PG{+w}{ }\PG{n}{state}\PG{p}{;}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n}{futex\PGZus{}mutex}\PG{p}{;}
+
+\PG{k}{static}\PG{+w}{ }\PG{k+kt}{atomic\PGZus{}long}\PG{+w}{ }\PG{n}{slow\PGZus{}path\PGZus{}entries}\PG{p}{;}\PG{+w}{   }\PG{c+cm}{/* instrumentation only */}
+
+\PG{k}{static}\PG{+w}{ }\PG{k+kt}{long}\PG{+w}{ }\PG{n+nf}{futex}\PG{p}{(}\PG{n}{futex\PGZus{}mutex}\PG{+w}{ }\PG{o}{*}\PG{n}{m}\PG{p}{,}\PG{+w}{ }\PG{k+kt}{int}\PG{+w}{ }\PG{n}{op}\PG{p}{,}\PG{+w}{ }\PG{k+kt}{uint32\PGZus{}t}\PG{+w}{ }\PG{n}{val}\PG{p}{)}
+\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n}{syscall}\PG{p}{(}\PG{n}{SYS\PGZus{}futex}\PG{p}{,}\PG{+w}{ }\PG{p}{(}\PG{k+kt}{uint32\PGZus{}t}\PG{+w}{ }\PG{o}{*}\PG{p}{)}\PG{o}{\PGZam{}}\PG{n}{m}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{state}\PG{p}{,}\PG{+w}{ }\PG{n}{op}\PG{p}{,}\PG{+w}{ }\PG{n}{val}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{NULL}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{NULL}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{c+cm}{/* Compare\PGZhy{}and\PGZhy{}exchange returning the value observed before the attempt. */}
+\PG{k}{static}\PG{+w}{ }\PG{k+kt}{uint32\PGZus{}t}\PG{+w}{ }\PG{n+nf}{cmpxchg}\PG{p}{(}\PG{n}{futex\PGZus{}mutex}\PG{+w}{ }\PG{o}{*}\PG{n}{m}\PG{p}{,}\PG{+w}{ }\PG{k+kt}{uint32\PGZus{}t}\PG{+w}{ }\PG{n}{expected}\PG{p}{,}\PG{+w}{ }\PG{k+kt}{uint32\PGZus{}t}\PG{+w}{ }\PG{n}{desired}\PG{p}{)}
+\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n}{atomic\PGZus{}compare\PGZus{}exchange\PGZus{}strong\PGZus{}explicit}\PG{p}{(}\PG{o}{\PGZam{}}\PG{n}{m}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{state}\PG{p}{,}\PG{+w}{ }\PG{o}{\PGZam{}}\PG{n}{expected}\PG{p}{,}\PG{+w}{ }\PG{n}{desired}\PG{p}{,}
+\PG{+w}{        }\PG{n}{memory\PGZus{}order\PGZus{}acquire}\PG{p}{,}\PG{+w}{ }\PG{n}{memory\PGZus{}order\PGZus{}relaxed}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n}{expected}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{k}{static}\PG{+w}{ }\PG{k+kt}{void}\PG{+w}{ }\PG{n+nf}{mutex\PGZus{}lock}\PG{p}{(}\PG{n}{futex\PGZus{}mutex}\PG{+w}{ }\PG{o}{*}\PG{n}{m}\PG{p}{)}
+\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k+kt}{uint32\PGZus{}t}\PG{+w}{ }\PG{n}{c}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{cmpxchg}\PG{p}{(}\PG{n}{m}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{p}{;}\PG{+w}{          }\PG{c+cm}{/* fast path: 0 \PGZhy{}\PGZgt{} 1, no syscall */}
+\PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{n}{c}\PG{+w}{ }\PG{o}{=}\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}
+\PG{+w}{        }\PG{k}{return}\PG{p}{;}
+\PG{+w}{    }\PG{n}{atomic\PGZus{}fetch\PGZus{}add\PGZus{}explicit}\PG{p}{(}\PG{o}{\PGZam{}}\PG{n}{slow\PGZus{}path\PGZus{}entries}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{n}{memory\PGZus{}order\PGZus{}relaxed}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{c+cm}{/* Announce a waiter by forcing the state to 2 before sleeping. */}
+\PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{n}{c}\PG{+w}{ }\PG{o}{!}\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{)}
+\PG{+w}{        }\PG{n}{c}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{atomic\PGZus{}exchange\PGZus{}explicit}\PG{p}{(}\PG{o}{\PGZam{}}\PG{n}{m}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{state}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{,}\PG{+w}{ }\PG{n}{memory\PGZus{}order\PGZus{}acquire}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{while}\PG{+w}{ }\PG{p}{(}\PG{n}{c}\PG{+w}{ }\PG{o}{!}\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{c+cm}{/* The kernel re\PGZhy{}checks state == 2 atomically before sleeping, so an}
+\PG{c+cm}{         * unlock between our exchange and this call cannot be lost. EINTR}
+\PG{c+cm}{         * and EAGAIN are harmless: the loop simply tries again. */}
+\PG{+w}{        }\PG{n}{futex}\PG{p}{(}\PG{n}{m}\PG{p}{,}\PG{+w}{ }\PG{n}{FUTEX\PGZus{}WAIT\PGZus{}PRIVATE}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{n}{c}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{atomic\PGZus{}exchange\PGZus{}explicit}\PG{p}{(}\PG{o}{\PGZam{}}\PG{n}{m}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{state}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{,}\PG{+w}{ }\PG{n}{memory\PGZus{}order\PGZus{}acquire}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{\PGZcb{}}
+
+\PG{k}{static}\PG{+w}{ }\PG{k+kt}{void}\PG{+w}{ }\PG{n+nf}{mutex\PGZus{}unlock}\PG{p}{(}\PG{n}{futex\PGZus{}mutex}\PG{+w}{ }\PG{o}{*}\PG{n}{m}\PG{p}{)}
+\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{c+cm}{/* 1 \PGZhy{}\PGZgt{} 0 means nobody can be waiting: no syscall. 2 \PGZhy{}\PGZgt{} 1 means someone}
+\PG{c+cm}{     * may be asleep: finish the release and wake exactly one waiter. */}
+\PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{n}{atomic\PGZus{}fetch\PGZus{}sub\PGZus{}explicit}\PG{p}{(}\PG{o}{\PGZam{}}\PG{n}{m}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{state}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{n}{memory\PGZus{}order\PGZus{}release}\PG{p}{)}\PG{+w}{ }\PG{o}{!}\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{atomic\PGZus{}store\PGZus{}explicit}\PG{p}{(}\PG{o}{\PGZam{}}\PG{n}{m}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{state}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{ }\PG{n}{memory\PGZus{}order\PGZus{}release}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{n}{futex}\PG{p}{(}\PG{n}{m}\PG{p}{,}\PG{+w}{ }\PG{n}{FUTEX\PGZus{}WAKE\PGZus{}PRIVATE}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{\PGZcb{}}
+
+\PG{k}{static}\PG{+w}{ }\PG{n}{futex\PGZus{}mutex}\PG{+w}{ }\PG{n}{lock}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{k}{static}\PG{+w}{ }\PG{k+kt}{long}\PG{+w}{ }\PG{n}{counter}\PG{p}{;}\PG{+w}{                    }\PG{c+cm}{/* deliberately NOT atomic */}
+
+\PG{k}{static}\PG{+w}{ }\PG{k+kt}{void}\PG{+w}{ }\PG{o}{*}\PG{n+nf}{worker}\PG{p}{(}\PG{k+kt}{void}\PG{+w}{ }\PG{o}{*}\PG{n}{arg}\PG{p}{)}
+\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{p}{(}\PG{k+kt}{void}\PG{p}{)}\PG{n}{arg}\PG{p}{;}
+\PG{+w}{    }\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{k+kt}{long}\PG{+w}{ }\PG{n}{i}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}\PG{+w}{ }\PG{n}{i}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{n}{ITERATIONS}\PG{p}{;}\PG{+w}{ }\PG{n}{i}\PG{o}{+}\PG{o}{+}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{mutex\PGZus{}lock}\PG{p}{(}\PG{o}{\PGZam{}}\PG{n}{lock}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{n}{counter}\PG{o}{+}\PG{o}{+}\PG{p}{;}\PG{+w}{                      }\PG{c+cm}{/* plain read\PGZhy{}modify\PGZhy{}write */}
+\PG{+w}{        }\PG{n}{mutex\PGZus{}unlock}\PG{p}{(}\PG{o}{\PGZam{}}\PG{n}{lock}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nb}{NULL}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{k+kt}{int}\PG{+w}{ }\PG{n+nf}{main}\PG{p}{(}\PG{k+kt}{void}\PG{p}{)}
+\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n}{pthread\PGZus{}t}\PG{+w}{ }\PG{n}{t}\PG{p}{[}\PG{n}{THREADS}\PG{p}{]}\PG{p}{;}
+\PG{+w}{    }\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{k+kt}{int}\PG{+w}{ }\PG{n}{i}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}\PG{+w}{ }\PG{n}{i}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{n}{THREADS}\PG{p}{;}\PG{+w}{ }\PG{n}{i}\PG{o}{+}\PG{o}{+}\PG{p}{)}
+\PG{+w}{        }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{n}{pthread\PGZus{}create}\PG{p}{(}\PG{o}{\PGZam{}}\PG{n}{t}\PG{p}{[}\PG{n}{i}\PG{p}{]}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{NULL}\PG{p}{,}\PG{+w}{ }\PG{n}{worker}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{NULL}\PG{p}{)}\PG{+w}{ }\PG{o}{!}\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}
+\PG{+w}{            }\PG{k}{return}\PG{+w}{ }\PG{n}{perror}\PG{p}{(}\PG{l+s}{\PGZdq{}}\PG{l+s}{pthread\PGZus{}create}\PG{l+s}{\PGZdq{}}\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{+w}{    }\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{k+kt}{int}\PG{+w}{ }\PG{n}{i}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}\PG{+w}{ }\PG{n}{i}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{n}{THREADS}\PG{p}{;}\PG{+w}{ }\PG{n}{i}\PG{o}{+}\PG{o}{+}\PG{p}{)}
+\PG{+w}{        }\PG{n}{pthread\PGZus{}join}\PG{p}{(}\PG{n}{t}\PG{p}{[}\PG{n}{i}\PG{p}{]}\PG{p}{,}\PG{+w}{ }\PG{n+nb}{NULL}\PG{p}{)}\PG{p}{;}
+
+\PG{+w}{    }\PG{k+kt}{long}\PG{+w}{ }\PG{n}{expected}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{THREADS}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{n}{ITERATIONS}\PG{p}{;}
+\PG{+w}{    }\PG{k+kt}{long}\PG{+w}{ }\PG{n}{slow}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{atomic\PGZus{}load}\PG{p}{(}\PG{o}{\PGZam{}}\PG{n}{slow\PGZus{}path\PGZus{}entries}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n}{printf}\PG{p}{(}\PG{l+s}{\PGZdq{}}\PG{l+s}{counter=\PGZpc{}ld expected=\PGZpc{}ld slow\PGZhy{}path=\PGZpc{}.2f\PGZpc{}\PGZpc{}}\PG{l+s+se}{\PGZbs{}n}\PG{l+s}{\PGZdq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n}{counter}\PG{p}{,}\PG{+w}{ }\PG{n}{expected}\PG{p}{,}\PG{+w}{ }\PG{l+m+mf}{100.0}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{n}{slow}\PG{+w}{ }\PG{o}{/}\PG{+w}{ }\PG{n}{expected}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n}{counter}\PG{+w}{ }\PG{o}{=}\PG{o}{=}\PG{+w}{ }\PG{n}{expected}\PG{+w}{ }\PG{o}{?}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{o}{:}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{p}{\PGZcb{}}

@@ -1,0 +1,202 @@
+% ================================================================ chapter 9
+\chapter{Redis and Valkey: leases, semaphores and streams}\label{ch:redis}
+\section{Scope and correctness contract}
+Redis serializes commands, and scripts, against a single authoritative primary. A key with a finite lifetime is a \emph{lease}, not a kernel mutex. Independent processes, interpreter threads and hosts can compete for the same key, provided they agree on endpoint, database, key namespace and resource identity. A disconnected or paused client can keep executing after its ownership has expired, and asynchronous replication can lose an acknowledged acquisition during failover. Redis coordination is therefore excellent for efficiency: suppressing duplicate work, coalescing cache refreshes, bounding load on a downstream service and distributing jobs. Persistent business invariants belong in database transactions, or behind a fencing check enforced by the protected resource (Section~\ref{sec:fencing}).
+
+Everything in this chapter applies equally to Valkey unless a version note says otherwise.
+
+\subsection{Execution boundary: Perl and Redis}
+Application orchestration, retries, deadlines, connections and error handling are Perl. Redis executes its own commands. A short Lua script may be supplied as a Perl heredoc and sent through \code{EVAL} or \code{EVALSHA} for conditional multi-command updates. No separate Lua interpreter is installed by the Perl worker. Redis serializes scripts with respect to other clients: this is isolation, not rollback on runtime errors or durable replication.
+\fig{redis-perl-boundary}{Perl owns application logic; Redis owns the atomic state transition. Embedded Lua is data until Redis executes it.}
+
+\section{Server landscape and client selection}\label{sec:redis-clients}
+\version{Redis was BSD-licensed through 7.2. Redis 7.4 moved to a dual RSALv2/SSPLv1 license, and Redis 8.0 (May 2025) added AGPLv3 as a third option [40]. Valkey, a Linux Foundation fork of Redis 7.2.4, remains BSD-licensed and is offered by several managed-cloud providers. Both speak the same protocol and support every pattern in this chapter. Confirm the license and support position that applies to your organization before standardizing on either.}
+Three Perl clients cover most needs. All three accept arbitrary commands, so newer server commands are available without a client upgrade.
+\begin{longtable}{L{.22\linewidth}L{.40\linewidth}L{.30\linewidth}}
+\toprule Client & Character & Use when \\ \midrule\endhead
+\code{Redis} [21] & Pure Perl; TLS (\code{ssl}, \code{SSL_verify_mode}), ACL \code{username}/\code{password}, Sentinel discovery & Portability matters; moderate request rates \\
+\code{Redis::Fast} [41] & XS over hiredis with a \code{Redis}-compatible API; TLS since 0.37, certificate verification on by default since 0.40; Sentinel (not combined with TLS) & Synchronous code that needs throughput \\
+\code{Net::Async::Redis} [42] & \code{IO::Async} and \code{Future} based; RESP3, Streams, client-side caching; cluster routing via \code{Net::Async::Redis::Cluster} & Event-loop applications; Redis Cluster \\
+\bottomrule\end{longtable}
+Whichever client you use, create the connection after \code{fork} or inside the thread, set connect, read and write timeouts, and disable automatic reconnection on coordination connections, or restrict it to idempotent reads. A transparent replay of \code{SET NX} or \code{INCR} after a lost reply can create a lease or consume a fence the caller never learns about.
+
+\section{Command reference}
+\begin{longtable}{L{.36\linewidth}L{.56\linewidth}}\toprule Command & Purpose and availability \\ \midrule\endhead
+\code{SET key token NX PX ms} & Atomically create an absent key with a millisecond expiry. All supported versions. \\
+\code{GET}, \code{PTTL} & Observe owner and remaining time; neither grants ownership. \\
+\code{EVALSHA} / \code{EVAL} script & Owner-checked release or renewal, or several steps as one atomic unit. All supported versions. \\
+\code{DELEX key IFEQ token} & Native compare-and-delete. Redis 8.4+ [33,34]. \\
+\code{SET key token IFEQ token PX ms} & Native owner-checked renewal. Redis 8.4+; Valkey 8.1+ [20,36]. \\
+\code{DELIFEQ key token} & Native compare-and-delete. Valkey 9.0+ [35]. \\
+\code{INCR} & Fence counter on one primary; see Section~\ref{sec:fencing} for its failure semantics. \\
+\code{WAIT}, \code{WAITAOF} & Wait for replica acknowledgment, or (7.2+) for AOF fsync locally and on replicas [37]. \\
+\code{XREADGROUP}, \code{XACK}, \code{XAUTOCLAIM} & Consumer-group queues; \code{XAUTOCLAIM} since 6.2 [38]; \code{XREADGROUP ... CLAIM} since 8.4. \\
+\code{WATCH}/\code{MULTI}/\code{EXEC} & Optimistic transaction; retry an aborted \code{EXEC}; an ambiguous reply is not a failure. \\
+\bottomrule\end{longtable}
+
+\section{Acquisition, renewal and release}
+\strategy{redislease}{Redis or Valkey lease}{A parking permit with an expiry time printed on it. Whoever holds a valid permit may park; if they do not renew it in time, it lapses and someone else can take the spot, even if the first driver has not left yet.}
+{processes on different hosts must avoid duplicate work (a nightly report, a cache rebuild, one active scheduler) and an occasional overlap is tolerable.}
+{an overlap would corrupt data and the protected resource cannot check a fencing token.}
+{\code{SET key token NX PX ttl} with owner-checked renewal and release scripts; \code{Redis}, \code{Redis::Fast} or \code{Net::Async::Redis}; example 13.}
+Acquire with a cryptographically random token that is unique to each acquisition. Never use \code{SETNX} followed by \code{EXPIRE}: a crash between the two commands leaves an immortal lock. Never release with \code{GET} followed by \code{DEL}: the lease can expire and pass to another client between the two. Renewal and release must compare the owner and act in one server-side step [19,20].
+\CodeFile{bash}{snippets/distributed-cache-01.sh}{Single-primary lease operations in a disposable instance}
+\fig{leasestates}{Lease lifecycle. Expiry is the dangerous transition: the former holder may still be running.}
+The Lua form works on every server and is used in the examples. Prefer the native command where the whole fleet supports it; it is simpler to audit and needs no script cache. Send scripts with \code{EVALSHA} and fall back to \code{SCRIPT LOAD} on a \code{NOSCRIPT} error: the script cache is not persisted and is empty after a restart or failover. Redis Functions (\code{FUNCTION LOAD}/\code{FCALL}, 7.0+) persist and replicate with the dataset, at the cost of a deployment step. Keep scripts O(1) and short; a long-running script blocks every other client.
+
+In Redis Cluster, all keys used by one script must hash to the same slot. A common hash tag (\code{lease:{report}} and \code{fence:{report}}) guarantees this; use a cluster-aware client.
+
+\tip{Name lease keys after what they protect (\code{lock:invoice:42}, not \code{lock:1}) and log the owner token on acquire and release. During an incident, \code{SCAN MATCH lock:*} plus the logs then tell you who holds what, and since when.}
+
+\subsection{Perl-only orchestration with optimistic transactions}\label{sec:redis-watch}
+When native conditional commands are unavailable, Perl can use \code{WATCH}, read the owner, then queue the update with \code{MULTI}/\code{EXEC}. Redis aborts if a watched key changes, including expiry on Redis 6.0.9 or later [61,62]. Retry only confirmed conflicts, with bounded randomized backoff. A lost reply is ambiguous; never assume an ambiguous renewal authorizes additional work.
+\begin{longtable}{L{.25\linewidth}L{.32\linewidth}L{.35\linewidth}}\toprule Approach & Benefits & Trade-offs \\ \midrule\endhead
+Native conditional command & One command; minimal implementation & Requires appropriate server version \\
+Perl with WATCH/MULTI/EXEC & No embedded Lua; optimistic concurrency & More round trips; conflict retries; exclusive connection per attempt \\
+Perl invoking Lua & One isolated server operation; multi-key invariants & Script review and ACLs; keys in one cluster slot \\
+\bottomrule\end{longtable}
+Example 31 demonstrates owner-checked renewal and release and forces a WATCH conflict. It does not allocate fencing tokens or make a lease a correctness guarantee. Use a dedicated connection with reconnection disabled. For multi-key fenced acquisition, watch every key participating in the decision and validate the full result. For more complex token and semaphore state machines, prefer the existing atomic scripts unless there is a compelling reason to redesign them.
+\CodeFile{perl}{examples/31-redis-watch-lease.pl}{31-redis-watch-lease.pl -- owner checks without embedded Lua}
+\note{Example 31 was documentation-reviewed against the Redis transaction reference and Perl Redis client documentation. It is not part of the historical integration results.}
+
+\section{A fenced lease}\label{sec:fenced-lease}
+Example 13 acquires the lease and allocates the fencing token in the \emph{same} script: \code{SET NX PX} and, only if it succeeded, \code{INCR} on the fence key. Because both happen in one atomic step, no other client can acquire in between, and no paused former owner can obtain a newer token. The local validity deadline is measured from \emph{before} the request and reduced by a safety margin. The heartbeat renews after a third of the TTL using the same owner token. Release is owner-checked, and a failed release is reported, never ignored.
+\CodeFile{perllua}{examples/13-redis-lease.pl}{\nolinkurl{13-redis-lease.pl}}
+\tested{Four processes competed for the lease. Critical sections never overlapped and fences increased strictly in acquisition order. The run was repeated under the restricted ACL user from Section~\ref{sec:redis-security}.}
+The client-side deadline is a soft budget: an in-flight command can complete after it, and the margin does not bound scheduling delay or clock error. An exception during acquisition must not authorize work; a key that was possibly created will expire on its own.
+
+\section{Worker integration and heartbeat design}
+Create a client inside each thread or after \code{fork}; never use one connection concurrently from unrelated execution contexts. Keep acquisition retries bounded and randomized. If work outlives the TTL, renew before expiry (for example every third of the TTL) with the original token, and stop after a configured maximum total duration. A failed or ambiguous renewal means: stop issuing protected operations and cancel the worker where possible. A heartbeat cannot recall work already sent to another service; that is the job of fencing. An event loop must use an asynchronous client or offload blocking calls.
+
+\section{Owner tokens versus fencing tokens}\label{sec:fencing}
+\strategy{fencing}{Fencing token}{Every new permit carries a higher serial number, and the gatekeeper at the protected resource remembers the highest number it has seen. A late arrival waving permit 41 after permit 42 has been used is turned away at the gate, whatever it believes.}
+{a lease protects anything where a stale holder's late write would cause harm.}
+{the resource cannot store and compare a number atomically; then you need a different design, not a lease.}
+{allocate the token in the same atomic step as the lease (example 13) and check it in a guarded \code{UPDATE} (example 18) or a version column.}
+\fig{fencing}{Why a lease alone is not enough: client A pauses past its expiry and writes late; the storage rejects its older fence.}
+A random owner token identifies an acquisition; it does not establish order. A fencing token is a monotonically increasing generation that the \emph{destination} checks atomically. A resource that admits several writes by the current holder and rejects older generations uses:
+\CodeFile{sql}{snippets/distributed-cache-02.sql}{SQL example}
+Initialize \code{last_fence} to zero, use a 64-bit unsigned column, bind the same token twice and require one affected row. Example 18 runs the full scenario: client A acquires and writes, stalls past its TTL, client B acquires a newer token and writes, and A's late write and late release are both refused.
+\CodeFile{perllua}{examples/18-fenced-write.pl}{\nolinkurl{18-fenced-write.pl}}
+\tested{The stale write matched zero rows, A's release returned 0 and left B's lease intact, and the row kept B's payload and fence.}
+\warn{A Redis \code{INCR} counter can regress after data loss, an unpersisted restart or asynchronous failover. With destination-enforced fencing this \emph{fails safe}: new tokens fall below \code{last_fence}, so writes are rejected rather than corrupting data. The laboratory reproduced this by deleting the counter. Recovery must re-seed the counter above the destination's maximum (for example \code{SET fence:{report} <max>} before reopening traffic), or allocate generations transactionally in the database that owns the resource.}
+
+\section{Distributed semaphores}
+\strategy{redissem}{Distributed counting semaphore}{The car-park counter, kept in Redis so that cars arriving at any of several entrances share it. Each ticket has its own expiry, so a car that broke down inside is eventually removed from the count.}
+{several hosts must not exceed a concurrency limit on a shared dependency, such as a licence pool, a fragile service or an API quota.}
+{you need requests per second (rate limiting), or a single host suffices (use \code{Thread::Semaphore} or System~V).}
+{a sorted set scored by server-time expiry with one Lua script for acquire and one for renew; example 16.}
+\fig{redissem}{A distributed semaphore as a sorted set: expired holders are purged atomically on every acquisition.}
+A counting semaphore bounds concurrent use of a downstream resource (an API quota, a licence pool, a fragile legacy service) across hosts. Example 16 stores holders in a sorted set scored by expiry time. The acquisition script reads the \emph{server} clock with \code{TIME}, purges expired holders, checks the count and admits the caller, all atomically. A crashed holder's permit therefore returns after its TTL, and no client clock participates. Renewal refuses tokens that have already expired, so a resumed holder cannot silently reclaim a permit that has been reissued.
+\CodeFile{perllua}{examples/16-redis-semaphore.pl}{\nolinkurl{16-redis-semaphore.pl}}
+\tested{Ten processes competed for three permits; observed peak concurrency was exactly three.}
+A concurrency limit is not a rate limit. For operations per unit time, use a token bucket or GCRA implemented in a script, or the server-side features of a managed offering, and test it against bursty arrivals.
+
+\section{Prefer queues: Redis Streams consumer groups}\label{sec:streams}
+\strategy{streams}{Redis Streams consumer group}{A shared inbox where each letter is handed to one clerk, stays on that clerk's ``in progress'' tray until they stamp it done, and can be reassigned if the clerk has been gone too long.}
+{jobs are produced and consumed by many processes across hosts with low latency, and at-least-once delivery with idempotent effects is acceptable.}
+{losing an acknowledged enqueue during a failover is unacceptable; use a transactional database queue instead.}
+{\code{XADD}, \code{XREADGROUP}, \code{XACK}, \code{XAUTOCLAIM} through \code{Redis} or \code{Net::Async::Redis}; example 17.}
+Many locks exist only to stop two workers taking the same job. A consumer group removes the need: each entry is delivered to one consumer and stays in that consumer's \emph{pending entries list} (PEL) until acknowledged with \code{XACK}. If a consumer dies, its pending entries remain; any other consumer can adopt entries that have been idle longer than a threshold with \code{XAUTOCLAIM} [38]. Delivery is therefore \emph{at least once}: make the effect idempotent, then acknowledge.
+\fig{streams}{A consumer group with crash recovery, as exercised by example 17.}
+\CodeFile{perl}{examples/17-redis-stream-worker.pl}{\nolinkurl{17-redis-stream-worker.pl}}
+\tested{One of four consumers exited holding ten unacknowledged entries; another consumer reclaimed them. All 200 effects were applied exactly once.}
+Production practice: cap stream length with \code{XADD ... MAXLEN ~ n} or trim by minimum ID; read delivery counts with the extended form of \code{XPENDING} and move entries that exceed a retry limit to a dead-letter stream; keep the idle threshold well above normal processing time to avoid needless duplicate execution; and alert on PEL size and oldest pending age. Redis 8.4 adds a \code{CLAIM} option to \code{XREADGROUP} that returns idle pending entries and new entries in a single call [34]. Streams inherit Redis durability: they are not a substitute for a transactional queue when loss of an acknowledged enqueue is unacceptable.
+
+\section{Durability, replication, Redlock and cluster topology}
+Asynchronous replication allows a primary to acknowledge an acquisition, fail before replicating it and promote a replica without the key; a second client then acquires the same logical lock. Sentinel and Redis Cluster improve availability, not this safety property. \code{WAIT} reduces replication exposure, and \code{WAITAOF} (7.2+) can additionally require an AOF fsync locally and on replicas, but neither turns Redis into a consensus system [37]. With \code{appendonly yes}, \code{appendfsync always} narrows the crash window at a latency cost; \code{everysec} can lose roughly the last one to two seconds of acknowledged writes on a crash.
+
+\fig{failover}{How asynchronous replication loses a lease during failover.}
+Key expiry is stored as an absolute Unix time on the server, so a stepped server clock can shorten or extend every lease at once. Run time synchronization that slews rather than steps, and alert on clock corrections.
+
+\fig{redlock}{Redlock acquires on a majority of independent primaries within a validity window; it reduces but does not remove the need for fencing.}
+Redlock acquires the same key on a majority of independent primaries (typically five) within a validity window that subtracts elapsed time and a drift allowance from the TTL, releases partial acquisitions on failure, and retries with jitter [19]. Its safety rests on bounded process pauses, bounded clock drift and independent failure domains. This assumption set has been publicly debated [43]; the practical conclusion is that Redlock may reduce, but does not eliminate, the need for destination fencing, and that fencing on a single primary is often the better engineering trade. Never build a quorum from replicas of one primary.
+
+\section{Key design and memory policy}
+Every coordination key used in this handbook has an owner, a type and a TTL. A key without a TTL outlives the process that created it, so every write path below sets one atomically.
+\begin{longtable}{L{.24\linewidth}L{.10\linewidth}L{.22\linewidth}L{.34\linewidth}}\toprule Key pattern & Type & TTL & Purpose \\ \midrule\endhead
+\code{lease:{res}} & string & lease (ms) & Owner token for a fenced lease (13, 18) \\
+\code{fence:{res}} & string & none; re-seed after loss & Monotonic fencing counter, same hash slot as the lease \\
+\code{sem:{pool}} & zset & latest holder expiry & Distributed semaphore holders scored by expiry (16) \\
+\code{jobs:{q}} & stream & trimmed by \code{MAXLEN} & Work queue with consumer group (17) \\
+\code{sess:session:SID} & string & session idle timeout & Catalyst session data (Chapter~\ref{ch:catalyst}) \\
+\code{cart:{SID}} & hash & session idle timeout & Mutable per-session state outside the blob \\
+\code{idem:USER:KEY} & string & 2 min pending, 24 h done & Idempotency claim and stored response \\
+\code{ratelimit:login:USER} & string & window & Fixed-window attempt counter \\
+\code{slock:{SID}} & string & 10 s & Per-session request lock \\
+\bottomrule\end{longtable}
+Use hash tags (\texttt{\{...\}}) wherever a script touches more than one key, so that the keys share a cluster slot. Remember that \code{maxmemory-policy} applies to a whole instance, not to a logical database number. Keep leases, fences, queues and sessions on an instance with \code{noeviction}, and put caches on a separate instance with an LRU or LFU policy.
+
+\section{Security and deployment}\label{sec:redis-security}
+Use a dedicated instance, or at least a dedicated logical database, for coordination keys, and set \code{maxmemory-policy noeviction} so that memory pressure fails writes instead of silently deleting leases. Expiration, restart and failover remain possible even then. Treat out-of-memory errors and network errors as acquisition failure. Never expose the service publicly; keep \code{protected-mode} enabled, authenticate every client, and use TLS with certificate verification (\code{ssl => 1} and \code{SSL_verify_mode} in \code{Redis.pm}) on any network you do not fully control.
+
+Since Redis 6, commands executed inside scripts are checked against the calling user's ACL, so a least-privilege lease user needs both \code{EVALSHA} and the commands its scripts call [39]:
+\CodeFile{bash}{snippets/distributed-cache-03.sh}{Least-privilege ACL for examples 13 and 16 (tested)}
+\tested{Under this user, examples 13 and 16 passed, while \code{FLUSHALL} and writes to keys outside the granted patterns were refused with \code{NOPERM}.}
+Persist ACLs through \code{aclfile} or configuration management rather than ad hoc \code{ACL SETUSER} calls, and rotate secrets without restarts by temporarily granting two passwords.
+
+\section{Monitoring and testing}
+Track acquisition wait, contention, lost and failed renewals, release failures, rejected fences, expired and evicted keys (\code{INFO stats}), rejected commands, replication lag, failover events and \code{SLOWLOG} entries for scripts. Name connections (\code{CLIENT SETNAME}) so that \code{CLIENT LIST} identifies holders. Test process death, \code{kill -STOP} followed by resume after the TTL, loss of replies, replica promotion, restart without persistence (fence regression) and clock steps. Verify that an old owner cannot release or renew a successor's lease and that the destination rejects stale generations.
+
+\input{catalyst-sessions.tex}
+
+% ================================================================ chapter 10
+\chapter{Memcached locking and cache coordination}
+\section{What Memcached can and cannot guarantee}
+Memcached is a volatile cache with atomic per-item operations, not a durable coordination authority. \code{add} stores a value only when the key is absent; \code{cas} updates an item only if its version is unchanged. These operations can suppress a cache stampede across threads, processes and hosts. Eviction, restart, flush, expiry or a change in client routing can erase a claim while its holder is still working. Never use Memcached as the sole mechanism for financial correctness, unique job execution, inventory allocation or irreversible effects [22,23].
+\begin{longtable}{L{.24\linewidth}L{.68\linewidth}}\toprule Primitive & Semantics \\ \midrule\endhead
+\code{add} & Create only when absent, with a finite expiry in seconds. \\
+\code{gets} & Read the value and its opaque CAS identifier. \\
+\code{cas} & Replace if the observed identifier is still current; can set a new expiry. \\
+\code{delete} & Unconditional removal in the classic protocol; unsafe for lease release. \\
+\code{touch} & Unconditional expiry change; unsafe for owner-checked renewal. \\
+\code{ms key 3 ME} & Meta-protocol add (mode \code{E}) of a 3-byte value. \\
+\code{md key C123} & Meta-protocol conditional delete: succeeds only if the current CAS is 123. \\
+\bottomrule\end{longtable}
+Use short relative TTLs. Zero means no expiry; values above 30 days are interpreted as absolute Unix timestamps. Expiry has one-second granularity, so a TTL of 1 can expire almost immediately. Use one fixed server or an identical, stable routing configuration across all workers: rehashing keys during a failure creates independent ownership domains. Never treat a cache miss as proof that previous work has stopped.
+
+\section{Classic text protocol and Perl CAS release}
+\strategy{memcas}{Memcached add/CAS lease}{A sticky note on a shared whiteboard saying ``I'm rebuilding this''. Anyone can see it and back off, but the cleaner (eviction) may wipe the board at any time.}
+{many web workers would otherwise rebuild the same expensive cache entry at once.}
+{anything other than cache efficiency depends on it.}
+{\code{add} to claim, \code{gets}/\code{cas} to release with a tombstone (\code{Cache::Memcached::Fast}, example 14); meta-protocol conditional delete (transcript 15).}
+\fig{memcas}{A best-effort Memcached lease: claim with add, release by compare-and-swap so another owner's entry is never touched.}
+The classic protocol lacks conditional delete. After reading and verifying the owner with \code{gets}, replace the entry with a short-lived tombstone using \code{cas}. If the version has changed, delete or overwrite nothing. Leave the tombstone to expire, since deleting it would recreate the original race. This delays the next acquisition by up to the tombstone TTL. Alternatively, let the lease expire. CAS identifiers are not fencing tokens and can repeat across server restarts.
+\CodeFile{perl}{examples/14-memcached-lease.pl}{\nolinkurl{14-memcached-lease.pl}}
+\code{Cache::Memcached::Fast} returns an array reference of CAS and value from \code{gets}; \code{add} and \code{cas} return false for a negative reply and \code{undef} for a backend error [24]. The example counts backend errors separately and gives up after repeated failures rather than treating an outage as permanent contention. Renew by fetching owner and CAS, verifying the token and performing \code{cas} with the original token and a new TTL; never use \code{touch} or \code{gat} to extend a lease that might belong to someone else.
+\tested{Four competing processes were serialized. Treat this as evidence that the protocol is implemented correctly, not as a mutual-exclusion guarantee.}
+
+\section{Modern meta protocol}
+The meta protocol provides conditional storage, conditional deletion and built-in stampede control [25,26]. Use a client that supports meta commands, or a carefully written adapter; do not mix raw protocol values with a client's serialization without checking flags and encoding. In the transcript, \code{ME} selects add mode, \code{C} supplies an expected CAS and \code{T} a TTL. \code{HD} means success, \code{NS} not stored, \code{EX} a CAS mismatch and \code{NF} not found.
+\CodeFile{text}{examples/15-memcached-meta.txt}{Meta protocol acquisition, renewal and release (replayed against 1.6.24)}
+Every successful mutation changes the CAS, so read the owner and the current CAS together immediately before a conditional delete; a mismatch means relinquish the attempt. The CAS check prevents the ordinary expiry-and-reacquisition race on one server incarnation, not eviction or server-reset failures.
+
+\section{Cache stampede pattern}
+\strategy{stampede}{Cache stampede control}{When the popular dish runs out, one cook makes a new batch while the others keep serving yesterday's portion, instead of every cook starting the same recipe at once.}
+{a hot cache key is expensive to rebuild and its expiry sends many requests to the database at once.}
+{the data must never be stale; then the source must be read directly, behind proper capacity limits.}
+{Memcached meta flags \code{N}, \code{R}, \code{W}, \code{Z}; or a short Redis lease around the rebuild with stale-while-revalidate.}
+\fig{stampede}{Without control, an expiring hot key triggers a rebuild per request; with recache election, one request rebuilds while others serve the stale value.}
+Read the cache first. On a miss, compete for a short lease with \code{add}. The winner rechecks the cache, performs a bounded refresh, publishes the result and releases conditionally. Losers sleep with jitter and reread, serve permitted stale data, or return a controlled error after a deadline. Do not let every waiter query the database when the cache goes down: use a local semaphore, request coalescing, stale-while-revalidate or a circuit breaker to cap backend load. If a stale refresh could overwrite a newer result, derive versions from authoritative rows and write conditionally.
+
+The meta protocol builds this in. On a miss, \code{mg} with \code{N}\textit{ttl} creates a placeholder and returns \code{W} to exactly one client, which wins the recache; others see \code{Z} (a recache is already in progress). \code{R}\textit{ttl} grants an early recache to one client when the remaining TTL falls below a threshold, and \code{md} with \code{I} marks an item stale instead of removing it, so readers receive the old value with \code{X} and \code{W} while one refresh runs. Prefer these flags for cache-specific coordination when the client supports them; they are still not durable locks.
+
+\tip{Add random jitter to cache TTLs (for example $\pm$10\,\%). Keys filled together by a deploy or a warm-up job otherwise expire together and stampede together.}
+
+\section{Operational comparison}
+\begin{longtable}{L{.20\linewidth}L{.36\linewidth}L{.36\linewidth}}\toprule Property & Redis / Valkey & Memcached \\ \midrule\endhead
+Acquisition & \code{SET NX PX} (optionally with fence \code{INCR} in one script) & \code{add} / meta add \\
+Expiry & Millisecond lease & Second-granularity lease \\
+Release & Owner-checked script; \code{DELEX IFEQ} (8.4+); \code{DELIFEQ} (Valkey 9.0+) & CAS tombstone or meta conditional delete \\
+Renewal & Owner-checked script; \code{SET IFEQ PX} & Owner-checked CAS update \\
+Fencing & Atomic \code{INCR} in the acquire script; can regress & None \\
+Queues & Streams with consumer groups & None \\
+Durability & Configurable; failover may lose writes & Volatile by design \\
+Best use & Best-effort coordination, bounded admission, job distribution & Cache-refresh coalescing \\
+Critical writes & Require destination fencing & Use another authority \\
+\bottomrule\end{longtable}
+Monitor evictions, reclaimed items, rejected stores, timeout rates and hit ratio. Restrict access to private trusted networks, disable UDP unless explicitly needed (\code{-U 0}), and use SASL or TLS where the build supports them. On a disposable instance, test concurrent \code{add}, expiry and reacquisition, stale CAS, memory pressure, restart and routing changes. Never run \code{flush_all} against a production cache as a test.
+
+\needspace{12\baselineskip}\section{Laboratory setup and verification}
+\CodeFile{bash}{snippets/distributed-cache-04.sh}{Shell commands}
+Each service example forks its own competing workers and checks the result, so no manual orchestration is required. To explore failure modes, increase the work duration toward the TTL, pause a holder with \code{kill -STOP}, or restart Redis between runs of example 18 and observe fencing fail safe.

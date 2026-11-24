@@ -1,0 +1,13 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\draw[thick,navy,-{Latex}] (1.5,-2.35) -- (15.6,-2.35) node[right,lbl]{time};
+\foreach \y/\t in {1.9/{Client A},1.0/{Client B},-1.1/{Storage}} {\node[anchor=east,font=\sffamily\small] at (1.4,\y) {\t}; \draw[lane] (1.5,\y) -- (15.6,\y);}
+\draw[span] (1.8,1.9) -- (5.4,1.9); \node[lbl,above] at (3.6,2.0) {lease, fence 41};
+\draw[waitspan] (5.4,1.9) -- (11.9,1.9); \node[lbl,above] at (8.5,2.0) {paused (GC, swap, SIGSTOP): lease expires unnoticed};
+\draw[badspan] (6.0,1.0) -- (11.0,1.0); \node[lbl,above,text=rust] at (8.5,1.1) {lease, fence 42};
+\node[okbox,font=\sffamily\footnotesize] (wb) at (8.5,-1.1) {write(42): accepted, last = 42};
+\draw[arr] (8.5,0.85) -- (wb.north);
+\node[badbox,font=\sffamily\footnotesize] (wa) at (13.3,-1.1) {write(41): 41 < 42, rejected};
+\draw[badarr] (11.9,1.9) -- (wa.north);
+\node[lbl,anchor=west,text=rust,fill=white,inner sep=1pt] at (12.3,0.3) {A resumes and\\writes with fence 41};
+\node[lbl,anchor=north] at (8.5,-1.55) {the storage enforces "only increasing fences", so a stale holder cannot corrupt data};
+\end{tikzpicture}

@@ -1,0 +1,12 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[box,minimum width=3cm] (app) at (6.4,2.4) {your application};
+\foreach \k/\x/\n/\a/\b in {a/1.2/{interpreter threads}/{share explicitly: threads::shared}/{lock, cond\_wait, queues},
+                            b/6.4/{processes}/{share nothing by default}/{flock, IPC, database, Redis},
+                            c/11.6/{event loop}/{one interpreter, many tasks}/{Futures, async/await, Future::Mutex}} {
+  \node[box,minimum width=4.4cm] (m\k) at (\x,0.9) {\n};
+  \node[box,fill=white,minimum width=4.4cm,font=\sffamily\footnotesize] (s\k) at (\x,-0.25) {\a};
+  \node[okbox,minimum width=4.4cm,font=\sffamily\footnotesize] (c\k) at (\x,-1.2) {\b};
+  \draw[arr] (app.south) -- (m\k.north);
+  \draw[thinarr] (m\k) -- (s\k); \draw[thinarr] (s\k) -- (c\k);}
+\node[lbl] at (6.4,-2.0) {middle row: how state is shared; bottom row: how it is coordinated};
+\end{tikzpicture}

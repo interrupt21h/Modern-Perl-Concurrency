@@ -1,0 +1,18 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[font=\sffamily\small\bfseries,text=navy,anchor=west] at (0,3.0) {Session A locked row 1 with SELECT ... FOR UPDATE.};
+\node[font=\sffamily\small,text=navy,anchor=west] at (0,2.5) {Three ways for session B to ask for a row:};
+\node[box,minimum width=2.4cm] (a) at (1.2,1.4) {session A};
+\node[badbox,minimum width=1.8cm] (r1) at (4.8,1.4) {row 1};
+\node[box,fill=white,minimum width=1.8cm] (r2) at (4.8,0.2) {row 2};
+\node[box,fill=white,minimum width=1.8cm] (r3) at (4.8,-1.0) {row 3};
+\draw[badarr] (a) -- node[lbl,above]{X lock} (r1);
+\node[box,minimum width=5.6cm,anchor=west] (b1) at (7.4,1.4) {B: FOR UPDATE};
+\node[box,minimum width=5.6cm,anchor=west] (b2) at (7.4,0.2) {B: FOR UPDATE NOWAIT};
+\node[okbox,minimum width=5.6cm,anchor=west] (b3) at (7.4,-1.0) {B: FOR UPDATE SKIP LOCKED};
+\draw[thinarr,dashed] (b1.west) -- (r1.east);
+\draw[badarr] (b2.west) -- (r1.east);
+\draw[arr] (b3.west) -- (r2.east);
+\node[lbl,anchor=west,align=left] at (13.3,1.4) {waits for A to commit, or fails\\after innodb\_lock\_wait\_timeout (1205)};
+\node[lbl,anchor=west,align=left] at (13.3,0.2) {fails at once with error 3572:\\try later or pick another row};
+\node[lbl,anchor=west,align=left,text=teal] at (13.3,-1.0) {skips row 1 and locks row 2 at once:\\queue workers never collide};
+\end{tikzpicture}

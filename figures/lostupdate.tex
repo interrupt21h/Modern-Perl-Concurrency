@@ -1,0 +1,20 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[font=\sffamily\small\bfseries,text=rust,anchor=west] at (0,3.55) {(a) Without a lock: two increments, one result};
+\foreach \y/\t in {2.8/T1,2.0/T2} {\node[anchor=east] at (0.9,\y) {\t}; \draw[lane] (1,\y) -- (14.6,\y);}
+\node[badbox] at (2.6,2.8) {read 41};
+\node[badbox] at (5.0,2.0) {read 41};
+\node[badbox] at (7.6,2.8) {write 42};
+\node[badbox] at (10.2,2.0) {write 42};
+\node[lbl,anchor=west,text=rust] at (11.0,2.4) {counter = 42, expected 43:\\one update lost};
+\node[font=\sffamily\small\bfseries,text=teal,anchor=west] at (0,1.2) {(b) With lock(): the second increment waits};
+\foreach \y/\t in {0.45/T1,-0.35/T2} {\node[anchor=east] at (0.9,\y) {\t}; \draw[lane] (1,\y) -- (14.6,\y);}
+\draw[span] (1.4,0.45) -- (7.4,0.45);
+\node[okbox] at (3.0,0.45) {read 41};
+\node[okbox] at (5.8,0.45) {write 42};
+\draw[waitspan] (4.6,-0.35) -- (7.6,-0.35);
+\node[lbl] at (6.1,-0.75) {blocked in lock()};
+\draw[span] (7.6,-0.35) -- (13.4,-0.35);
+\node[okbox] at (9.2,-0.35) {read 42};
+\node[okbox] at (12.0,-0.35) {write 43};
+\node[lbl,anchor=west,text=teal] at (13.6,0.05) {43: correct};
+\end{tikzpicture}

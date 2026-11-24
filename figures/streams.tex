@@ -1,0 +1,17 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[box,minimum width=2.4cm] (prod) at (-0.8,0) {producers};
+\node[box,minimum width=5.2cm,minimum height=1.1cm] (st) at (4.6,0) {};
+\node[font=\sffamily\footnotesize\bfseries,text=navy,anchor=north west] at (2.1,0.5) {stream jobs:\{demo\}};
+\foreach \i in {0,...,6} \draw[navy,fill=white] (2.3+0.62*\i,-0.35) rectangle ++(0.5,0.4);
+\draw[arr] (prod) -- node[lbl,above=2pt]{XADD} (st);
+\node[box,minimum width=3.4cm,minimum height=1.1cm] (g) at (10.6,0) {consumer group\\\footnotesize last-delivered ID};
+\draw[arr] (st) -- (g);
+\node[badbox,minimum width=3.0cm] (c1) at (5.2,-2.7) {c1 (crashed)\\\footnotesize PEL: 10 entries};
+\node[okbox,minimum width=3.0cm] (c2) at (10.6,-2.7) {c2\\\footnotesize PEL: in progress};
+\node[okbox,minimum width=3.0cm] (c3) at (14.2,-2.7) {c3\\\footnotesize PEL: in progress};
+\foreach \c in {c1,c2,c3} \draw[thinarr] (g.south) -- (\c.north);
+\node[lbl,fill=white,inner sep=2pt] at (10.6,-1.35) {XREADGROUP ... STREAMS key >};
+\draw[badarr,dashed] (c1.east) -- node[lbl,above,text=rust]{XAUTOCLAIM} node[lbl,below,text=rust]{idle $>$ 500 ms} (c2.west);
+\node[okbox] (eff) at (10.6,-4.6) {idempotent effect, then XACK\\\footnotesize removes the entry from the PEL};
+\draw[arr] (c2) -- (eff);
+\end{tikzpicture}

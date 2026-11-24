@@ -1,0 +1,26 @@
+\PG{c+ch}{\PGZsh{}!/usr/bin/env perl}
+\PG{c+c1}{\PGZsh{} Lexical mutex protecting a read\PGZhy{}modify\PGZhy{}write on a shared counter.}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{strict}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{threads}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{threads::shared}\PG{p}{;}
+
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{count}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{mutex}\PG{+w}{ }\PG{p}{:}\PG{n}{shared}\PG{p}{;}\PG{+w}{            }\PG{c+c1}{\PGZsh{} dedicated lock variable, never mutated}
+
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{workers}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{map}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n+nn}{threads}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{k}{for}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{10\PGZus{}000}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n}{lock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{mutex}\PG{p}{)}\PG{p}{;}\PG{+w}{     }\PG{c+c1}{\PGZsh{} released when this block iteration exits}
+\PG{+w}{            }\PG{o}{+}\PG{o}{+}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{count}\PG{p}{;}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}\PG{p}{)}\PG{p}{;}
+\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{4}\PG{p}{;}
+
+\PG{k}{for}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{thr}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{@}\PG{n+nv}{workers}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{thr}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{join}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZsq{}worker failed: \PGZsq{}}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{thr}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{error}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}no result\PGZsq{}}\PG{p}{)}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}lost update: \PGZdl{}count\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{count}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{40\PGZus{}000}\PG{p}{;}
+\PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}count\PGZbs{}n\PGZdq{}}\PG{p}{;}

@@ -1,0 +1,18 @@
+\begin{tikzpicture}[node distance=7mm and 4mm]
+\node[decision,aspect=3.6] (q1) {Can the resource enforce the rule itself?\\(unique key, guarded UPDATE, version column)};
+\node[okbox,right=6mm of q1,text width=4.0cm] (c) {Use the constraint. Add locks only to reduce conflicts, never as the sole guard.};
+\draw[arr] (q1) -- node[lbl,above]{yes} (c);
+\node[box,below=8mm of q1] (q2) {Who participates?};
+\draw[arr] (q1) -- node[lbl,right]{no} (q2);
+\node[box,below left=10mm and 22mm of q2,text width=2.9cm] (p1) {One process\\\footnotesize lock(), Thread::Queue, Future::Mutex};
+\node[box,right=4mm of p1,text width=2.6cm] (p2) {One host\\\footnotesize flock, SysV semaphore};
+\node[box,right=4mm of p2,text width=3.1cm] (p3) {Shared MySQL\\\footnotesize transaction, SKIP LOCKED, GET\_LOCK};
+\node[box,right=4mm of p3,text width=2.6cm] (p4) {Cluster, no shared database};
+\foreach \n in {p1,p2,p3,p4} \draw[arr] (q2.south) -- (\n.north);
+\node[decision,below=8mm of p4] (q3) {Is a violation\\harmful?};
+\draw[arr] (p4) -- (q3);
+\node[okbox,below left=8mm and -4mm of q3,text width=3.0cm] (e) {Redis/Valkey lease\\\footnotesize efficiency lock};
+\node[badbox,below right=8mm and -4mm of q3,text width=4.3cm] (f) {Consensus coordinator\\plus a fencing token\\checked by the resource};
+\draw[arr] (q3) -| node[lbl,pos=0.25,above]{no} (e);
+\draw[badarr] (q3) -| node[lbl,pos=0.25,above]{yes} (f);
+\end{tikzpicture}

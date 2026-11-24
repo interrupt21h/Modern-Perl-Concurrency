@@ -1,0 +1,12 @@
+\begin{tikzpicture}[node distance=40mm]
+\node[state,fill=white,minimum size=15mm] (a) {absent};
+\node[state,right=of a,minimum size=15mm] (p) {pending};
+\node[state,right=of p,fill=teal!10,minimum size=15mm] (d) {done\\\scriptsize response\\[-2pt]\scriptsize stored};
+\draw[arr] (a) to[bend left=18] node[lbl,above]{first request:\\SET key NX EX 120} (p);
+\draw[badarr] (p) to[bend left=18] node[lbl,below]{failed before any effect:\\DEL (client may retry)} (a);
+\draw[arr] (p) -- node[lbl,above]{effect done: store response,\\SET XX EX 86400} (d);
+\draw[thinarr,dashed] (d) to[out=-120,in=-60,looseness=0.55] node[lbl,below]{TTL expires: 24 h after done, 2 min if a worker died while pending} (a);
+\draw[thinarr,loop above,looseness=5] (p) to node[lbl,above]{duplicate: 409 Retry-After} (p);
+\draw[thinarr,loop above,looseness=5] (d) to node[lbl,above]{duplicate: replay stored response} (d);
+\node[lbl,text=rust,anchor=north] at ($(p.south)+(0,-2.55)$) {any state, same key but a different request body (fingerprint mismatch): 422};
+\end{tikzpicture}

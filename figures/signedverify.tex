@@ -1,0 +1,12 @@
+\begin{tikzpicture}[x=1cm,y=1cm,chk/.style={box,fill=white,text width=2.0cm,minimum height=11mm,font=\sffamily\footnotesize}]
+\foreach \i/\x/\t/\s/\c in {1/0/{key ID known?}/{EXISTS apikey:}/401,2/3.0/{timestamp within 300 s?}/{server clock}/401,3/6.0/{nonce well formed?}/{32 hex digits}/400,4/9.0/{HMAC matches?}/{constant-time\\compare}/401,5/12.0/{nonce unused?}/{SET NX EX 600}/{409 replay}} {
+  \node[chk] (d\i) at (\x,0) {\t};
+  \node[badbox,font=\sffamily\scriptsize] (f\i) at (\x,-1.75) {\c};
+  \draw[badarr] (d\i) -- node[lbl,right,align=left,pos=0.45]{\s} (f\i);}
+\node[okbox,minimum height=11mm] (acc) at (14.6,0) {accept};
+\foreach \a/\b in {1/2,2/3,3/4,4/5} \draw[arr] (d\a) -- (d\b);
+\draw[arr] (d5) -- (acc);
+\draw[span] (-1.0,1.0) -- (10.0,1.0); \node[lbl,above] at (4.5,1.1) {read-only checks: nothing is written};
+\draw[line width=5pt,draw=gold] (11.0,1.0) -- (13.0,1.0); \node[lbl,above,text=gold] at (12.0,1.1) {first write};
+\node[lbl,text width=15.5cm,align=center] at (6.8,-2.85) {The nonce is recorded only after the signature verifies. Recording it first would let anyone who sees a nonce burn it with a forged request and block the real client.\\[2pt] Signed string: METHOD, PATH, TIMESTAMP, NONCE and BODY joined with newlines, using the per-key signing secret.};
+\end{tikzpicture}

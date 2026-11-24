@@ -1,0 +1,12 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[okbox,minimum width=5.0cm,minimum height=3.1cm] (z) at (7,0) {};
+\node[font=\sffamily\small\bfseries,text=teal] at (7,1.2) {sorted set sem:\{api\}};
+\foreach \t/\s/\y/\st in {{token a}/{expires 10:00:03}/0.55/badbox,{token b}/{expires 10:00:05}/-0.05/badbox,{token c}/{expires 10:00:01}/-0.65/box} {
+  \node[\st,minimum width=4.4cm,font=\sffamily\footnotesize] at (7,\y) {\t\quad score: \s};}
+\node[lbl,text=muted] at (7,-1.25) {limit 3; server TIME is 10:00:02};
+\node[box,text width=3.6cm,align=left] (s) at (0.4,0) {acquire script (atomic):\\[2pt]\footnotesize 1. purge scores $<$ now\\\footnotesize 2. count holders\\\footnotesize 3. add if count $<$ limit};
+\draw[arr] (s) -- (z);
+\node[box,text width=3.6cm] (r) at (13.5,0.6) {token c expired: removed, freeing a permit};
+\node[okbox,text width=3.6cm] (n) at (13.5,-0.75) {new token admitted\\(2 + 1 $\le$ 3)};
+\draw[thinarr] (z.east |- r) -- (r.west); \draw[arr] (z.east |- n) -- (n.west);
+\end{tikzpicture}

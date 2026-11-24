@@ -1,0 +1,228 @@
+openapi: 3.2.0
+info:
+  title: SessionLab API (laboratory)
+  version: 1.2.0
+  summary: Credentials and request coordination on Redis, from the Modern Perl Concurrency and Locking handbook.
+  description: |
+    Laboratory API exercised by examples/30-api-tokens.pl. Security schemes
+    describe how a client authenticates; the server-side storage and
+    concurrency rules are documented in the handbook.
+servers:
+  - url: http://127.0.0.1:5000
+    description: Local laboratory only (plain HTTP on loopback). Production requires HTTPS.
+
+tags:
+  - name: credentials
+    summary: Issue and rotate credentials
+  - name: resources
+    summary: Protected resources
+
+components:
+  headers:
+    RateLimitPolicy:
+      description: 'Quota policy, draft-ietf-httpapi-ratelimit-headers-11 syntax, for example "perkey";q=10;w=60.'
+      schema: { type: string }
+    RateLimit:
+      description: 'Remaining quota (r) and seconds until reset (t), for example "perkey";r=3;t=41.'
+      schema: { type: string }
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sessionlab_sid
+      description: Catalyst session cookie (HttpOnly, SameSite=Lax; Secure in production).
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Long-lived key, shown once at creation. The server stores only its SHA-256.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Five-minute HS256 JWT with typ at+jwt (RFC 9068). Revoked on logout through a jti denylist.
+    signedRequest:
+      type: apiKey
+      in: header
+      name: X-Signature
+      description: |
+        HMAC-SHA256 over "METHOD\nPATH\nX-Timestamp\nX-Nonce\nBODY" with the key's
+        signing secret. Also send X-Key-Id, X-Timestamp (Unix seconds, within 300 s)
+        and X-Nonce (32 hex characters, single use).
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated unique key; retries with the same key replay the first response.
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9_-]{16,64}$'
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    TokenPair:
+      type: object
+      required: [access_token, refresh_token]
+      properties:
+        access_token:  { type: string, description: JWT access token }
+        token_type:    { type: string, const: Bearer }
+        expires_in:    { type: integer, description: Access token lifetime in seconds }
+        refresh_token: { type: string, pattern: '^[0-9a-f]{16}\.[0-9a-f]{64}$' }
+
+  responses:
+    Unauthorized:
+      description: Missing, invalid, expired or revoked credentials.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+paths:
+  /api/keys:
+    post:
+      operationId: createApiKey
+      tags: [credentials]
+      summary: Create an API key for the logged-in user (shown once).
+      security: [ { sessionCookie: [] } ]
+      responses:
+        '201':
+          description: Key created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [api_key, key_id, signing_secret]
+                properties:
+                  api_key:        { type: string, pattern: '^slk_[0-9a-f]{64}$' }
+                  key_id:         { type: string, description: SHA-256 of the key }
+                  signing_secret: { type: string }
+                  expires_in:     { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/token:
+    post:
+      operationId: createTokenPair
+      tags: [credentials]
+      summary: Start a refresh-token family from an authenticated session.
+      security: [ { sessionCookie: [] } ]
+      responses:
+        '201':
+          description: New token pair.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenPair' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/refresh:
+    post:
+      operationId: refreshTokens
+      tags: [credentials]
+      summary: Rotate a refresh token (reuse detection with a short grace window).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200':
+          description: Rotated, or a duplicate within the grace window (same successor).
+          headers:
+            X-Refresh-Outcome:
+              schema: { type: string, enum: [rotated, replay] }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenPair' }
+        '400':
+          description: Malformed token.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/me:
+    get:
+      operationId: whoAmI
+      tags: [resources]
+      security:
+        - bearerAuth: []
+        - apiKey: []
+      responses:
+        '200':
+          description: Authenticated principal.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:       { type: string }
+                  credential: { type: string, enum: [jwt, api_key] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/logout:
+    post:
+      operationId: logout
+      tags: [credentials]
+      summary: Deny the current access token and revoke its refresh family.
+      security: [ { bearerAuth: [] } ]
+      responses:
+        '200': { description: Logged out. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/limited:
+    get:
+      operationId: rateLimitedResource
+      tags: [resources]
+      summary: Ten requests per minute per API key.
+      security: [ { apiKey: [] } ]
+      responses:
+        '200':
+          description: Within the limit.
+          headers:
+            RateLimit-Policy: { $ref: '#/components/headers/RateLimitPolicy' }
+            RateLimit: { $ref: '#/components/headers/RateLimit' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429':
+          description: Limit exceeded.
+          headers:
+            RateLimit-Policy: { $ref: '#/components/headers/RateLimitPolicy' }
+            RateLimit: { $ref: '#/components/headers/RateLimit' }
+            Retry-After: { schema: { type: integer } }
+
+  /api/signed:
+    post:
+      operationId: signedRequest
+      tags: [resources]
+      summary: Accept a signed request once (nonce replay protection).
+      security: [ { signedRequest: [] } ]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Signature valid and nonce unused. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: Nonce already used (replay).
+
+  /pay:
+    post:
+      operationId: pay
+      tags: [resources]
+      summary: Idempotent payment (Chapter 10 laboratory).
+      security: [ { sessionCookie: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201': { description: Charged (or replayed with Idempotent-Replayed true). }
+        '409': { description: Same key still in progress. }
+        '422': { description: 'Same key, different request.' }

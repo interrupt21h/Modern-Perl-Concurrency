@@ -1,0 +1,55 @@
+\PG{c+c1}{\PGZhy{}\PGZhy{} Disposable laboratory schema for examples 10\PGZhy{}12, 18 and 29.}
+\PG{c+c1}{\PGZhy{}\PGZhy{} MySQL 8.0.16+ (enforced CHECK constraints); baseline 8.4 LTS / 9.7 LTS.}
+\PG{k}{DROP}\PG{+w}{ }\PG{k}{TABLE}\PG{+w}{ }\PG{k}{IF}\PG{+w}{ }\PG{k}{EXISTS}\PG{+w}{ }\PG{n}{job\PGZus{}effect}\PG{p}{,}\PG{+w}{ }\PG{n}{job}\PG{p}{,}\PG{+w}{ }\PG{n}{protected\PGZus{}resource}\PG{p}{,}\PG{+w}{ }\PG{n}{document}\PG{p}{,}\PG{+w}{ }\PG{n}{account}\PG{p}{;}
+
+\PG{k}{CREATE}\PG{+w}{ }\PG{k}{TABLE}\PG{+w}{ }\PG{n}{account}\PG{+w}{ }\PG{p}{(}
+\PG{+w}{    }\PG{n}{id}\PG{+w}{    }\PG{n+nb}{BIGINT}\PG{+w}{ }\PG{k}{PRIMARY}\PG{+w}{ }\PG{k}{KEY}\PG{p}{,}
+\PG{+w}{    }\PG{n}{cents}\PG{+w}{ }\PG{n+nb}{BIGINT}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{    }\PG{k}{CONSTRAINT}\PG{+w}{ }\PG{n}{account\PGZus{}nonnegative}\PG{+w}{ }\PG{k}{CHECK}\PG{+w}{ }\PG{p}{(}\PG{n}{cents}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}
+\PG{p}{)}\PG{+w}{ }\PG{n}{ENGINE}\PG{o}{=}\PG{n}{InnoDB}\PG{p}{;}
+\PG{k}{INSERT}\PG{+w}{ }\PG{k}{INTO}\PG{+w}{ }\PG{n}{account}\PG{+w}{ }\PG{k}{VALUES}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{10000}\PG{p}{)}\PG{p}{,}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{2}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{10000}\PG{p}{)}\PG{p}{;}
+
+\PG{c+c1}{\PGZhy{}\PGZhy{} Visibility\PGZhy{}timeout queue: a pending job is claimable once visible\PGZus{}at has}
+\PG{c+c1}{\PGZhy{}\PGZhy{} passed. Claiming pushes visible\PGZus{}at forward (the lease); an abandoned}
+\PG{c+c1}{\PGZhy{}\PGZhy{} lease therefore becomes claimable again without a separate sweeper.}
+\PG{k}{CREATE}\PG{+w}{ }\PG{k}{TABLE}\PG{+w}{ }\PG{n}{job}\PG{+w}{ }\PG{p}{(}
+\PG{+w}{    }\PG{n}{id}\PG{+w}{           }\PG{n+nb}{BIGINT}\PG{+w}{ }\PG{n}{UNSIGNED}\PG{+w}{ }\PG{n}{AUTO\PGZus{}INCREMENT}\PG{+w}{ }\PG{k}{PRIMARY}\PG{+w}{ }\PG{k}{KEY}\PG{p}{,}
+\PG{+w}{    }\PG{n}{payload}\PG{+w}{      }\PG{n}{JSON}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{    }\PG{k}{state}\PG{+w}{        }\PG{n}{ENUM}\PG{p}{(}\PG{l+s+s1}{\PGZsq{}pending\PGZsq{}}\PG{p}{,}\PG{l+s+s1}{\PGZsq{}done\PGZsq{}}\PG{p}{,}\PG{l+s+s1}{\PGZsq{}dead\PGZsq{}}\PG{p}{)}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{+w}{ }\PG{k}{DEFAULT}\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}pending\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{visible\PGZus{}at}\PG{+w}{   }\PG{n}{DATETIME}\PG{p}{(}\PG{l+m+mi}{6}\PG{p}{)}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{+w}{ }\PG{k}{DEFAULT}\PG{+w}{ }\PG{p}{(}\PG{n}{UTC\PGZus{}TIMESTAMP}\PG{p}{(}\PG{l+m+mi}{6}\PG{p}{)}\PG{p}{)}\PG{p}{,}
+\PG{+w}{    }\PG{k}{owner}\PG{+w}{        }\PG{n+nb}{VARCHAR}\PG{p}{(}\PG{l+m+mi}{64}\PG{p}{)}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{    }\PG{n}{attempt}\PG{+w}{      }\PG{n+nb}{INT}\PG{+w}{ }\PG{n}{UNSIGNED}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{+w}{ }\PG{k}{DEFAULT}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}
+\PG{+w}{    }\PG{n}{max\PGZus{}attempts}\PG{+w}{ }\PG{n+nb}{INT}\PG{+w}{ }\PG{n}{UNSIGNED}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{+w}{ }\PG{k}{DEFAULT}\PG{+w}{ }\PG{l+m+mi}{5}\PG{p}{,}
+\PG{+w}{    }\PG{n}{last\PGZus{}error}\PG{+w}{   }\PG{n+nb}{VARCHAR}\PG{p}{(}\PG{l+m+mi}{255}\PG{p}{)}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{    }\PG{k}{INDEX}\PG{+w}{ }\PG{n}{claim\PGZus{}scan}\PG{+w}{ }\PG{p}{(}\PG{k}{state}\PG{p}{,}\PG{+w}{ }\PG{n}{visible\PGZus{}at}\PG{p}{,}\PG{+w}{ }\PG{n}{id}\PG{p}{)}
+\PG{p}{)}\PG{+w}{ }\PG{n}{ENGINE}\PG{o}{=}\PG{n}{InnoDB}\PG{p}{;}
+
+\PG{c+c1}{\PGZhy{}\PGZhy{} Side effect recorded in the same transaction as completion; the unique}
+\PG{c+c1}{\PGZhy{}\PGZhy{} key makes a duplicate effect impossible even if two workers race.}
+\PG{k}{CREATE}\PG{+w}{ }\PG{k}{TABLE}\PG{+w}{ }\PG{n}{job\PGZus{}effect}\PG{+w}{ }\PG{p}{(}
+\PG{+w}{    }\PG{n}{job\PGZus{}id}\PG{+w}{  }\PG{n+nb}{BIGINT}\PG{+w}{ }\PG{n}{UNSIGNED}\PG{+w}{ }\PG{k}{PRIMARY}\PG{+w}{ }\PG{k}{KEY}\PG{p}{,}
+\PG{+w}{    }\PG{n}{attempt}\PG{+w}{ }\PG{n+nb}{INT}\PG{+w}{ }\PG{n}{UNSIGNED}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{    }\PG{k}{result}\PG{+w}{  }\PG{n}{JSON}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{    }\PG{k}{CONSTRAINT}\PG{+w}{ }\PG{n}{effect\PGZus{}job}\PG{+w}{ }\PG{k}{FOREIGN}\PG{+w}{ }\PG{k}{KEY}\PG{+w}{ }\PG{p}{(}\PG{n}{job\PGZus{}id}\PG{p}{)}\PG{+w}{ }\PG{k}{REFERENCES}\PG{+w}{ }\PG{n}{job}\PG{+w}{ }\PG{p}{(}\PG{n}{id}\PG{p}{)}
+\PG{p}{)}\PG{+w}{ }\PG{n}{ENGINE}\PG{o}{=}\PG{n}{InnoDB}\PG{p}{;}
+
+\PG{k}{INSERT}\PG{+w}{ }\PG{k}{INTO}\PG{+w}{ }\PG{n}{job}\PG{+w}{ }\PG{p}{(}\PG{n}{payload}\PG{p}{)}
+\PG{k}{WITH}\PG{+w}{ }\PG{k}{RECURSIVE}\PG{+w}{ }\PG{n}{seq}\PG{+w}{ }\PG{p}{(}\PG{n}{n}\PG{p}{)}\PG{+w}{ }\PG{k}{AS}\PG{+w}{ }\PG{p}{(}\PG{k}{SELECT}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{k}{UNION}\PG{+w}{ }\PG{k}{ALL}\PG{+w}{ }\PG{k}{SELECT}\PG{+w}{ }\PG{n}{n}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{k}{FROM}\PG{+w}{ }\PG{n}{seq}\PG{+w}{ }\PG{k}{WHERE}\PG{+w}{ }\PG{n}{n}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{l+m+mi}{20}\PG{p}{)}
+\PG{k}{SELECT}\PG{+w}{ }\PG{n}{JSON\PGZus{}OBJECT}\PG{p}{(}\PG{l+s+s1}{\PGZsq{}n\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{n}\PG{p}{)}\PG{+w}{ }\PG{k}{FROM}\PG{+w}{ }\PG{n}{seq}\PG{p}{;}
+
+\PG{c+c1}{\PGZhy{}\PGZhy{} Destination that enforces fencing tokens (example 18).}
+\PG{k}{CREATE}\PG{+w}{ }\PG{k}{TABLE}\PG{+w}{ }\PG{n}{protected\PGZus{}resource}\PG{+w}{ }\PG{p}{(}
+\PG{+w}{    }\PG{n}{resource\PGZus{}id}\PG{+w}{ }\PG{n+nb}{VARCHAR}\PG{p}{(}\PG{l+m+mi}{64}\PG{p}{)}\PG{+w}{ }\PG{k}{PRIMARY}\PG{+w}{ }\PG{k}{KEY}\PG{p}{,}
+\PG{+w}{    }\PG{n}{payload}\PG{+w}{     }\PG{n+nb}{VARCHAR}\PG{p}{(}\PG{l+m+mi}{255}\PG{p}{)}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{    }\PG{n}{last\PGZus{}fence}\PG{+w}{  }\PG{n+nb}{BIGINT}\PG{+w}{ }\PG{n}{UNSIGNED}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{+w}{ }\PG{k}{DEFAULT}\PG{+w}{ }\PG{l+m+mi}{0}
+\PG{p}{)}\PG{+w}{ }\PG{n}{ENGINE}\PG{o}{=}\PG{n}{InnoDB}\PG{p}{;}
+\PG{k}{INSERT}\PG{+w}{ }\PG{k}{INTO}\PG{+w}{ }\PG{n}{protected\PGZus{}resource}\PG{+w}{ }\PG{k}{VALUES}\PG{+w}{ }\PG{p}{(}\PG{l+s+s1}{\PGZsq{}report\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}initial\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{p}{;}
+
+\PG{c+c1}{\PGZhy{}\PGZhy{} Optimistic concurrency (example 29): every change increments version, and}
+\PG{c+c1}{\PGZhy{}\PGZhy{} an UPDATE succeeds only against the version the writer read.}
+\PG{k}{CREATE}\PG{+w}{ }\PG{k}{TABLE}\PG{+w}{ }\PG{n}{document}\PG{+w}{ }\PG{p}{(}
+\PG{+w}{    }\PG{n}{id}\PG{+w}{      }\PG{n+nb}{BIGINT}\PG{+w}{ }\PG{k}{PRIMARY}\PG{+w}{ }\PG{k}{KEY}\PG{p}{,}
+\PG{+w}{    }\PG{n}{body}\PG{+w}{    }\PG{n+nb}{TEXT}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{    }\PG{k}{version}\PG{+w}{ }\PG{n+nb}{INT}\PG{+w}{ }\PG{n}{UNSIGNED}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{+w}{ }\PG{k}{DEFAULT}\PG{+w}{ }\PG{l+m+mi}{0}
+\PG{p}{)}\PG{+w}{ }\PG{n}{ENGINE}\PG{o}{=}\PG{n}{InnoDB}\PG{p}{;}
+\PG{k}{INSERT}\PG{+w}{ }\PG{k}{INTO}\PG{+w}{ }\PG{n}{document}\PG{+w}{ }\PG{k}{VALUES}\PG{+w}{ }\PG{p}{(}\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{l+s+s1}{\PGZsq{}\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{p}{;}

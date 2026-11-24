@@ -1,0 +1,12 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[okbox,minimum width=5.2cm,minimum height=2.8cm] (cl) at (6,0) {};
+\node[font=\sffamily\small\bfseries,text=teal] at (6,1.0) {consensus cluster};
+\foreach \i/\x in {1/4.6,2/6.0,3/7.4} \node[circle,draw=teal,fill=white,minimum size=8mm,font=\sffamily\footnotesize] at (\x,0.15) {n\i};
+\node[lbl] at (6,-0.85) {etcd, ZooKeeper, Kubernetes API};
+\node[box,text width=3.3cm] (c) at (0,0.6) {worker\\\footnotesize lease with keep-alive};
+\draw[arr] (c.east) -- node[lbl,above]{acquire} (cl.west |- c.east);
+\draw[arr] (cl.west |- 0,-0.45) -| node[lbl,below,pos=0.3]{revision 9172} (c.south);
+\node[box,text width=3.6cm] (d) at (12.4,0.6) {protected service\\\footnotesize rejects revision $<$ highest seen};
+\draw[arr] (c.north) -- ++(0,1.0) -| node[lbl,above,pos=0.25]{write carrying revision 9172 as its fencing token} (d.north);
+\node[lbl,anchor=north,text width=12cm] at (6.2,-1.65) {the cluster agrees on one owner and a monotonic revision even across failures; the destination still enforces it};
+\end{tikzpicture}

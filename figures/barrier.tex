@@ -1,0 +1,15 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\foreach \y/\t/\a in {2.1/T1/2.0,1.4/T2/4.4,0.7/T3/3.1,0/T4/5.6} {
+  \node[anchor=east] at (0.9,\y) {\t}; \draw[lane] (1,\y) -- (11.3,\y);
+  \draw[span] (1.2,\y) -- (\a,\y);
+  \draw[waitspan] (\a,\y) -- (5.6,\y);
+  \draw[span] (5.8,\y) -- (5.8+\a*0.6+1.6,\y);
+}
+\draw[very thick,navy,dashed] (5.7,-0.45) -- (5.7,2.55) node[above,font=\sffamily\footnotesize\bfseries,text=navy]{barrier: generation 1};
+\node[lbl] at (3.4,-0.6) {phase 1 (uneven work)};
+\draw[very thick,navy,dashed] (11.2,-0.45) -- (11.2,2.55) node[above,font=\sffamily\footnotesize\bfseries,text=navy]{generation 2};
+\node[lbl] at (8.6,-0.6) {phase 2 starts only when all four arrived};
+\node[lbl,text=rust,anchor=west] at (11.5,1.4) {one failed thread\\strands the rest};
+\draw[waitspan] (11.6,0.35) -- (12.3,0.35); \node[lbl,anchor=west] at (12.4,0.35) {arrived, waiting};
+\draw[span] (11.6,-0.05) -- (12.3,-0.05); \node[lbl,anchor=west] at (12.4,-0.05) {working};
+\end{tikzpicture}

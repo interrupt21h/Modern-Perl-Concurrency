@@ -1,0 +1,11 @@
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{strict}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{FindBin}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{lib}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}FindBin::Bin/lib\PGZdq{}}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{SessionLab}\PG{p}{;}
+
+\PG{c+c1}{\PGZsh{} apply\PGZus{}default\PGZus{}middlewares wraps the app in Plack::Middleware::ReverseProxy}
+\PG{c+c1}{\PGZsh{} only for requests from 127.0.0.1, unless using\PGZus{}frontend\PGZus{}proxy is configured}
+\PG{c+c1}{\PGZsh{} (see SessionLab.pm). It makes \PGZdl{}c\PGZhy{}\PGZgt{}req\PGZhy{}\PGZgt{}secure and the client address}
+\PG{c+c1}{\PGZsh{} reflect X\PGZhy{}Forwarded\PGZhy{}Proto / X\PGZhy{}Forwarded\PGZhy{}For.}
+\PG{n+nn}{SessionLab}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{apply\PGZus{}default\PGZus{}middlewares}\PG{p}{(}\PG{n+nn}{SessionLab}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{psgi\PGZus{}app}\PG{p}{)}\PG{p}{;}

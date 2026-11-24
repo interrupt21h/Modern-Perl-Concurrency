@@ -1,0 +1,13 @@
+Edition 1.3 final build: latexmk exit 0
+Pages: 156
+Unique code listing numbers: 59
+Unique figure numbers: 45
+Out-of-page text spans: 0
+Replacement glyph pages: []
+Overfull boxes: 0
+Underfull box notices: 3
+LaTeX warnings: 0
+All 59 source listings token round-trip checked.
+Local suite: 16 passed, 14 skipped; service-backed tests not rerun.
+Perl::Tidy unavailable; targeted source formatting, not a whole-project perltidy run.
+See revision-local-tests.txt and historical test-results.txt.

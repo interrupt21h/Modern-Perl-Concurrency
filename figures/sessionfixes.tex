@@ -1,0 +1,16 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\foreach \x/\title/\sty/\res in {0/{Naive: cart in the session blob}/badbox/{3 of 8 kept},5.6/{Atomic: HINCRBY outside the session}/okbox/{8 of 8, no waiting},11.2/{Per-session lock around load and save}/okbox/{8 of 8, one at a time}} {
+  \node[font=\sffamily\small\bfseries,text=navy,text width=5.0cm,align=center] at (\x+2.4,2.1) {\title};
+  \node[\sty,minimum width=4.6cm] at (\x+2.4,-1.9) {\res};}
+% naive
+\foreach \i/\y in {1/1.3,2/0.45,3/-0.4} \node[box,fill=white,font=\sffamily\scriptsize,minimum width=4.2cm] at (2.4,\y) {request \i: GET blob, change, SET blob};
+\node[lbl,text=rust] at (2.4,-1.15) {later SET overwrites earlier ones};
+% atomic
+\node[box,font=\sffamily\scriptsize,minimum width=4.2cm,fill=white] at (8.0,1.2) {session blob: identity, CSRF only};
+\foreach \i/\y in {1/0.4,2/-0.45} \node[okbox,font=\sffamily\scriptsize,minimum width=4.2cm] at (8.0,\y) {request \i: HINCRBY cart:\{sid\} item 1};
+\node[lbl,text=teal] at (8.0,-1.15) {each change is one atomic command};
+% lock
+\draw[span] (11.6,1.0) -- (13.4,1.0); \node[lbl,above] at (12.5,1.1) {request 1};
+\draw[waitspan] (11.6,0.3) -- (13.4,0.3); \draw[span] (13.4,0.3) -- (15.2,0.3); \node[lbl,above] at (14.3,0.4) {request 2};
+\draw[waitspan] (11.6,-0.4) -- (15.2,-0.4); \draw[span] (15.2,-0.4) -- (16.4,-0.4); \node[lbl,below] at (13.6,-0.5) {request 3 waits on slock:\{sid\}};
+\end{tikzpicture}

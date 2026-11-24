@@ -1,0 +1,26 @@
+\PGZsh{} Meta protocol transcript, replayed against Memcached 1.6.24.
+\PGZsh{} Send CRLF after each line. Values are illustrative, not random.
+\PGZsh{} Acquire only if absent (ME = add mode). A second add is refused (NS).
+ms lease:demo 3 ME T10
+abc
+HD
+ms lease:demo 3 ME T10
+xyz
+NS
+\PGZsh{} Read owner, CAS and remaining TTL together.
+mg lease:demo v c t
+VA 3 c3 t10
+abc
+\PGZsh{} Renew: compare\PGZhy{}and\PGZhy{}set with the observed CAS, same owner, new TTL.
+ms lease:demo 3 C3 T10
+abc
+HD
+\PGZsh{} The renewal changed the CAS, so the old value is now stale (EX).
+md lease:demo C3
+EX
+\PGZsh{} Re\PGZhy{}read and release with the current CAS.
+mg lease:demo v c
+VA 3 c4
+abc
+md lease:demo C4
+HD

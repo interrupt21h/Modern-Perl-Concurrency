@@ -1,0 +1,8 @@
+\begin{tikzpicture}[node distance=6mm]
+\node[box,text width=49mm] (perl) {\textbf{Perl worker}\\\footnotesize ownership, deadlines, error handling};
+\node[okbox,text width=49mm,right=16mm of perl] (redis) {\textbf{Redis primary}\\\footnotesize command or short Lua script};
+\node[box,text width=49mm,below=of redis] (state) {\textbf{Shared state}\\\footnotesize lease, counter, token record};
+\draw[arr] ([yshift=4pt]perl.east) -- node[above,lbl]{request} ([yshift=4pt]redis.west);
+\draw[thinarr] ([yshift=-4pt]redis.west) -- node[below,lbl]{result} ([yshift=-4pt]perl.east);
+\draw[arr] (redis) -- node[right,lbl]{atomic transition} (state);
+\end{tikzpicture}

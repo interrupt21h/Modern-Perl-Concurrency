@@ -1,0 +1,18 @@
+\begin{tikzpicture}[node distance=22mm]
+\node[font=\sffamily\small\bfseries,text=rust] at (2.1,1.7) {(a) Circular wait: deadlock};
+\node[box] (t1) at (0,0) {T1}; \node[box] (t2) at (4.2,0) {T2};
+\node[box,fill=white] (a) at (2.1,0.95) {lock A}; \node[box,fill=white] (b) at (2.1,-0.95) {lock B};
+\draw[arr] (a) -- node[lbl,above left]{held by} (t1);
+\draw[arr] (b) -- node[lbl,below right]{held by} (t2);
+\draw[badarr,dashed] (t1) -- node[lbl,below left]{waits for} (b);
+\draw[badarr,dashed] (t2) -- node[lbl,above right]{waits for} (a);
+\begin{scope}[xshift=8.2cm]
+\node[font=\sffamily\small\bfseries,text=teal] at (2.1,1.7) {(b) Global order A before B};
+\node[box] (u1) at (0,0) {T1}; \node[box] (u2) at (4.2,0) {T2};
+\node[box,fill=white] (ua) at (2.1,0.95) {lock A (rank 10)}; \node[box,fill=white] (ub) at (2.1,-0.95) {lock B (rank 20)};
+\draw[arr] (ua) -- node[lbl,above left]{held by} (u1);
+\draw[arr] (u1) -- node[lbl,below left]{then takes} (ub);
+\draw[thinarr,dashed] (u2) -- node[lbl,above right]{waits for A first} (ua);
+\node[lbl,text=teal] at (2.1,-1.75) {T2 holds nothing while waiting: no cycle is possible};
+\end{scope}
+\end{tikzpicture}

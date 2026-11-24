@@ -1,0 +1,48 @@
+% Shared code presentation. Content is highlighted offline; no shell escape.
+\input{generated/code/palette.tex}
+% Pygments emits slot 39 for apostrophes; use the actual ASCII glyphs.
+\renewcommand{\PGZsq}{\textquotesingle}
+\newcommand{\PGZgrave}{\textasciigrave}
+\newcounter{guideListing}[chapter]
+\renewcommand{\theguideListing}{\thechapter.\arabic{guideListing}}
+\definecolor{codebackground}{HTML}{FAFBFC}
+\definecolor{codeborder}{HTML}{C9D5DD}
+\definecolor{codeheader}{HTML}{E9EFF3}
+\renewcommand{\theFancyVerbLine}{\sffamily\scriptsize\color{muted}\arabic{FancyVerbLine}}
+\newcommand{\CodeLanguage}[1]{\ifcsname code@lang@#1\endcsname\csname code@lang@#1\endcsname\else#1\fi}
+\makeatletter
+\def\code@lang@perl{Perl}
+\def\code@lang@sql{SQL}
+\def\code@lang@c{C}
+\def\code@lang@bash{Shell}
+\def\code@lang@lua{Redis server-side operation (Lua)}
+\def\code@lang@perllua{Perl application (embedded Redis script)}
+\definecolor{serverheader}{HTML}{F4E9DB}
+\newcommand{\CodeHeaderColor}[1]{\ifcsname code@header@#1\endcsname\csname code@header@#1\endcsname\else codeheader\fi}
+\def\code@header@lua{serverheader}
+\def\code@lang@yaml{YAML}
+\def\code@lang@text{Output / transcript}
+\makeatother
+\tcbset{guidecode/.style={enhanced,breakable,sharp corners,
+  colback=codebackground,colframe=codeborder,colbacktitle=codeheader,coltitle=navy,
+  boxrule=.5pt,left=24pt,right=7pt,top=6pt,bottom=6pt,
+  lefttitle=8pt,righttitle=8pt,toptitle=5pt,bottomtitle=5pt,
+  fonttitle=\sffamily\small\bfseries,before skip=9pt,after skip=9pt,
+  pad at break=4pt,lines before break=5,
+  overlay unbroken={\draw[codeborder] ([xshift=21pt]interior.north west)--([xshift=21pt]interior.south west);},
+  overlay first={\draw[codeborder] ([xshift=21pt]interior.north west)--([xshift=21pt]interior.south west);},
+  overlay middle={\draw[codeborder] ([xshift=21pt]interior.north west)--([xshift=21pt]interior.south west);},
+  overlay last={\draw[codeborder] ([xshift=21pt]interior.north west)--([xshift=21pt]interior.south west);}}}
+\newcommand{\CodeFile}[3]{%
+  \par\needspace{6\baselineskip}\refstepcounter{guideListing}%
+  \begin{tcolorbox}[guidecode,
+    colbacktitle=\CodeHeaderColor{#1},
+    title={Listing \theguideListing\enspace\textperiodcentered\enspace\CodeLanguage{#1}\\[-1pt]\mdseries #3},
+    title after break={Listing \theguideListing\enspace\textperiodcentered\enspace\CodeLanguage{#1}\enspace(continued)\\[-1pt]\mdseries #3}]%
+  \VerbatimInput[commandchars=\\\{\},fontsize=\small,baselinestretch=1.10,numbers=left,numbersep=6pt,
+    breaklines=true,breakanywhere=true,breakautoindent=true,breakindent=1em,
+    breaksymbolleft={\tiny\color{muted}\ensuremath{\hookrightarrow}},
+    breaksymbolright={},tabsize=4,obeytabs=true,showspaces=false,showtabs=false,
+    formatcom=\color{navy}]{generated/code/#2.tex}%
+  \end{tcolorbox}%
+}

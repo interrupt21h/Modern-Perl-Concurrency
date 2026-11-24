@@ -1,0 +1,8 @@
+# Handbook-oriented style: avoid overly wide lines and drifting side comments.
+-i=4
+-ci=4
+-l=76
+-nvsc
+-olbxl=*
+-nasc
+-ndsm

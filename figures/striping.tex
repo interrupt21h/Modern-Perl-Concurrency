@@ -1,0 +1,15 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[font=\sffamily\small\bfseries,text=navy,anchor=west] at (0,2.35) {64 accounts};
+\foreach \i in {0,...,15} {
+  \pgfmathtruncatemacro{\s}{mod(\i,8)}
+  \node[draw=navy!60,fill=white,minimum size=6.5mm,font=\sffamily\scriptsize,inner sep=0] (a\i) at (0.4+0.75*\i,1.6) {\i};}
+\node[lbl,anchor=west] at (12.3,1.6) {\dots\ 63};
+\node[font=\sffamily\small\bfseries,text=navy,anchor=west,text width=2.6cm] at (12.3,-0.15) {8 stripe locks\\\footnotesize\mdseries stripe = account mod 8};
+\foreach \s in {0,...,7} \node[box,minimum width=1.2cm] (s\s) at (0.75+1.55*\s,-0.15) {stripe \s};
+\foreach \i in {0,...,15} {\pgfmathtruncatemacro{\s}{mod(\i,8)} \draw[navy!12] (a\i.south) -- (s\s.north);}
+\draw[teal,very thick] (a3.south) -- (s3.north); \draw[teal,very thick] (a13.south) -- (s5.north);
+\draw[very thick,teal] (s3) circle (0pt); \node[draw=teal,very thick,rounded corners=2pt,fit=(s3),inner sep=1pt] {}; \node[draw=teal,very thick,rounded corners=2pt,fit=(s5),inner sep=1pt] {};
+\draw[very thick,teal] (a3) circle (4.2mm); \draw[very thick,teal] (a13) circle (4.2mm);
+\node[okbox,text width=9.6cm,anchor=north west] at (0,-0.95) {transfer 13 $\to$ 3: stripes 5 and 3; lock stripe 3 first, then 5 (ascending order). Unrelated accounts on other stripes proceed in parallel.};
+\node[badbox,text width=3.6cm,anchor=north west] at (10.3,-0.95) {auditor: locks all 8 stripes in order 0..7};
+\end{tikzpicture}

@@ -1,0 +1,10 @@
+\begin{tikzpicture}[node distance=38mm]
+\node[state,fill=teal!10] (s0) {0\\unlocked};
+\node[state,right=of s0] (s1) {1\\locked,\\no waiters};
+\node[state,right=of s1,fill=rust!8] (s2) {2\\locked,\\waiters};
+\draw[arr] (s0) to[bend left=22] node[lbl,above]{lock: CAS 0$\to$1\\no syscall} (s1);
+\draw[arr] (s1) to[bend left=22] node[lbl,below]{unlock: 1$\to$0\\no syscall} (s0);
+\draw[badarr] (s1) to[bend left=22] node[lbl,above]{contended lock: xchg 2,\\then FUTEX\_WAIT} (s2);
+\draw[badarr] (s2) to[out=-70,in=-110,looseness=0.45] node[lbl,below]{unlock: 2$\to$0, FUTEX\_WAKE one waiter} (s0);
+\draw[badarr] (s2) to[out=30,in=-30,looseness=5] node[lbl,right]{more\\waiters\\sleep} (s2);
+\end{tikzpicture}

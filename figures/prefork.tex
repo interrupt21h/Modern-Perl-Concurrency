@@ -1,0 +1,14 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[box,minimum width=3.4cm] (lb) at (0,3.3) {ingress / load balancer};
+\node[box,minimum width=3.4cm] (m) at (0,1.8) {Starman master\\\footnotesize listens, forks, supervises};
+\draw[arr] (lb) -- (m);
+\foreach \i/\x in {1/-5.4,2/-1.8,3/1.8,4/5.4} {
+  \node[box,minimum width=3.1cm,minimum height=1.3cm] (w\i) at (\x,0) {worker \i\\\footnotesize own interpreter,\\\footnotesize own lexicals and lock()};
+  \draw[thinarr] (m) -- (w\i);
+}
+\node[badbox,text width=12.6cm] at (0,-1.45) {A lock() or Perl variable in worker 1 is invisible to workers 2--4, to other pods and to cron jobs.};
+\node[okbox,minimum width=3.4cm] (r) at (-3.6,-3.0) {Redis / Valkey\\\footnotesize sessions, leases, queues};
+\node[okbox,minimum width=3.4cm] (d) at (0,-3.0) {MySQL\\\footnotesize transactions, constraints};
+\node[okbox,minimum width=3.4cm] (f) at (3.6,-3.0) {flock on a local file\\\footnotesize same host only};
+\node[lbl] at (0,-4.0) {coordination between workers must live outside the interpreter};
+\end{tikzpicture}

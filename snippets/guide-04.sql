@@ -1,0 +1,4 @@
+START TRANSACTION;
+SELECT * FROM account WHERE id = 1 FOR UPDATE;
+UPDATE account SET cents = cents + 100 WHERE id = 1;
+COMMIT;

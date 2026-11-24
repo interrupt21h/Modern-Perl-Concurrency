@@ -1,0 +1,4 @@
+\PG{k}{START}\PG{+w}{ }\PG{k}{TRANSACTION}\PG{p}{;}
+\PG{k}{SELECT}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{k}{FROM}\PG{+w}{ }\PG{n}{account}\PG{+w}{ }\PG{k}{WHERE}\PG{+w}{ }\PG{n}{id}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{k}{FOR}\PG{+w}{ }\PG{k}{UPDATE}\PG{+w}{ }\PG{n}{NOWAIT}\PG{p}{;}
+\PG{c+c1}{\PGZhy{}\PGZhy{} ERROR 3572: the requested row is already locked.}
+\PG{k}{ROLLBACK}\PG{p}{;}

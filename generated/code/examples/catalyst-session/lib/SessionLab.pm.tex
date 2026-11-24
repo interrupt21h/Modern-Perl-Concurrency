@@ -1,0 +1,106 @@
+\PG{k}{package}\PG{+w}{ }\PG{n+nn}{SessionLab}\PG{p}{;}
+\PG{c+c1}{\PGZsh{} Catalyst application demonstrating Redis\PGZhy{}backed sessions and request\PGZhy{}level}
+\PG{c+c1}{\PGZsh{} coordination: secure session IDs, fixation defense, lost\PGZhy{}update races and}
+\PG{c+c1}{\PGZsh{} their fixes, idempotency keys, rate limiting and logout\PGZhy{}everywhere.}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Moose}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{namespace::autoclean}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Catalyst::Runtime}\PG{+w}{ }\PG{l+m+mf}{5.80}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Catalyst}\PG{+w}{ }\PG{l+s+sx}{qw/}
+\PG{l+s+sx}{    Session}
+\PG{l+s+sx}{    Session::State::Cookie}
+\PG{l+s+sx}{    +SessionLab::Plugin::Session::Store::RedisSafe}
+\PG{l+s+sx}{/}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{SessionLab::Redis}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Time::HiRes}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{clock\PGZus{}gettime CLOCK\PGZus{}MONOTONIC sleep}\PG{l+s+sx}{)}\PG{p}{;}
+
+\PG{n}{extends}\PG{+w}{ }\PG{l+s}{\PGZsq{}Catalyst\PGZsq{}}\PG{p}{;}
+
+\PG{n+nn}{\PGZus{}\PGZus{}PACKAGE\PGZus{}\PGZus{}}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{config}\PG{p}{(}
+\PG{+w}{    }\PG{n}{name}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}SessionLab\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{disable\PGZus{}component\PGZus{}resolution\PGZus{}regex\PGZus{}fallback}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{    }\PG{c+c1}{\PGZsh{} Behind an ingress in another pod (Traefik, nginx), REMOTE\PGZus{}ADDR is not}
+\PG{+w}{    }\PG{c+c1}{\PGZsh{} 127.0.0.1, so Catalyst will not apply ReverseProxy by itself. Enable it}
+\PG{+w}{    }\PG{c+c1}{\PGZsh{} explicitly, and make sure only the proxy can reach the application:}
+\PG{+w}{    }\PG{c+c1}{\PGZsh{} X\PGZhy{}Forwarded\PGZhy{}* headers are trusted once this is on.}
+\PG{+w}{    }\PG{n}{using\PGZus{}frontend\PGZus{}proxy}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{SESSIONLAB\PGZus{}BEHIND\PGZus{}PROXY}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}Plugin::Session\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{expires}\PG{+w}{          }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{3600}\PG{p}{,}\PG{+w}{   }\PG{c+c1}{\PGZsh{} idle timeout in seconds}
+\PG{+w}{        }\PG{n}{expiry\PGZus{}threshold}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{300}\PG{p}{,}\PG{+w}{    }\PG{c+c1}{\PGZsh{} extend at most every 5 min: fewer writes}
+\PG{+w}{        }\PG{n}{redis\PGZus{}prefix}\PG{+w}{     }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}sess:\PGZsq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n}{cookie\PGZus{}name}\PG{+w}{      }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}sessionlab\PGZus{}sid\PGZsq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n}{cookie\PGZus{}httponly}\PG{+w}{  }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{      }\PG{c+c1}{\PGZsh{} not readable from JavaScript}
+\PG{+w}{        }\PG{n}{cookie\PGZus{}samesite}\PG{+w}{  }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Lax\PGZsq{}}\PG{p}{,}\PG{+w}{  }\PG{c+c1}{\PGZsh{} basic CSRF mitigation for top\PGZhy{}level POSTs}
+\PG{+w}{        }\PG{c+c1}{\PGZsh{} Production behind TLS: 1. Mode 2 relies on \PGZdl{}c\PGZhy{}\PGZgt{}req\PGZhy{}\PGZgt{}secure, which is}
+\PG{+w}{        }\PG{c+c1}{\PGZsh{} false behind a TLS\PGZhy{}terminating proxy unless ReverseProxy middleware}
+\PG{+w}{        }\PG{c+c1}{\PGZsh{} is applied. The laboratory runs over plain HTTP on loopback.}
+\PG{+w}{        }\PG{n}{cookie\PGZus{}secure}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{SESSION\PGZus{}COOKIE\PGZus{}SECURE}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}
+\PG{+w}{    }\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{p}{)}\PG{p}{;}
+
+\PG{c+c1}{\PGZsh{} All security tokens come from the kernel CSPRNG, never from rand().}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{random\PGZus{}hex}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bytes}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{open}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZlt{}:raw\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/dev/urandom\PGZsq{}}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}urandom: \PGZdl{}!\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{read}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{buf}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bytes}\PG{p}{)}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bytes}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}short read from urandom\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nb}{unpack}\PG{+w}{ }\PG{l+s}{\PGZsq{}H*\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{buf}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{c+c1}{\PGZsh{} Session IDs must be unpredictable. The plugin\PGZsq{}s default hashes a counter,}
+\PG{c+c1}{\PGZsh{} time, rand(), the PID and an address: not a cryptographic source.}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{generate\PGZus{}session\PGZus{}id}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{random\PGZus{}hex}\PG{p}{(}\PG{l+m+mi}{32}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{   }\PG{c+c1}{\PGZsh{} 256 bits, hex}
+
+\PG{c+c1}{\PGZsh{} \PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}}
+\PG{c+c1}{\PGZsh{} Per\PGZhy{}session request lock. Catalyst::Plugin::Session loads the whole}
+\PG{c+c1}{\PGZsh{} session on first access and writes the whole session back at the end of}
+\PG{c+c1}{\PGZsh{} the request, so two concurrent requests in one session are a classic}
+\PG{c+c1}{\PGZsh{} read\PGZhy{}modify\PGZhy{}write race. Actions that must mutate the session safely call}
+\PG{c+c1}{\PGZsh{} lock\PGZus{}session() BEFORE their first \PGZdl{}c\PGZhy{}\PGZgt{}session access; the lock is released}
+\PG{c+c1}{\PGZsh{} after the session has been saved, in finalize\PGZus{}session below.}
+
+\PG{c+c1}{\PGZsh{} Redis executes the embedded Lua; Perl sends it as data.}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{RELEASE}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZlt{}\PGZlt{}}\PG{l+s}{\PGZsq{}}\PG{l+s+dl}{LUA}\PG{l+s}{\PGZsq{};}
+\PG{k+kr}{if}\PG{+w}{ }\PG{n+nv}{redis}\PG{p}{.}\PG{n+nf}{call}\PG{p}{(}\PG{l+s+s1}{\PGZsq{}}\PG{l+s+s1}{GET}\PG{l+s+s1}{\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{KEYS}\PG{p}{[}\PG{l+m+mi}{1}\PG{p}{])}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv}{ARGV}\PG{p}{[}\PG{l+m+mi}{1}\PG{p}{]}\PG{+w}{ }\PG{k+kr}{then}
+\PG{+w}{    }\PG{k+kr}{return}\PG{+w}{ }\PG{n+nv}{redis}\PG{p}{.}\PG{n+nf}{call}\PG{p}{(}\PG{l+s+s1}{\PGZsq{}}\PG{l+s+s1}{DEL}\PG{l+s+s1}{\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{KEYS}\PG{p}{[}\PG{l+m+mi}{1}\PG{p}{])}
+\PG{k+kr}{end}
+\PG{k+kr}{return}\PG{+w}{ }\PG{l+m+mi}{0}
+\PG{l+s+dl}{LUA}
+
+\PG{n}{has}\PG{+w}{ }\PG{n}{\PGZus{}session\PGZus{}lock}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{(}\PG{n}{is}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}rw\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n}{clearer}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZus{}clear\PGZus{}session\PGZus{}lock\PGZsq{}}\PG{p}{)}\PG{p}{;}
+
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{lock\PGZus{}session}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{opt}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sid}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{sessionid}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} no session yet: nothing to race}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{+w}{   }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZdq{}slock:\PGZob{}\PGZdl{}sid\PGZcb{}\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ttl}\PG{+w}{   }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{opt}\PG{p}{\PGZob{}}\PG{n}{ttl\PGZus{}ms}\PG{p}{\PGZcb{}}\PG{+w}{  }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+m+mi}{10\PGZus{}000}\PG{p}{;}\PG{+w}{    }\PG{c+c1}{\PGZsh{} longer than any request}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{wait}\PG{+w}{  }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{opt}\PG{p}{\PGZob{}}\PG{n}{wait\PGZus{}s}\PG{p}{\PGZcb{}}\PG{+w}{  }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+m+mi}{5}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{token}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{random\PGZus{}hex}\PG{p}{(}\PG{l+m+mi}{16}\PG{p}{)}\PG{p}{;}
+
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{deadline}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{clock\PGZus{}gettime}\PG{p}{(}\PG{n}{CLOCK\PGZus{}MONOTONIC}\PG{p}{)}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{wait}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pause}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mf}{0.005}\PG{p}{;}
+\PG{+w}{    }\PG{k}{until}\PG{+w}{ }\PG{p}{(}\PG{n+nn}{SessionLab::Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{handle}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{set}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{token}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}NX\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}PX\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ttl}\PG{p}{)}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n}{clock\PGZus{}gettime}\PG{p}{(}\PG{n}{CLOCK\PGZus{}MONOTONIC}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZgt{}=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{deadline}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{sleep}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pause}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{p}{(}\PG{l+m+mf}{0.5}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nb}{rand}\PG{p}{)}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pause}\PG{+w}{ }\PG{o}{*=}\PG{+w}{ }\PG{l+m+mi}{2}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pause}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{l+m+mf}{0.05}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{\PGZus{}session\PGZus{}lock}\PG{p}{(}\PG{p}{[}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{token}\PG{p}{]}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{finalize\PGZus{}session}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{shift}\PG{p}{;}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{next}\PG{o}{::}\PG{n}{method}\PG{p}{(}\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{)}\PG{p}{;}\PG{+w}{                   }\PG{c+c1}{\PGZsh{} the session is written here}
+\PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{lock}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{\PGZus{}session\PGZus{}lock}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{     }\PG{c+c1}{\PGZsh{} ... and only then unlocked}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{\PGZus{}clear\PGZus{}session\PGZus{}lock}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nn}{SessionLab::Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{run\PGZus{}script}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{RELEASE}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@\PGZdl{}}\PG{n+nv}{lock}\PG{p}{)}\PG{p}{;}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{log}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{warn}\PG{p}{(}\PG{l+s}{\PGZdq{}session unlock failed: \PGZdl{}@\PGZdq{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{\PGZcb{}}
+
+\PG{n+nn}{\PGZus{}\PGZus{}PACKAGE\PGZus{}\PGZus{}}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{setup}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+
+\PG{c+c1}{\PGZsh{} Catalyst\PGZsq{}s default UTF\PGZhy{}8 encoding runs binmode(STDERR, \PGZsq{}:encoding(UTF\PGZhy{}8)\PGZsq{}),}
+\PG{c+c1}{\PGZsh{} which silently makes STDERR buffered. Log lines then reach the container log}
+\PG{c+c1}{\PGZsh{} late, in batches, and are lost if the worker is killed. Restore line\PGZhy{}at\PGZhy{}a\PGZhy{}}
+\PG{c+c1}{\PGZsh{} time delivery.}
+\PG{n+nb+bp}{STDERR}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{autoflush}\PG{p}{(}\PG{l+m+mi}{1}\PG{p}{)}\PG{p}{;}
+\PG{l+m+mi}{1}\PG{p}{;}

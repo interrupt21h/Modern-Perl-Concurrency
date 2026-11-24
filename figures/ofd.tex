@@ -1,0 +1,12 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[box,minimum width=3cm] (p) at (0,2) {parent\\\footnotesize fd 3};
+\node[box,minimum width=3cm] (c) at (0,0.4) {child after fork()\\\footnotesize fd 3 (inherited)};
+\node[box,minimum width=3cm] (q) at (0,-1.4) {other process\\\footnotesize fd 5 (own open())};
+\node[okbox,minimum width=4.2cm] (o1) at (5.6,1.2) {open file description 1\\\footnotesize offset, flags, \textbf{flock LOCK\_EX}};
+\node[box,minimum width=4.2cm] (o2) at (5.6,-1.4) {open file description 2\\\footnotesize offset, flags};
+\node[box,minimum width=2.8cm] (ino) at (10.6,0) {inode\\\footnotesize /run/lock/app.lock};
+\draw[arr] (p) -- (o1); \draw[arr] (c) -- (o1); \draw[thinarr] (q) -- (o2);
+\draw[thinarr] (o1) -- (ino); \draw[thinarr] (o2) -- (ino);
+\node[lbl,text=teal,align=left,anchor=west] at (2.0,2.75) {parent and child share one description,\\so they share one lock};
+\node[lbl,text=rust,align=left,anchor=west] at (2.0,-2.35) {LOCK\_EX on description 2 blocks\\until description 1 is unlocked or closed};
+\end{tikzpicture}

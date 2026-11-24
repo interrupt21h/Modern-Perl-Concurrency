@@ -1,0 +1,32 @@
+01-mutex.pl                      ok   40000
+02-semaphore.pl                  ok   peak=3
+03-condition.pl                  ok   all ready
+04-queue.pl                      ok   100 jobs completed
+05-rwlock.pl                     ok   value=1000
+06-flock.pl                      ok   400
+07-sysv.pl                       ok   permits restored
+08-pipe.pl                       ok   sum=5050
+09-barrier.pl                    ok   20 phases completed
+20-scope-release.pl              ok   lock released on exception and on explicit release
+22-config-snapshot.pl            ok   500 versions published, 832 consistent snapshots read
+23-lock-striping.pl              ok   19575 transfers, 112641 consistent audits, total=64000
+25-flock-deadline.pl             ok   timed out after 0.21s; acquired 0.68s after holder locked; shared OK
+26-lock-metrics.pl               ok   contended acquisitions: 99%
+24-try-defer.pl                  ok   try/catch/defer released the lock on return, exception and nesting
+27-mce-loop.pl                   skip (MCE not installed)
+21-futex-mutex.c                 ok   counter=8000000 expected=8000000 slow-path=3.03%
+19-async-await.pl                skip (Future::AsyncAwait / IO::Async not installed)
+10-mysql-advisory.pl             skip (DB_DSN not set)
+11-mysql-transfer.pl             skip (DB_DSN not set)
+12-mysql-queue.pl                skip (DB_DSN not set)
+29-dbic-locking.pl               skip (DB_DSN not set)
+13-redis-lease.pl                skip (REDIS_SERVER not set)
+16-redis-semaphore.pl            skip (REDIS_SERVER not set)
+17-redis-stream-worker.pl        skip (REDIS_SERVER not set)
+18-fenced-write.pl               skip (REDIS_SERVER not set)
+31-redis-watch-lease.pl          skip (REDIS_SERVER not set)
+28-catalyst-sessions.pl          skip (needs REDIS_SERVER, Catalyst, Sereal, Starman)
+30-api-tokens.pl                 skip (needs REDIS_SERVER, Catalyst, Starman, Crypt::JWT, YAML::XS)
+14-memcached-lease.pl            skip (MEMCACHED_SERVER not set)
+
+16 passed, 14 skipped

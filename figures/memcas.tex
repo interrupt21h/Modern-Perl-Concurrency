@@ -1,0 +1,12 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\foreach \y/\t in {1.8/{Worker A},0.9/{Memcached},0/{Worker B}} {\node[anchor=east,font=\sffamily\small] at (1.6,\y) {\t}; \draw[lane] (1.7,\y) -- (16.4,\y);}
+\node[okbox,font=\sffamily\footnotesize] at (3.0,1.8) {add: stored};
+\node[box,fill=white,font=\sffamily\footnotesize] at (3.6,0) {add: NOT\_STORED};
+\node[lbl,below] at (3.6,-0.3) {B backs off, rereads cache};
+\draw[span] (4.4,1.8) -- (8.4,1.8); \node[lbl,above] at (6.4,1.9) {refresh the cache entry};
+\node[box,fill=white,font=\sffamily\footnotesize] at (10.0,1.8) {gets: owner A, cas 17};
+\node[okbox,font=\sffamily\footnotesize] at (13.9,1.8) {cas(17): tombstone, 1 s};
+\node[box,fill=white,font=\sffamily\footnotesize] (val) at (6.4,0.9) {lease = token A};
+\node[box,fill=white,font=\sffamily\footnotesize] at (13.9,0.9) {lease = released};
+\node[lbl,anchor=north,text=rust] at (8.8,-0.6) {CAS fails if the entry changed (expired, evicted, taken by someone else): nothing is deleted};
+\end{tikzpicture}

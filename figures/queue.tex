@@ -1,0 +1,15 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[box,minimum width=2.5cm] (p) at (0,0) {producer};
+\node[draw=navy,fill=paper,rounded corners=2pt,minimum width=6.2cm,minimum height=1.25cm] (q) at (5.6,0) {};
+\node[font=\sffamily\footnotesize\bfseries,text=navy,anchor=north west] at (2.6,0.6) {Thread::Queue, limit = 16};
+\foreach \i in {0,...,7} \draw[navy,fill=white] (2.8+0.68*\i,-0.4) rectangle ++(0.55,0.5);
+\foreach \i in {0,...,3} \node[font=\sffamily\tiny] at (3.08+0.68*\i,-0.15) {job};
+\draw[arr] (p) -- node[lbl,above]{enqueue} (q);
+\node[lbl,text=rust] at (5.6,-0.95) {when all 16 slots are full, enqueue blocks (backpressure)};
+\foreach \i/\y in {1/1.2,2/0,3/-1.2} {\node[okbox,minimum width=2.4cm] (w\i) at (11.4,\y) {worker \i};
+  \draw[arr] (q.east) -- (w\i.west);}
+\node[lbl,fill=white,inner sep=1pt] at (9.3,0.55) {dequeue};
+\node[box,minimum width=2.4cm] (r) at (14.8,0) {results};
+\foreach \i in {1,2,3} \draw[thinarr] (w\i.east) -- (r.west);
+\node[lbl] at (11.4,-2.0) {each job has exactly one owner at a time:\\no shared mutable state, no locks in user code};
+\end{tikzpicture}

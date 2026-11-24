@@ -1,0 +1,4 @@
+\PG{k}{UPDATE}\PG{+w}{ }\PG{n}{protected\PGZus{}resource}
+\PG{k}{SET}\PG{+w}{ }\PG{n}{payload}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{o}{?}\PG{p}{,}\PG{+w}{ }\PG{n}{last\PGZus{}fence}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{o}{?}
+\PG{k}{WHERE}\PG{+w}{ }\PG{n}{resource\PGZus{}id}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{o}{?}\PG{+w}{ }\PG{k}{AND}\PG{+w}{ }\PG{n}{last\PGZus{}fence}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{o}{=}\PG{+w}{ }\PG{o}{?}\PG{p}{;}\PG{+w}{   }\PG{c+c1}{\PGZhy{}\PGZhy{} use \PGZlt{} for one write per generation}
+\PG{c+c1}{\PGZhy{}\PGZhy{} Require one affected row; zero means a newer holder exists.}

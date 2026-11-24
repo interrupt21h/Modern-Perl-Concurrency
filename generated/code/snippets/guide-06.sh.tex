@@ -1,0 +1,6 @@
+cpanm\PG{+w}{ }DBI\PG{+w}{ }DBD::mysql
+mysql\PG{+w}{ }\PGZhy{}u\PG{+w}{ }lab\PG{+w}{ }\PGZhy{}p\PG{+w}{ }concurrency\PGZus{}lab\PG{+w}{ }\PGZlt{}\PG{+w}{ }examples/schema.sql
+\PG{n+nb}{export}\PG{+w}{ }\PG{n+nv}{DB\PGZus{}DSN}\PG{o}{=}\PG{l+s+s1}{\PGZsq{}DBI:mysql:database=concurrency\PGZus{}lab;host=127.0.0.1\PGZsq{}}
+\PG{n+nb}{export}\PG{+w}{ }\PG{n+nv}{DB\PGZus{}USER}\PG{o}{=}lab
+\PG{c+c1}{\PGZsh{} Inject DB\PGZus{}PASS using your approved secret mechanism.}
+perl\PG{+w}{ }examples/11\PGZhy{}mysql\PGZhy{}transfer.pl\PG{+w}{ }\PG{l+m}{100}

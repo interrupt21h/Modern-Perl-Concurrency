@@ -1,0 +1,13 @@
+Concurrent requests in one session (8 at once, 4 workers)
+  ok  naive session read\PGZhy{}modify\PGZhy{}write LOST updates: 3 of 8 kept
+  ok  atomic HINCRBY outside the session: 8 of 8
+  ok  per\PGZhy{}session lock: 8 of 8 kept
+  ok  ...at the price of serialization (0.94s for 8 x 0.1s)
+Idempotency keys
+  ok  6 simultaneous submissions: exactly one 201 (409 409 201 409 409 409)
+  ok  worker killed mid\PGZhy{}request: client sees 599
+  ok  immediate retry refused while the outcome is unknown
+  ok  abandoned pending key expires in 120 s, not 24 h
+Forged session record
+  ok  record containing an object is discarded, not revived
+Catalyst sessions: all checks passed (naive kept 3 of 8)

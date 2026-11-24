@@ -1,0 +1,84 @@
+\PG{c+ch}{\PGZsh{}!/usr/bin/env perl}
+\PG{c+c1}{\PGZsh{} flock with a deadline. flock() has no timeout of its own, so poll with}
+\PG{c+c1}{\PGZsh{} LOCK\PGZus{}NB, a monotonic clock and jittered backoff. A child process holds the}
+\PG{c+c1}{\PGZsh{} lock while the parent first times out, then waits long enough to succeed.}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{strict}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Errno}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{EAGAIN EWOULDBLOCK EINTR}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Fcntl}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{:DEFAULT :flock}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{File::Temp}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{tempdir}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{POSIX}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{\PGZus{}exit}\PG{l+s+sx}{)}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Time::HiRes}\PG{+w}{ }\PG{l+s+sx}{qw(}\PG{l+s+sx}{clock\PGZus{}gettime CLOCK\PGZus{}MONOTONIC sleep}\PG{l+s+sx}{)}\PG{p}{;}
+
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{now}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{clock\PGZus{}gettime}\PG{p}{(}\PG{n}{CLOCK\PGZus{}MONOTONIC}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}
+
+\PG{c+c1}{\PGZsh{} Returns true when acquired, false on timeout; dies on real errors.}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{flock\PGZus{}deadline}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{mode}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{timeout}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{deadline}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{timeout}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pause}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mf}{0.005}\PG{p}{;}
+\PG{+w}{    }\PG{k}{until}\PG{+w}{ }\PG{p}{(}\PG{n+nb}{flock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{mode}\PG{+w}{ }\PG{o}{|}\PG{+w}{ }\PG{n}{LOCK\PGZus{}NB}\PG{p}{)}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}flock: \PGZdl{}!\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}!}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n}{EAGAIN}\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}!}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n}{EWOULDBLOCK}\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}!}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n}{EINTR}\PG{p}{;}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{left}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{deadline}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{left}\PG{+w}{ }\PG{o}{\PGZlt{}=}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{sleep}\PG{p}{(}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pause}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{left}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pause}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{left}\PG{p}{)}\PG{+w}{ }\PG{o}{*}\PG{+w}{ }\PG{p}{(}\PG{l+m+mf}{0.5}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nb}{rand}\PG{p}{)}\PG{p}{)}\PG{p}{;}\PG{+w}{   }\PG{c+c1}{\PGZsh{} jitter}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pause}\PG{+w}{ }\PG{o}{*=}\PG{+w}{ }\PG{l+m+mi}{2}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pause}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{l+m+mf}{0.1}\PG{p}{;}\PG{+w}{                              }\PG{c+c1}{\PGZsh{} capped backoff}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{open\PGZus{}lockfile}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{sysopen}\PG{p}{(}\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{,}\PG{+w}{ }\PG{n}{O\PGZus{}CREAT}\PG{+w}{ }\PG{o}{|}\PG{+w}{ }\PG{n}{O\PGZus{}RDWR}\PG{p}{,}\PG{+w}{ }\PG{l+m+mo}{0600}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}open \PGZdl{}path: \PGZdl{}!\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{c+c1}{\PGZsh{} Use a private directory: never a world\PGZhy{}writable one such as /tmp itself.}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dir}\PG{+w}{  }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{LOCK\PGZus{}DIR}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{n}{tempdir}\PG{p}{(}\PG{n}{CLEANUP}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+s}{\PGZdq{}\PGZdl{}dir/nightly\PGZhy{}report.lock\PGZdq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{HOLD}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{l+m+mf}{0.6}\PG{p}{;}
+
+\PG{n+nb}{pipe}\PG{p}{(}\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready\PGZus{}r}\PG{p}{,}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready\PGZus{}w}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}pipe: \PGZdl{}!\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{n+nb}{defined}\PG{p}{(}\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{fork}\PG{p}{(}\PG{p}{)}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}fork: \PGZdl{}!\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{o}{!}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{                                   }\PG{c+c1}{\PGZsh{} child: hold the lock briefly}
+\PG{+w}{    }\PG{n+nb}{close}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready\PGZus{}r}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{open\PGZus{}lockfile}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{)}\PG{p}{;}\PG{+w}{             }\PG{c+c1}{\PGZsh{} own open file description}
+\PG{+w}{    }\PG{n+nb}{flock}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n}{LOCK\PGZus{}EX}\PG{p}{)}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n}{\PGZus{}exit}\PG{p}{(}\PG{l+m+mi}{1}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{syswrite}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready\PGZus{}w}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}1\PGZdq{}}\PG{p}{;}\PG{+w}{                    }\PG{c+c1}{\PGZsh{} tell the parent it is held}
+\PG{+w}{    }\PG{n+nb}{sleep}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{HOLD}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{close}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{;}\PG{+w}{                                 }\PG{c+c1}{\PGZsh{} release}
+\PG{+w}{    }\PG{n}{\PGZus{}exit}\PG{p}{(}\PG{l+m+mi}{0}\PG{p}{)}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+\PG{n+nb}{close}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready\PGZus{}w}\PG{p}{;}
+\PG{n+nb}{sysread}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ready\PGZus{}r}\PG{p}{,}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{byte}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}child failed to lock\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{held\PGZus{}since}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{open\PGZus{}lockfile}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{)}\PG{p}{;}
+
+\PG{c+c1}{\PGZsh{} 1. A short deadline expires while the child holds the lock.}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t0}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{got}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{flock\PGZus{}deadline}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n}{LOCK\PGZus{}EX}\PG{p}{,}\PG{+w}{ }\PG{l+m+mf}{0.2}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{waited}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{t0}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}acquired a lock that was held\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{got}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{n+nb}{sprintf}\PG{p}{(}\PG{l+s}{\PGZdq{}timeout not honored (\PGZpc{}.3fs)\PGZbs{}n\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{waited}\PG{p}{)}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{waited}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{l+m+mf}{0.19}\PG{+w}{ }\PG{o}{||}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{waited}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mf}{0.45}\PG{p}{;}
+
+\PG{c+c1}{\PGZsh{} 2. A longer deadline succeeds once the child releases.}
+\PG{n+nv}{\PGZdl{}}\PG{n+nv}{got}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{flock\PGZus{}deadline}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{,}\PG{+w}{ }\PG{n}{LOCK\PGZus{}EX}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{5}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{acquired\PGZus{}after}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{now}\PG{p}{(}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{held\PGZus{}since}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}did not acquire after release\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{got}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}acquired before the holder released\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{acquired\PGZus{}after}\PG{+w}{ }\PG{o}{\PGZlt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{HOLD}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{+w}{ }\PG{l+m+mf}{0.05}\PG{p}{;}
+\PG{n+nb}{close}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fh}\PG{p}{;}
+
+\PG{n+nb}{waitpid}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pid}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{)}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}child failed\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}?}\PG{p}{;}
+
+\PG{c+c1}{\PGZsh{} 3. Shared locks coexist; an exclusive request is refused meanwhile.}
+\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r1}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r2}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{w}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{map}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{open\PGZus{}lockfile}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{path}\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{o}{..}\PG{+w}{ }\PG{l+m+mi}{3}\PG{p}{;}
+\PG{n}{flock\PGZus{}deadline}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r1}\PG{p}{,}\PG{+w}{ }\PG{n}{LOCK\PGZus{}SH}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n}{flock\PGZus{}deadline}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r2}\PG{p}{,}\PG{+w}{ }\PG{n}{LOCK\PGZus{}SH}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}
+\PG{+w}{    }\PG{o+ow}{or}\PG{+w}{ }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}shared locks should coexist\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}exclusive granted beside readers\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n}{flock\PGZus{}deadline}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{w}\PG{p}{,}\PG{+w}{ }\PG{n}{LOCK\PGZus{}EX}\PG{p}{,}\PG{+w}{ }\PG{l+m+mf}{0.1}\PG{p}{)}\PG{p}{;}
+\PG{n+nb}{close}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{+w}{ }\PG{k}{for}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r1}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r2}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{w}\PG{p}{;}
+
+\PG{n+nb}{printf}\PG{+w}{ }\PG{l+s}{\PGZdq{}timed out after \PGZpc{}.2fs; acquired \PGZpc{}.2fs after holder locked; shared OK\PGZbs{}n\PGZdq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{waited}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{acquired\PGZus{}after}\PG{p}{;}

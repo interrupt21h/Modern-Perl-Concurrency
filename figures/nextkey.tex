@@ -1,0 +1,17 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[anchor=west,font=\sffamily\small\bfseries,text=navy] at (0,2.25) {Index kv on column v: \texttt{SELECT id FROM nk WHERE v BETWEEN 15 AND 25 FOR UPDATE}};
+\begin{scope}[xshift=3.1cm]
+\draw[thick,navy] (0,1) -- (14.4,1);
+\foreach \x/\v in {1.2/10,4.8/20,8.4/30,12.0/40} {\node[box,fill=white,minimum width=1.1cm] at (\x,1) {\v};}
+\node[box,fill=white,font=\sffamily\scriptsize] at (14.4,1) {supremum};
+% REPEATABLE READ
+\draw[badspan] (1.85,0.35) -- (5.35,0.35); \draw[badspan] (5.45,0.35) -- (8.95,0.35);
+\node[lbl,text=rust] at (3.6,0.0) {next-key (10,20]}; \node[lbl,text=rust] at (7.2,0.0) {next-key (20,30]};
+\node[lbl,anchor=west,text=rust] at (9.3,0.25) {blocks inserts of v from 11 to 30;\\locks the row v = 30 just past the range};
+% READ COMMITTED
+\draw[span] (4.3,-0.75) -- (5.3,-0.75);
+\node[lbl,anchor=west,text=teal] at (5.6,-0.75) {record lock on v = 20 only; inserts into the gaps proceed};
+\end{scope}
+\node[anchor=west,font=\sffamily\footnotesize\bfseries,text=rust] at (0,0.35) {REPEATABLE READ};
+\node[anchor=west,font=\sffamily\footnotesize\bfseries,text=teal] at (0,-0.75) {READ COMMITTED};
+\end{tikzpicture}

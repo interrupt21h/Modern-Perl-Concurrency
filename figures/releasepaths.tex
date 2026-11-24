@@ -1,0 +1,14 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[box,minimum width=2.6cm] (acq) at (0,0) {acquire};
+\node[box,minimum width=2.8cm,fill=white] (work) at (3.9,0) {protected work};
+\node[okbox] (ok) at (8.2,1.3) {normal return};
+\node[badbox] (ex) at (8.2,0) {die / exception};
+\node[box] (early) at (8.2,-1.3) {early return, last, next};
+\draw[arr] (acq) -- (work);
+\draw[thinarr] (work.east) -- (ok.west); \draw[badarr] (work.east) -- (ex.west); \draw[thinarr] (work.east) -- (early.west);
+\node[okbox,minimum width=3.0cm,minimum height=3.6cm] (rel) at (12.6,0) {};
+\node[font=\sffamily\small\bfseries,text=teal] at (12.6,1.25) {release, once};
+\node[lbl,align=center] at (12.6,0) {scope exit (lock)\\[2pt]defer block\\[2pt]guard DESTROY\\[2pt]eval + rethrow};
+\foreach \n in {ok,ex,early} \draw[arr] (\n.east) -- (rel.west |- \n.east);
+\node[lbl,text=rust,anchor=north] at (6.3,-2.0) {a path that skips the release leaks the lock until the process exits or the lease expires};
+\end{tikzpicture}

@@ -1,0 +1,49 @@
+\PG{k}{package}\PG{+w}{ }\PG{n+nn}{SessionLab::Redis}\PG{p}{;}
+\PG{c+c1}{\PGZsh{} One Redis connection per process, created lazily and recreated after fork.}
+\PG{c+c1}{\PGZsh{} Preforking servers (Starman, Gazelle, uWSGI) fork workers from a master;}
+\PG{c+c1}{\PGZsh{} a socket inherited across fork would be shared by several processes and}
+\PG{c+c1}{\PGZsh{} their replies would interleave. Checking \PGZdl{}\PGZdl{} makes the handle fork\PGZhy{}safe.}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{strict}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{Redis}\PG{p}{;}
+
+\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{handle}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{owner\PGZus{}pid}\PG{p}{)}\PG{p}{;}
+
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{handle}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{handle}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{handle}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{owner\PGZus{}pid}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}\PGZdl{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{handle}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{new}\PG{p}{(}
+\PG{+w}{        }\PG{n}{server}\PG{+w}{        }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{REDIS\PGZus{}SERVER}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}127.0.0.1:6379\PGZsq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n}{name}\PG{+w}{          }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZdq{}sessionlab\PGZhy{}\PGZdl{}\PGZdl{}\PGZdq{}}\PG{p}{,}\PG{+w}{          }\PG{c+c1}{\PGZsh{} visible in CLIENT LIST}
+\PG{+w}{        }\PG{n}{cnx\PGZus{}timeout}\PG{+w}{   }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{        }\PG{n}{read\PGZus{}timeout}\PG{+w}{  }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{,}
+\PG{+w}{        }\PG{n}{write\PGZus{}timeout}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{,}
+\PG{+w}{        }\PG{n}{reconnect}\PG{+w}{     }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}\PG{+w}{      }\PG{c+c1}{\PGZsh{} never replay SET NX / INCR after a lost reply}
+\PG{+w}{        }\PG{p}{(}\PG{n+nb}{defined}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{REDIS\PGZus{}PASSWORD}\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{?}\PG{+w}{ }\PG{p}{(}\PG{n}{username}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{REDIS\PGZus{}USERNAME}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}default\PGZsq{}}\PG{p}{,}
+\PG{+w}{               }\PG{n}{password}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{REDIS\PGZus{}PASSWORD}\PG{p}{\PGZcb{}}\PG{p}{)}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{p}{(}\PG{p}{)}\PG{p}{)}\PG{p}{,}
+\PG{+w}{        }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{REDIS\PGZus{}TLS}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{p}{(}\PG{n}{ssl}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{n}{SSL\PGZus{}verify\PGZus{}mode}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{)}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{p}{(}\PG{p}{)}\PG{p}{)}\PG{p}{,}
+\PG{+w}{    }\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{owner\PGZus{}pid}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}\PGZdl{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{handle}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{c+c1}{\PGZsh{} Drop the handle after a network error so the next call reconnects.}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{reset}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nb}{undef}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{handle}\PG{+w}{ }\PG{p}{\PGZcb{}}
+
+\PG{c+c1}{\PGZsh{} EVALSHA with a one\PGZhy{}time SCRIPT LOAD fallback (the script cache is empty}
+\PG{c+c1}{\PGZsh{} after a restart or failover).}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZpc{}}\PG{n+nv}{sha}\PG{p}{;}
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{run\PGZus{}script}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{class}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{source}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{keys\PGZus{}and\PGZus{}args}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{class}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{handle}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{reply}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sha}\PG{p}{\PGZob{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{source}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{script\PGZus{}load}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{source}\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{evalsha}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sha}\PG{p}{\PGZob{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{source}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{keys\PGZus{}and\PGZus{}args}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{reply}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /NOSCRIPT/}\PG{p}{;}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sha}\PG{p}{\PGZob{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{source}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{script\PGZus{}load}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{source}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{r}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{evalsha}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sha}\PG{p}{\PGZob{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{source}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{keys\PGZus{}and\PGZus{}args}\PG{p}{)}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+
+\PG{l+m+mi}{1}\PG{p}{;}

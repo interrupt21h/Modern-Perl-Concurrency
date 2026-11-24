@@ -1,0 +1,13 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[box] (br) at (0,0) {browser\\\footnotesize cookie: random 256-bit ID\\\footnotesize HttpOnly, Secure, SameSite};
+\node[box] (in) at (4.6,0) {ingress (Traefik)\\\footnotesize TLS termination,\\\footnotesize X-Forwarded-Proto};
+\draw[arr] (br) -- node[lbl,above]{HTTPS} (in);
+\foreach \i/\y in {1/1.5,2/0,3/-1.5} {
+  \node[box,minimum width=3.4cm] (p\i) at (9.3,\y) {pod \i: Starman\\\footnotesize N workers, no local state};
+  \draw[thinarr] (in) -- (p\i);}
+\node[okbox,text width=4.3cm] (rs) at (14.7,1.55) {Redis: sessions, coordination\\\footnotesize noeviction, AOF, ACL, TLS};
+\node[box,text width=4.3cm] (rc) at (14.7,-0.05) {Redis: cache\\\footnotesize allkeys-lru (separate instance)};
+\node[box,text width=4.3cm] (db) at (14.7,-1.65) {MySQL\\\footnotesize durable state, constraints};
+\foreach \i in {1,2,3} {\draw[thinarr] (p\i.east) -- (rs.west); \draw[thinarr] (p\i.east) -- (rc.west); \draw[thinarr] (p\i.east) -- (db.west);}
+\node[lbl,anchor=north] at (9.3,-2.35) {any worker can serve any request: no sticky sessions};
+\end{tikzpicture}
