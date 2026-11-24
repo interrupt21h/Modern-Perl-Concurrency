@@ -32,7 +32,7 @@
 \hypersetup{colorlinks=true,linkcolor=teal,urlcolor=teal,
   pdftitle={Modern Perl Concurrency and Locking},
   pdfauthor={Scott Muller},
-  pdfsubject={Engineering handbook, edition 1.3},
+  pdfsubject={Engineering handbook, edition 2.0},
   pdfkeywords={Perl, concurrency, locking, MySQL, Redis, Valkey, Memcached}}
 
 % ---------------------------------------------------------------- layout
@@ -106,18 +106,21 @@
   \StrSubstitute{\code@tmp}{`}{\noexpand\textasciigrave}[\code@tmp]%
   \restoreexpandmode\code@tmp}
 \makeatother
-\newtcolorbox{callout}[1]{enhanced,breakable,colback=paper,colframe=#1,boxrule=0pt,
-  leftrule=2.5pt,sharp corners,left=8pt,right=8pt,top=5pt,bottom=5pt,
-  fontupper=\small,before skip=8pt,after skip=10pt}
-\newcommand{\note}[1]{\begin{callout}{teal}\textbf{\sffamily\color{teal}Engineering note.} #1\end{callout}}
-\newcommand{\warn}[1]{\begin{callout}{rust}\textbf{\sffamily\color{rust}Correctness warning.} #1\end{callout}}
-\newcommand{\version}[1]{\begin{callout}{gold}\textbf{\sffamily\color{gold}Version note.} #1\end{callout}}
-\newcommand{\tested}[1]{\begin{callout}{navy}\textbf{\sffamily\color{navy}Verified.} #1\end{callout}}
-% Pop-out tip: short, practical advice set off in the outer margin direction
-\newtcolorbox{tipbox}{enhanced,breakable,colback=leaf!5,colframe=leaf,boxrule=0pt,
-  leftrule=2.5pt,sharp corners,left=8pt,right=8pt,top=6pt,bottom=6pt,
-  fontupper=\small,before skip=8pt,after skip=9pt}
-\newcommand{\tip}[1]{\begin{tipbox}\textbf{\sffamily\color{leaf}Practical tip.} #1\end{tipbox}}
+% A single callout system: dedicated title, clear spacing, readable body.
+\newtcolorbox{callout}[2]{enhanced,breakable,sharp corners,
+  colback=#1!3!white,colframe=#1!45!white,boxrule=.45pt,
+  leftrule=2.6pt,left=9pt,right=9pt,top=6pt,bottom=7pt,
+  colbacktitle=#1!8!white,coltitle=#1,
+  fonttitle=\sffamily\bfseries\small,title={#2},
+  lefttitle=9pt,righttitle=9pt,toptitle=5pt,bottomtitle=5pt,
+  title after break={#2\space(continued)},
+  fontupper=\small\raggedright,
+  before skip=11pt,after skip=11pt,pad at break=5pt}
+\newcommand{\note}[1]{\begin{callout}{teal}{Engineering note}#1\end{callout}}
+\newcommand{\warn}[1]{\begin{callout}{rust}{Correctness warning}#1\end{callout}}
+\newcommand{\version}[1]{\begin{callout}{gold}{Version note}#1\end{callout}}
+\newcommand{\tested}[1]{\begin{callout}{navy}{Verification}#1\end{callout}}
+\newcommand{\tip}[1]{\begin{callout}{leaf}{Practical tip}#1\end{callout}}
 % Strategy card: key, name, plain terms, use when, avoid when, Perl tools
 \newtcolorbox{strategybox}[1]{enhanced,colback=white,colframe=navy,boxrule=0.6pt,arc=2pt,
   colbacktitle=navy,coltitle=white,fonttitle=\sffamily\bfseries\small,title={#1},
@@ -147,7 +150,7 @@ MySQL and DBIx::Class, Redis and Valkey, Catalyst sessions and Memcached\par}
 Owner \& Independent Consultant, 21h Systems\\
 \href{mailto:scott@21h.io}{scott@21h.io}\par}
 \vspace{0.3in}
-{\sffamily November 2026\quad /\quad Edition 1.3\quad /\quad Technical reference and self-verifying laboratory\par}
+{\sffamily November 2026\quad /\quad Edition 2.0\quad /\quad Technical reference and self-verifying laboratory\par}
 \end{titlepage}
 
 % ---------------------------------------------------------------- copyright page
@@ -155,7 +158,7 @@ Owner \& Independent Consultant, 21h Systems\\
 \vspace*{\fill}
 {\small\sffamily
 \textbf{Modern Perl Concurrency and Locking}\\
-Engineering Handbook, Edition 1.3 (November 2026)\par\medskip
+Engineering Handbook, Edition 2.0 (November 2026)\par\medskip
 \textbf{Scott Muller}\par
 Software Engineer, Matsch Systems\\
 Owner \& Independent Consultant, 21h Systems\par
@@ -165,7 +168,7 @@ Contact: \href{mailto:scott@21h.io}{scott@21h.io}.\par
 \color{muted}
 Documentation baseline: Perl 5.44; MySQL 8.4 LTS and 9.7 LTS; Redis 7.2--8.4; Valkey 8.1--9.0; Catalyst 5.90; DBIx::Class 0.0828.\\
 Verification environment: threaded Perl 5.38.2, MySQL 8.0.46, Redis 7.0.15 and Memcached 1.6.24 on Linux.\par\medskip
-The original laboratory verification record is retained in Chapter~\ref{ch:refs}. This formatting revision does not constitute a new service-integration test run.
+The original laboratory verification record is retained in Chapter~\ref{ch:refs}. The application-architecture laboratories are separately identified in the verification chapter. Current release logs distinguish executed tests from optional skips.
 Examples that create, flush or delete data must be run only against disposable, isolated services.\par}
 \clearpage
 
@@ -665,8 +668,11 @@ Test correctness with invariants, not timing assumptions. Start competing worker
 \end{itemize}
 
 % ================================================================ glossary
+\input{enterprise-architecture.tex}
+
 \chapter{Glossary}\label{ch:glossary}
 \begin{description}[style=nextline,leftmargin=1.2em,itemsep=1pt,parsep=0pt,font=\sffamily\bfseries\color{navy}]\small
+\item[Attempt ID] A generation associated with a particular job claim; a late worker cannot complete a replacement worker's claim.
 \item[Advisory lock] A lock that only works if every participant checks it; nothing stops code that ignores it. Perl's \code{lock}, \code{flock} and MySQL \code{GET_LOCK} are advisory.
 \item[Atomic operation] A change that happens completely or not at all, with no observable halfway state, such as a single Redis command or one SQL \code{UPDATE}.
 \item[At-least-once delivery] A message may be delivered more than once (after a crash or timeout) but never lost; consumers must make effects idempotent.
@@ -676,8 +682,10 @@ Test correctness with invariants, not timing assumptions. Start competing worker
 \item[Consensus] A protocol (Raft, ZAB) that lets a group of servers agree on one ordered history even when some fail; etcd and ZooKeeper are built on it.
 \item[Consumer group] A Redis Streams feature that delivers each entry to one member of a group and tracks unacknowledged entries in a pending entries list (PEL).
 \item[Critical section] The code that must not run in two places at once because it touches shared state.
+\item[Checkpoint] Durable progress recorded with the effects it describes, allowing a restarted pipeline to resume without losing committed work.
 \item[Deadlock] Two or more parties each waiting for a lock the other holds, so none can proceed.
 \item[Eviction] A cache deleting keys to free memory. Harmless for caches, harmful for sessions and locks.
+\item[Outbox] An event record committed in the same transaction as a business change, then relayed independently.
 \item[Failover] Promoting a replica to primary after the primary fails; with asynchronous replication the newest writes can be lost.
 \item[Fencing token] A number that increases with every new lock holder and is checked by the protected resource, which rejects older numbers.
 \item[Grace window] A short period after a refresh token is rotated during which presenting it again returns the same successor instead of revoking the family; it absorbs concurrent and retried refreshes.
@@ -708,7 +716,7 @@ Test correctness with invariants, not timing assumptions. Start competing worker
 % ================================================================ chapter 12
 \chapter{References and verification}\label{ch:refs}
 \section{Verification record}
-The following integration record is retained from Edition 1.2. Edition 1.3 revises presentation and adds example 31; the historical results below are not a fresh integration run. See the revision test log for current checks.
+The following integration record is retained from Edition 1.2. Edition 1.3 added example 31; Edition 2.0 adds application architecture and examples 32--35. The historical results below are not a fresh integration run. See the revision test log for current checks.
 
 Primary documentation was consulted on November 24, 2026. Perl documentation resolved to 5.44.0; MySQL documentation to 8.4 and 9.7; Redis documentation to 8.4; Valkey documentation to 9.0. The examples were executed with \code{run-tests.sh} three consecutive times after the final change on Linux with threaded Perl 5.38.2, GCC (example 21), MCE 1.889, Catalyst 5.90131 with \code{Catalyst::Plugin::Session} 0.43 and Starman 0.4017 (examples 28 and 30), \code{Crypt::JWT} 0.035 and \code{YAML::XS} 0.89 (example 30), \code{openapi-spec-validator} 0.9.0 for the OpenAPI document, DBIx::Class 0.082843 (example 29), Sereal 5.004, DBI 1.643, \code{DBD::mysql} 4.052, MySQL 8.0.46, Redis 7.0.15 with \code{Redis.pm} 2.000, Memcached 1.6.24 with \code{Cache::Memcached::Fast} 0.28, IO::Async 0.803 and \code{Future::AsyncAwait} 0.66. Examples 13 and 16 were additionally run under the least-privilege ACL user in Section~\ref{sec:redis-security}. Native Redis 8.4 and Valkey 9.0 commands are documented from primary sources but were not available on the verification host. No throughput benchmarks or fairness guarantees are claimed.
 \begin{longtable}{L{.30\linewidth}L{.62\linewidth}}\toprule Example & Verified invariant \\ \midrule\endhead
@@ -729,6 +737,9 @@ Primary documentation was consulted on November 24, 2026. Perl documentation res
 18 & Stale fence rejected by MySQL; stale owner cannot release successor's lease; counter regression fails safe \\
 19 & Concurrency bound respected; no lost update with \code{Future::Mutex} \\
 \bottomrule\end{longtable}
+\section{Application architecture laboratories}
+Examples 32--35 use independently constructed synthetic data. Example 32 checks PID-local Moose resource ownership; 33 checks transaction rollback and duplicate-request behavior with DBIx::Class and SQLite; 34 checks durable source/outbox consistency and replay against a separate SQLite destination; 35 forces a lost-update interleaving and verifies the corrected critical section. SQLite tests demonstrate application transaction boundaries, not MySQL row-lock or isolation semantics. Consult the release build log for actual test results and skipped dependencies.
+
 \section{References}
 \small
 \refdoc{[1] Perl threading tutorial}{https://perldoc.perl.org/perlthrtut}
@@ -793,4 +804,15 @@ Primary documentation was consulted on November 24, 2026. Perl documentation res
 \refdoc{[60] Auth0: refresh token rotation}{https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation}
 \refdoc{[61] Redis transactions and WATCH semantics}{https://redis.io/docs/latest/develop/using-commands/transactions/}
 \refdoc{[62] Redis EXEC reply semantics}{https://redis.io/docs/latest/commands/exec/}
+\refdoc{[63] Moose attributes}{https://metacpan.org/pod/Moose::Manual::Attributes}
+\refdoc{[64] Catalyst component lifecycle}{https://metacpan.org/pod/Catalyst::Component}
+\refdoc{[65] DBIx::Class storage and nested transactions}{https://metacpan.org/pod/DBIx::Class::Storage}
+\refdoc{[66] Kubernetes CronJob controller}{https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/}
+\refdoc{[67] InnoDB error handling}{https://dev.mysql.com/doc/refman/8.4/en/innodb-error-handling.html}
+\refdoc{[68] Converting MyISAM tables}{https://dev.mysql.com/doc/refman/8.4/en/converting-tables-to-innodb.html}
+\refdoc{[69] Test2 harness}{https://metacpan.org/pod/Test2::Harness}
+\refdoc{[70] SQLite UPSERT}{https://www.sqlite.org/lang_upsert.html}
+\refdoc{[71] Transactional outbox pattern}{https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html}
+\refdoc{[72] Kubernetes Pod termination}{https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/}
+\refdoc{[73] OpenTelemetry metrics concepts}{https://opentelemetry.io/docs/concepts/signals/metrics/}
 \end{document}

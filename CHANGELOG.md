@@ -1,11 +1,18 @@
+# Changelog
+
+## Edition 2.0 — application concurrency architecture
+
+- Add seven application-oriented chapters, synthetic laboratories 32–35, and architecture diagrams covering object lifetimes, transaction ownership, batch pipelines, cross-system delivery, migration, testing and deployment.
+- Unify callout headings, spacing and accent rules across the handbook.
+- Enable Moose, DBIx::Class and SQLite laboratory dependencies in CI; retain historical integration evidence separately.
+- Keep the two-page cheat sheet and publish it with the expanded handbook.
+
 ## Edition 1.3 — presentation and Perl execution boundary
 
 - Clarify Redis server-side Lua, highlight embedded scripts, pair standalone script with Perl invocation.
 - Add WATCH/MULTI/EXEC lease example and regression entry; document trade-offs and ambiguous results.
 - Clean up front matter, contents numbering, tip boxes, laboratory navigation and selected dense source lines.
 - Retain earlier integration results as historical evidence, not a new service test.
-
-# Changelog
 
 Modern Perl Concurrency and Locking — created and written by Scott Muller.
 

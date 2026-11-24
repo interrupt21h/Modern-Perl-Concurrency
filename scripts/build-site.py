@@ -35,6 +35,13 @@ chapters = [
     "Catalyst sessions and request coordination on Redis",
     "Memcached locking and cache coordination",
     "Production reliability and distributed coordination",
+    "Concurrency in object-oriented Perl applications",
+    "Transaction boundaries in layered applications",
+    "Scheduled jobs and resumable processing pipelines",
+    "Reliable cross-system integration",
+    "Modernizing legacy locking and database access",
+    "Concurrency verification in application test suites",
+    "Production deployment and observability",
     "Glossary",
     "References and verification",
 ]
@@ -73,9 +80,9 @@ footer{{border-top:1px solid var(--line);padding:1.5rem 1.25rem;color:var(--mute
 </head>
 <body>
 <header><div class="wrap">
-<div class="eyebrow">Engineering handbook / Edition 1.3</div>
+<div class="eyebrow">Engineering handbook / Edition 2.0</div>
 <h1>Modern Perl Concurrency and Locking</h1>
-<p>From interpreter threads and process synchronization to transactional databases, distributed leases, fencing, and concurrent web requests.</p>
+<p>From interpreter threads and process synchronization to transactional databases, distributed leases, fencing, concurrent web requests, resumable data pipelines and reliable application integrations.</p>
 <p><strong>Scott Muller</strong> · <a href="mailto:scott@21h.io">scott@21h.io</a><br>Software Engineer, Matsch Systems<br>Owner &amp; Independent Consultant, 21h Systems</p>
 <p><em>This work is an independent technical publication. The views and recommendations expressed herein are solely those of the author and do not necessarily reflect those of his employer or affiliated organizations. Professional affiliations do not imply institutional endorsement.</em></p>
 <div class="actions"><a class="button" href="{PDF}">Read the PDF</a><a class="button secondary" href="perl-concurrency-cheat-sheet.pdf">Two-page cheat sheet</a><a class="button secondary" href="{SOURCE}" download>Download source</a><a class="button secondary" href="{esc(release)}">GitHub release</a></div>

@@ -96,4 +96,15 @@ fi
 if [ -n "${MEMCACHED_SERVER:-}" ]; then run 14-memcached-lease.pl
 else skipped 14-memcached-lease.pl 'MEMCACHED_SERVER not set'; fi
 
+# Architecture laboratories use isolated, synthetic data.
+if perl -MMoose -e1 2>/dev/null; then run 32-worker-lifecycle.pl
+else skipped 32-worker-lifecycle.pl 'Moose not installed'; fi
+if perl -MDBIx::Class -MDBD::SQLite -e1 2>/dev/null; then
+    run 33-layered-transaction.pl
+else skipped 33-layered-transaction.pl 'needs DBIx::Class and DBD::SQLite'; fi
+if perl -MDBI -MDBD::SQLite -e1 2>/dev/null; then
+    run 34-replay-outbox.pl
+else skipped 34-replay-outbox.pl 'needs DBI and DBD::SQLite'; fi
+run 35-deterministic-race.pl
+
 printf '\n%d passed, %d skipped\n' "$pass" "$skip"

@@ -1,0 +1,22 @@
+# Illustrative manifest; use your own approved container image.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sample-import
+spec:
+  schedule: "*/15 * * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 720
+      template:
+        spec:
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 45
+          containers:
+            - name: import
+              image: example.invalid/import:1.0
+              args: ["--resume"]

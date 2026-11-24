@@ -19,7 +19,7 @@ jobs:
       - name: Install build tools and isolated Redis
         run: |
           sudo apt-get update
-          sudo apt-get install -y cpanminus make gcc latexmk texlive-latex-extra texlive-pictures texlive-fonts-recommended lmodern python3-venv redis-server libredis-perl poppler-utils
+          sudo apt-get install -y cpanminus make gcc latexmk texlive-latex-extra texlive-pictures texlive-fonts-recommended lmodern python3-venv redis-server libredis-perl poppler-utils libmoose-perl libdbix-class-perl libdbd-sqlite3-perl
           sudo cpanm SHANCOCK/Perl-Tidy-20260826.tar.gz
           perltidy --version
           python3 -m venv .venv
@@ -53,7 +53,7 @@ jobs:
             git commit -m 'Apply verified Perl::Tidy formatting and regenerate listings'
           fi
           echo "PUBLISHED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-          echo "RELEASE_TAG=v1.3-build.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=v2.0-build.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
       - name: Package formatted source and PDF
         run: |
           set -euo pipefail
@@ -82,7 +82,7 @@ jobs:
           set -euo pipefail
           gh release create "$RELEASE_TAG" dist/modern-perl-concurrency.pdf dist/perl-concurrency-cheat-sheet.pdf dist/cheat-sheet.tex dist/formatted-source.tar.gz dist/SHA256SUMS dist/tidy-build.txt \
             --target "$PUBLISHED_SHA" \
-            --title "Modern Perl Concurrency and Locking — Edition 1.3 (build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT})" \
+            --title "Modern Perl Concurrency and Locking — Edition 2.0 (build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT})" \
             --notes "Formatted and rebuilt by CI from commit $PUBLISHED_SHA. See tidy-build.txt for the executed and skipped tests. Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - name: Build static handbook portal
         if: github.ref == 'refs/heads/main'

@@ -2,7 +2,7 @@
 
 **An illustrated engineering handbook and executable laboratory for Perl developers.**
 
-[![Edition](https://img.shields.io/badge/edition-1.3-34546B)](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest)
+[![Edition](https://img.shields.io/badge/edition-2.0-34546B)](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest)
 [![Build and publish](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions/workflows/tidy-handbook.yml/badge.svg?branch=main)](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions/workflows/tidy-handbook.yml)
 
 [Documentation website](https://interrupt21h.github.io/Modern-Perl-Concurrency/) · [Latest release](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest) · [Source examples](examples/) · [Build history](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions)
@@ -11,7 +11,7 @@
 
 | Publication | Description | Download |
 | :--- | :--- | :--- |
-| **Engineering handbook** | In-depth explanations, 31 strategy cards, 45 technical figures and 59 code listings. | [PDF](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/modern-perl-concurrency.pdf) |
+| **Engineering handbook** | In-depth explanations, illustrated strategy cards, architecture diagrams and syntax-highlighted examples. | [PDF](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/modern-perl-concurrency.pdf) |
 | **Illustrated cheat sheet** | Two landscape US Letter pages with 24 reference diagrams. Designed for double-sided printing. | [PDF](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/perl-concurrency-cheat-sheet.pdf) · [LaTeX](cheat-sheet.tex) |
 | **Source and laboratory** | Complete LaTeX project, executable examples, diagrams and build tooling. | [Source archive](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/formatted-source.tar.gz) |
 | **Build verification** | Formatter output, regression results, compilation log and download integrity. | [Build log](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/tidy-build.txt) · [SHA-256](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/SHA256SUMS) |
@@ -31,6 +31,7 @@ Designed for junior developers learning synchronization and experienced engineer
 | **Process coordination** | File locks, System V IPC, pipes, ownership and crash recovery |
 | **Database transactions** | MySQL/InnoDB, DBI, DBIx::Class, pessimistic and optimistic locking, advisory locks and job claims |
 | **Distributed coordination** | Redis/Valkey leases, atomic scripts, optimistic transactions, fencing, semaphores and Streams |
+| **Application architecture** | Moose and Catalyst object lifetimes, service-layer transactions, resumable batch processing, reliable integrations, migration and concurrency testing |
 | **Web applications and caches** | Catalyst sessions, API credentials, idempotency, rate limiting and Memcached CAS |
 
 ## Using this repository
@@ -120,6 +121,17 @@ If you flush or restart Redis without persistence, reload `schema.sql` before
 rerunning it. Otherwise it reports that fencing failed safe, which is the
 behavior it is meant to demonstrate.
 
+## Application architecture laboratories
+
+Examples 32–35 use synthetic data and disposable local resources. Install `libmoose-perl`, `libdbix-class-perl`, and `libdbd-sqlite3-perl` on Debian/Ubuntu to enable the new optional tests. SQLite examples verify transaction and replay contracts, not MySQL locking semantics.
+
+| Example | Invariant |
+| --- | --- |
+| 32 | Forked worker owns its own Moose resource |
+| 33 | Layered DBIx::Class operation rolls back as a unit |
+| 34 | Replay after ambiguous delivery produces one durable effect |
+| 35 | Deterministic lost update reproduced and corrected |
+
 ## Catalyst laboratory
 
 `examples/catalyst-session/` is a complete Catalyst application (hardened
@@ -157,6 +169,7 @@ authority for correctness-critical operations.
 ## Project layout
 
 - `guide.tex`: main handbook and shared document macros.
+- `enterprise-architecture.tex`: application architecture, processing pipelines, integration and deployment chapters.
 - `cheat-sheet.tex`: standalone, two-page illustrated quick reference.
 - `distributed-cache.tex`, `catalyst-sessions.tex`, `api-credentials.tex`:
   chapter/section source files.
@@ -168,7 +181,7 @@ authority for correctness-critical operations.
 - `generated/code/`: generated TeX token streams and palette; do not edit by hand.
 - `scripts/highlight.py`: language-aware highlighting and source-preservation check.
 
-The 59 code listings use Perl, C, SQL, Shell, Lua, YAML and plain-text output
+The code listings use Perl, C, SQL, Shell, Lua, YAML and plain-text output
 lexers. Long listings repeat their title on continuation pages; wrapping does
 not change the underlying source file. The source files are authoritative for
 copying and running examples.
@@ -201,7 +214,7 @@ make tidy-check    # verify formatting without modifying source
 make tidy-rebuild  # format, check, run local regression suite, regenerate PDF
 ```
 
-The formatting driver stages results for all 38 Perl files in memory before
+The formatting driver stages results for the Perl source files in memory before
 writing any changes, rejects formatter diagnostics and non-idempotent output,
 and checks embedded Lua bodies byte-for-byte. The formatter targets 76 columns;
 long literals or embedded scripts may still require PDF line wrapping. The
