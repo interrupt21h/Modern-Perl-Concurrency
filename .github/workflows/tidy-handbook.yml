@@ -1,27 +1,57 @@
 name: Format Perl and rebuild handbook
 on:
+  push:
+    branches: [main]
+    paths:
+      - '**.tex'
+      - 'examples/**'
+      - 'snippets/**'
+      - 'scripts/**'
+      - 'styles/**'
+      - 'figures/**'
+      - 'Makefile'
+      - 'run-tests.sh'
+      - 'requirements-docs.txt'
+      - '.perltidyrc'
+      - '.github/workflows/tidy-handbook.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: handbook-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   tidy:
     runs-on: ubuntu-24.04
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
-      - name: Install build tools
+      - name: Install build tools and isolated Redis
         run: |
           sudo apt-get update
-          sudo apt-get install -y cpanminus make gcc latexmk texlive-latex-extra texlive-pictures texlive-fonts-recommended lmodern python3-venv
+          sudo apt-get install -y cpanminus make gcc latexmk texlive-latex-extra texlive-pictures texlive-fonts-recommended lmodern python3-venv redis-server libredis-perl
           sudo cpanm SHANCOCK/Perl-Tidy-20260826.tar.gz
+          perltidy --version
           python3 -m venv .venv
           .venv/bin/pip install -r requirements-docs.txt
+          sudo systemctl start redis-server
+          redis-cli ping
       - name: Format, check, test and rebuild
+        shell: bash
+        env:
+          REDIS_SERVER: 127.0.0.1:6379
         run: |
-          set -o pipefail
+          set -euo pipefail
           export PATH="$PWD/.venv/bin:$PATH"
-          make tidy-rebuild 2>&1 | tee tidy-build.txt
+          {
+            make tidy
+            make tidy-check
+            sh run-tests.sh
+            make pdf
+          } 2>&1 | tee tidy-build.txt
           git diff -- examples snippets > tidy-source.diff
-      - name: Package formatted source
+          test -s guide.pdf
+      - name: Package formatted source and PDF
         run: |
           mkdir -p dist
           tar --exclude=.git --exclude=.venv --exclude=dist --exclude='guide.pdf' --exclude='guide.aux' --exclude='guide.log' --exclude='guide.fls' --exclude='guide.fdb_latexmk' --exclude='guide.out' --exclude='guide.toc' -czf dist/formatted-source.tar.gz .
@@ -30,3 +60,23 @@ jobs:
         with:
           name: tidied-perl-handbook
           path: dist/
+          if-no-files-found: error
+      - name: Upload diagnostic log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: handbook-build-diagnostics
+          path: |
+            tidy-build.txt
+            guide.log
+          if-no-files-found: ignore
+      - name: Persist validated formatting
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git add examples snippets generated
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'Apply verified Perl::Tidy formatting and regenerate listings'
+            git push origin HEAD:main
+          fi
