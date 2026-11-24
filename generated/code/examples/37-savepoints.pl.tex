@@ -1,0 +1,74 @@
+\PG{c+ch}{\PGZsh{}!/usr/bin/env perl}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{strict}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{warnings}\PG{p}{;}
+\PG{k}{use}\PG{+w}{ }\PG{n+nn}{DBI}\PG{p}{;}
+\PG{p}{\PGZob{}}
+
+\PG{+w}{    }\PG{k}{package}\PG{+w}{ }\PG{n+nn}{Demo::SavepointSchema}\PG{p}{;}
+\PG{+w}{    }\PG{k}{use}\PG{+w}{ }\PG{n+nn}{base}\PG{+w}{ }\PG{l+s}{\PGZsq{}DBIx::Class::Schema\PGZsq{}}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+\PG{p}{\PGZob{}}
+
+\PG{+w}{    }\PG{k}{package}\PG{+w}{ }\PG{n+nn}{Demo::SavepointRow}\PG{p}{;}
+\PG{+w}{    }\PG{k}{use}\PG{+w}{ }\PG{n+nn}{base}\PG{+w}{ }\PG{l+s}{\PGZsq{}DBIx::Class::Core\PGZsq{}}\PG{p}{;}
+\PG{+w}{    }\PG{n+nn}{\PGZus{}\PGZus{}PACKAGE\PGZus{}\PGZus{}}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{table}\PG{p}{(}\PG{l+s}{\PGZsq{}lab\PGZus{}savepoint\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nn}{\PGZus{}\PGZus{}PACKAGE\PGZus{}\PGZus{}}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{add\PGZus{}columns}\PG{p}{(}\PG{+w}{ }\PG{n}{id}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{data\PGZus{}type}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}integer\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nn}{\PGZus{}\PGZus{}PACKAGE\PGZus{}\PGZus{}}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{set\PGZus{}primary\PGZus{}key}\PG{p}{(}\PG{l+s}{\PGZsq{}id\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{p}{\PGZcb{}}
+\PG{n+nn}{Demo::SavepointSchema}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{register\PGZus{}class}\PG{p}{(}\PG{+w}{ }\PG{n}{Row}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Demo::SavepointRow\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+
+\PG{c+c1}{\PGZsh{} DB\PGZus{}DSN is optional and must designate the disposable laboratory.}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dsn}\PG{+w}{    }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{DB\PGZus{}DSN}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{l+s}{\PGZsq{}dbi:SQLite:dbname=:memory:\PGZsq{}}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{schema}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{Demo::SavepointSchema}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{connect}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dsn}\PG{p}{,}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{DB\PGZus{}USER}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ENV}\PG{p}{\PGZob{}}\PG{n}{DB\PGZus{}PASS}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n}{RaiseError}\PG{+w}{     }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{        }\PG{n}{PrintError}\PG{+w}{     }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{p}{,}
+\PG{+w}{        }\PG{n}{AutoCommit}\PG{+w}{     }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{        }\PG{n}{auto\PGZus{}savepoint}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}
+\PG{+w}{    }\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{schema}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{storage}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{dbh}\PG{p}{;}
+\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{do}\PG{p}{(}\PG{l+s}{\PGZsq{}DROP TABLE IF EXISTS lab\PGZus{}savepoint\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{engine}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dsn}\PG{+w}{ }\PG{o}{=\PGZti{}}\PG{l+s+sr}{ /\PGZca{}dbi:mysql:/i}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{l+s}{\PGZsq{} ENGINE=InnoDB\PGZsq{}}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{l+s}{\PGZsq{}\PGZsq{}}\PG{p}{;}
+\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{do}\PG{p}{(}\PG{l+s}{\PGZdq{}CREATE TABLE lab\PGZus{}savepoint (id INTEGER PRIMARY KEY)\PGZdl{}engine\PGZdq{}}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rows}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{schema}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{resultset}\PG{p}{(}\PG{l+s}{\PGZsq{}Row\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{n+nv}{\PGZdl{}}\PG{n+nv}{schema}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{txn\PGZus{}do}\PG{p}{(}
+\PG{+w}{    }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rows}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{id}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{schema}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{txn\PGZus{}do}\PG{p}{(}
+\PG{+w}{                }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rows}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{id}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{2}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{                    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}inner rollback\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{)}\PG{p}{;}
+\PG{+w}{            }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{+w}{        }\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{        }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}expected savepoint rollback\PGZdq{}}
+\PG{+w}{            }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{+w}{ }\PG{o}{!\PGZti{}}\PG{+w}{ }\PG{l+s+sr}{/inner rollback/}\PG{p}{;}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rows}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{id}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{3}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}savepoint invariant\PGZdq{}}
+\PG{+w}{    }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rows}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{count}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{2}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{o}{!}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rows}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{find}\PG{p}{(}\PG{l+m+mi}{2}\PG{p}{)}\PG{p}{;}
+\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{eval}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{schema}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{txn\PGZus{}do}\PG{p}{(}
+\PG{+w}{        }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{c+c1}{\PGZsh{} Materialize the outer DBI transaction with real work before}
+\PG{+w}{            }\PG{c+c1}{\PGZsh{} the nested SAVEPOINT (SQLite may defer issuing BEGIN).}
+\PG{+w}{            }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rows}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{id}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{5}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{            }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{schema}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{txn\PGZus{}do}\PG{p}{(}\PG{+w}{ }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rows}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{create}\PG{p}{(}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{id}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{4}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{            }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}outer rollback\PGZbs{}n\PGZdq{}}\PG{p}{;}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}outer rollback invariant\PGZdq{}}
+\PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{ok}\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{n+nv+vg}{\PGZdl{}@}\PG{+w}{ }\PG{o}{!\PGZti{}}\PG{+w}{ }\PG{l+s+sr}{/outer rollback/}\PG{p}{;}
+\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}outer transaction leaked a row\PGZdq{}}
+\PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rows}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{find}\PG{p}{(}\PG{l+m+mi}{4}\PG{p}{)}\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rows}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{find}\PG{p}{(}\PG{l+m+mi}{5}\PG{p}{)}\PG{+w}{ }\PG{o}{||}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rows}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{count}\PG{+w}{ }\PG{o}{!=}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{;}
+\PG{n+nv}{\PGZdl{}}\PG{n+nv}{dbh}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{do}\PG{p}{(}\PG{l+s}{\PGZsq{}DROP TABLE lab\PGZus{}savepoint\PGZsq{}}\PG{p}{)}\PG{p}{;}
+\PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}nested rollback and outer commit ownership verified\PGZbs{}n\PGZdq{}}\PG{p}{;}
