@@ -1,0 +1,137 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=.44in,headheight=12pt,footskip=17pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern, microtype, xcolor, tikz, array, tabularx, ragged2e, fancyhdr}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{pdftitle={Perl Concurrency and Locking - Cheat Sheet},pdfauthor={Scott Muller},pdfsubject={Companion to Modern Perl Concurrency and Locking}}
+\definecolor{navy}{HTML}{20394D}
+\definecolor{teal}{HTML}{156B68}
+\definecolor{pale}{HTML}{EFF4F5}
+\definecolor{warn}{HTML}{944725}
+\definecolor{line}{HTML}{B8C9CD}
+\renewcommand{\familydefault}{\sfdefault}
+\setlength{\parindent}{0pt}\setlength{\parskip}{4pt}
+\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.17}
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[L]{\fontsize{8}{9}\selectfont\color{navy} Modern Perl Concurrency and Locking\enspace /\enspace Companion to Edition 1.3}
+\fancyfoot[R]{\fontsize{8}{9}\selectfont\color{navy}\thepage\ / 2}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\sect}[1]{\par\vspace{4pt}{\color{teal}\bfseries\fontsize{11}{13}\selectfont #1}\par\vspace{1pt}{\color{line}\hrule}\vspace{2pt}}
+\newcommand{\entry}[2]{\textbf{#1}\enspace #2\par}
+\newcommand{\alert}[1]{\par\noindent{\color{warn}\bfseries Watch out:} #1\par}
+\newcommand{\heading}[2]{\noindent{\color{teal}\bfseries\fontsize{9}{11}\selectfont CHEAT SHEET\enspace /\enspace #1}\par{\color{navy}\bfseries\fontsize{23}{25}\selectfont #2}\par\vspace{3pt}{\color{navy}\rule{\linewidth}{1.2pt}}\par}
+\newcommand{\band}[1]{\noindent\colorbox{pale}{\parbox{\dimexpr\linewidth-2\fboxsep}{#1}}\par}
+\tikzset{nodebox/.style={draw=line,fill=pale,rounded corners=2pt,align=center,inner sep=5pt,font=\fontsize{9}{10}\selectfont},arr/.style={-{Stealth[length=2mm]},thick,draw=teal}}
+\begin{document}\fontsize{10}{12}\selectfont\RaggedRight
+\heading{01 / LOCAL CONCURRENCY}{Perl concurrency \& locking}
+{\small Scott Muller\enspace $\cdot$\enspace \href{mailto:scott@21h.io}{scott@21h.io}\par
+Software Engineer, Matsch Systems\enspace $\cdot$\enspace Owner, 21h Systems (consulting)\par}
+\band{\textbf{Start with the invariant, not the lock.} What must remain true? Who can change it? Prefer a queue or single owner over shared mutable state; use a constraint at the protected resource when correctness matters.}
+\begin{center}
+\begin{tikzpicture}
+\node[nodebox,text width=2.05in] (a) {\textbf{One event loop}\\ I/O tasks; interleave at awaits\\\code{IO::Async}, \code{Future::Mutex}};
+\node[nodebox,text width=2.05in,right=7pt of a] (b) {\textbf{Interpreter threads}\\ Separate interpreters; explicit sharing\\\code{threads::shared}, \code{lock()}};
+\node[nodebox,text width=2.05in,right=7pt of b] (c) {\textbf{Processes / workers}\\ Separate address spaces; IPC\\\code{fork}, MCE, \code{flock}};
+\node[font=\fontsize{8}{9}\selectfont,below=3pt of b] {Choose by workload and coordination scope, not by number of workers.};
+\end{tikzpicture}
+\end{center}\vspace{-5pt}
+\noindent\begin{minipage}[t]{.485\linewidth}
+\sect{1 / Choose the execution model}
+\entry{Async / event loop}{Many network requests, timers; no blocking calls on the loop. State may change across an \code{await}.}
+\entry{Ithreads}{Existing shared-state code or fixed worker pools. Load \code{threads} before \code{threads::shared}; interpreter cloning has memory cost. Discouraged for new designs.}
+\entry{Fork / MCE}{CPU-heavy batches, isolation and bounded worker pools. Open DBI handles and sockets in the worker; do not reuse inherited connections.}
+\sect{2 / Match the primitive to the job}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries\RaggedRight\arraybackslash}p{.30\linewidth} >{\RaggedRight\arraybackslash}X@{}}
+Mutex & One owner; protect a compound update.\\
+Semaphore & N permits; cap simultaneous work, not requests/sec.\\
+Condition & Wait until a predicate is true; recheck after wake.\\
+Barrier & All workers meet before the next phase.\\
+Queue & Transfer ownership; bound backlog for backpressure.\\
+RW lock & Many readers OR one writer; fairness matters.\\
+Futex / atomic & Native implementation building blocks, not Perl scalar locks.\\
+\end{tabularx}
+\sect{3 / Mutex: avoid lost updates}
+\begin{center}\begin{tikzpicture}[x=.96cm,y=.48cm,font=\scriptsize]
+\node[anchor=east] at (0,2) {A}; \node[anchor=east] at (0,1) {B};
+\draw[gray!60] (0,2)--(7.1,2);\draw[gray!60] (0,1)--(7.1,1);
+\draw[fill=pale,draw=teal] (.25,1.65) rectangle (3.2,2.35);\node at (1.72,2) {lock / update / exit};
+\draw[dashed,draw=warn] (.6,1)--(3.3,1);\node[above] at (1.8,1) {wait};
+\draw[fill=pale,draw=teal] (3.4,.65) rectangle (6.35,1.35);\node at (4.87,1) {lock / update / exit};
+\draw[arr] (0,.25)--(7.1,.25) node[right]{time};
+\end{tikzpicture}\end{center}\vspace{-4pt}
+\band{\texttt{\small use threads;\\use threads::shared;\\my \$n :shared = 0;\\\{ lock(\$n); ++\$n; \}}\\[-1pt]\textit{Excerpt: declare shared state before workers.}}
+\alert{Every participant must lock the same stable shared variable. Container locks are not recursive locks on contents. Scope exit releases \code{lock()}.}
+\end{minipage}\hfill\begin{minipage}[t]{.485\linewidth}
+\sect{4 / Core Perl quick reference}
+\entry{\code{threads::shared}}{\code{lock(\$gate)}; \code{shared\_clone} for nested data. No built-in timed \code{lock()}.}
+\entry{\code{Thread::Semaphore}}{\code{new(3)}, \code{down}, \code{up}; balance permits on error. Use \code{down\_timed} for a deadline.}
+\entry{\code{Thread::Queue}}{\code{enqueue}, \code{dequeue}, \code{end}; consumers drain then stop. Use a bounded queue when producers can outrun consumers.}
+\entry{\code{cond\_wait}}{Hold the predicate's lock, wait inside a \code{while} loop; notifier changes state under the same lock and signals/broadcasts.}
+\entry{\code{Future::Mutex}}{Serialize logical critical sections across suspension points; do not block the event loop.}
+\sect{5 / Cross-process coordination}
+\entry{\code{flock}}{Cooperating processes on one host: \code{LOCK\_EX} for writers, \code{LOCK\_SH} for readers, \code{LOCK\_NB} for nonblocking attempts. Use a dedicated stable lock file.}
+\entry{\code{IPC::Semaphore}}{System V kernel permits shared by processes; manage creation, crash recovery and removal explicitly.}
+\entry{Pipes / sockets}{Prefer sending work to one owner instead of coordinating writes to shared memory.}
+\alert{A Perl thread lock is not a process lock. After \code{fork}, inherited file descriptions can share a \code{flock}; open separately per worker.}
+\sect{6 / Design habits that prevent bugs}
+\entry{Order}{Acquire multiple locks in one global order; release on every exit path.}
+\entry{Duration}{Keep critical sections short. Avoid network I/O, sleeps and unbounded waits while holding a lock.}
+\entry{Lifecycle}{Join workers; check failures. Stop admission, drain queues and shut down cleanly.}
+\entry{Observability}{Measure wait time, hold time, timeout rate, queue depth; test forced interleavings and failures.}
+\band{\textbf{Debugging shortcuts}\par\code{perl -V:useithreads}\par\code{ps -eLf}\enspace /\enspace \code{lslocks}\par\code{strace -f -e trace=futex,flock -p PID}\par\textit{Attach tracing only with authorization; it adds overhead.}}
+\end{minipage}
+\newpage
+\heading{02 / SHARED SERVICES}{Database \& distributed locks}
+\band{\textbf{Correctness vs. efficiency.} A duplicate cache refresh wastes work; a duplicate charge corrupts state. For the latter, enforce uniqueness, an atomic conditional update, or fencing at the destination. A lease alone is not a correctness guarantee.}
+\begin{center}\begin{tikzpicture}
+\node[nodebox,text width=1.9in] (a) {\textbf{Worker A}\par lease expires; A pauses};
+\node[nodebox,text width=1.9in,right=8pt of a] (b) {\textbf{Worker B}\par acquires newer fence 42};
+\node[nodebox,text width=2.45in,right=8pt of b] (c) {\textbf{Destination}\par accepts fence 42; rejects stale 41};
+\draw[arr] (a)--(b);\draw[arr] (b)--(c);
+\end{tikzpicture}\end{center}\vspace{-5pt}
+\noindent\begin{minipage}[t]{.485\linewidth}
+\sect{7 / MySQL + DBI / DBIx::Class}
+\entry{Atomic update}{First choice for counters and guards. Check affected rows. A unique key prevents duplicate effects.}
+\band{\texttt{UPDATE account\\SET cents = cents - 100\\WHERE id = 1 AND cents >= 100;}\\\textit{Require one affected row.}}
+\entry{Pessimistic}{In a transaction, \code{SELECT ... FOR UPDATE} locks matching index records/ranges. Keep transactions short and indexed.}
+\entry{Optimistic}{Version column in \code{WHERE}; increment it on update; retry or surface a conflict when zero rows change.}
+\entry{Advisory}{\code{GET\_LOCK(name, timeout)} / \code{RELEASE\_LOCK(name)}; connection-owned, not transaction-owned. Check return values.}
+\entry{Work queue}{\code{FOR UPDATE SKIP LOCKED} for claiming independent jobs; commit claims promptly. Use visibility deadlines, attempt IDs and idempotent effects.}
+\entry{DBIx::Class}{Use \code{txn\_do} or \code{txn\_scope\_guard}; explicitly retry complete deadlocked transactions with bounded backoff.}
+\alert{InnoDB may lock ranges, not just one row. Deadlocks are normal; rollback before retry. A network failure can leave commit outcome unknown.}
+\sect{8 / Memcached: cache efficiency only}
+\entry{Claim}{\code{add(key, owner, ttl)} succeeds only when absent.}
+\entry{Release}{\code{gets} + owner check + \code{cas} short-lived tombstone, or let expire. Never unconditionally delete a successor's entry.}
+\entry{Limitations}{Eviction, expiry, restart and rehash can invalidate ownership. No durable fencing; CAS IDs are not fence tokens.}
+\sect{9 / Sessions and HTTP requests}
+\entry{Prefer atomic state}{Session load/modify/save races across requests. Store counters/cart updates separately or serialize carefully.}
+\entry{Idempotency}{Bind a key to request identity and payload; store result or pending state. A lock alone does not prevent repeat effects after a crash.}
+\end{minipage}\hfill\begin{minipage}[t]{.485\linewidth}
+\sect{10 / Redis / Valkey: owner-checked leases}
+\band{\texttt{SET key token NX PX 10000}\\Acquire with a unique random owner token and TTL (milliseconds). Check success.}
+\entry{Release / renew}{Compare the stored token and modify it atomically. Never use separate \code{GET} then \code{DEL}.}
+\entry{Native commands}{Redis 8.4+: \code{DELEX ... IFEQ}; Valkey 9.0+: \code{DELIFEQ}. Conditional \code{SET ... IFEQ ... PX} renews on Redis 8.4+ / Valkey 8.1+.}
+\entry{Perl transactions}{\code{WATCH key}, read owner, \code{MULTI}, queue update, \code{EXEC}. Retry confirmed conflicts only, using an exclusive connection.}
+\entry{Lua invoked by Perl}{Server-side atomic check/update with \code{EVALSHA} or \code{EVAL}; not a separate application language. Cluster keys must share a slot.}
+\begin{center}\begin{tikzpicture}[node distance=5pt]
+\node[nodebox,text width=1.15in] (p) {Perl worker};
+\node[nodebox,text width=1.55in,right=of p] (r) {Redis atomic check\\then update};
+\draw[arr] (p)--(r);\end{tikzpicture}\end{center}\vspace{-3pt}
+\entry{Fencing}{Assign monotonically increasing generations and reject stale generations at the protected resource. Preserve counter ordering across failures.}
+\entry{Semaphore / queue}{Atomic permit bookkeeping with expiry; prefer Streams consumer groups for distributed jobs (acknowledge only after effect; reclaim abandoned work).}
+\alert{TTL expiry does not stop a worker. An ambiguous renewal is not permission to continue. Replication and failover may lose lease state.}
+\sect{11 / Decision shortcut}
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}p{.39\linewidth}>{\RaggedRight\arraybackslash}X@{}}
+\textbf{Need} & \textbf{Prefer}\\\hline
+Shared durable data & DB constraint / transaction\\
+Distributed duplicate work & Redis lease + bounded retry\\
+Cache regeneration & Memcached add/CAS\\
+Cross-host correctness & Authoritative coordinator + destination fencing\\
+Durable job delivery & DB queue or durable broker; idempotency\\
+\end{tabularx}
+\band{\textbf{Before shipping:} define owner, scope, deadline, lock order, cleanup, crash recovery, stale-writer policy and invariant tests.}
+\end{minipage}
+\vfill
+{\fontsize{8}{9}\selectfont\color{navy} Read the full handbook for complete runnable programs, version notes and laboratory verification. Code on this sheet is illustrative, not standalone.\quad Scott Muller $\cdot$ \href{mailto:scott@21h.io}{scott@21h.io}.}
+\end{document}

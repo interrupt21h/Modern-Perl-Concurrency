@@ -1,6 +1,12 @@
 # Modern Perl Concurrency and Locking — Edition 1.3
 
-Created and written by **Scott Muller**. © 2026 Scott Muller.
+Created and written by **Scott Muller** ([scott@21h.io](mailto:scott@21h.io)).
+Software Engineer, Matsch Systems; Owner, 21h Systems (consulting).
+© 2026 Scott Muller. Affiliations identify the author, not institutional endorsement.
+
+**[Read the handbook and two-page cheat sheet](https://interrupt21h.github.io/Modern-Perl-Concurrency/)** · [Download releases](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases)
+
+The printable US Letter companion is in `cheat-sheet.tex`; build it with `latexmk -pdf -halt-on-error cheat-sheet.tex`.
 
 Engineering handbook and self-verifying laboratory covering ithreads, processes,
 event loops, MySQL/InnoDB transactions and DBIx::Class, Redis/Valkey leases,
@@ -173,8 +179,4 @@ standalone Lua, C, SQL and other non-Perl files are intentionally untouched.
 Review the source diff and run integration tests against disposable services
 before publication. No formatter can prove semantic equivalence by itself.
 
-For an online build, initialize/push this directory to a GitHub repository and
-run **Format Perl and rebuild handbook** from the Actions tab. The artifact
-contains the formatted source, PDF, build log and source diff. It does not push
-changes back to the repository. The workflow is provided but has not been run
-in the offline authoring environment.
+The **Build, test and publish handbook** workflow runs on main updates and manual dispatch. Successful builds persist validated formatting, create a versioned release containing the handbook and cheat sheet PDFs, and deploy the documentation portal. CI artifacts include build logs and source differences.

@@ -19,7 +19,7 @@ jobs:
       - name: Install build tools and isolated Redis
         run: |
           sudo apt-get update
-          sudo apt-get install -y cpanminus make gcc latexmk texlive-latex-extra texlive-pictures texlive-fonts-recommended lmodern python3-venv redis-server libredis-perl
+          sudo apt-get install -y cpanminus make gcc latexmk texlive-latex-extra texlive-pictures texlive-fonts-recommended lmodern python3-venv redis-server libredis-perl poppler-utils
           sudo cpanm SHANCOCK/Perl-Tidy-20260826.tar.gz
           perltidy --version
           python3 -m venv .venv
@@ -38,6 +38,8 @@ jobs:
             make tidy-check
             sh run-tests.sh
             make pdf
+            latexmk -pdf -interaction=nonstopmode -halt-on-error -file-line-error cheat-sheet.tex
+            test "$(pdfinfo cheat-sheet.pdf | awk '/^Pages:/ {print $2}')" = 2
           } 2>&1 | tee tidy-build.txt
           git diff -- examples snippets > tidy-source.diff
           test -s guide.pdf
@@ -58,8 +60,10 @@ jobs:
           mkdir -p dist
           git archive --format=tar.gz --prefix=perl-concurrency/ -o dist/formatted-source.tar.gz HEAD
           cp guide.pdf dist/modern-perl-concurrency.pdf
+          cp cheat-sheet.pdf dist/perl-concurrency-cheat-sheet.pdf
+          cp cheat-sheet.tex dist/
           cp tidy-build.txt tidy-source.diff dist/
-          (cd dist && sha256sum modern-perl-concurrency.pdf formatted-source.tar.gz > SHA256SUMS)
+          (cd dist && sha256sum modern-perl-concurrency.pdf perl-concurrency-cheat-sheet.pdf cheat-sheet.tex formatted-source.tar.gz > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with:
           name: tidied-perl-handbook
@@ -76,7 +80,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create "$RELEASE_TAG" dist/modern-perl-concurrency.pdf dist/formatted-source.tar.gz dist/SHA256SUMS dist/tidy-build.txt \
+          gh release create "$RELEASE_TAG" dist/modern-perl-concurrency.pdf dist/perl-concurrency-cheat-sheet.pdf dist/cheat-sheet.tex dist/formatted-source.tar.gz dist/SHA256SUMS dist/tidy-build.txt \
             --target "$PUBLISHED_SHA" \
             --title "Modern Perl Concurrency and Locking — Edition 1.3 (build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT})" \
             --notes "Formatted and rebuilt by CI from commit $PUBLISHED_SHA. See tidy-build.txt for the executed and skipped tests. Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
@@ -96,6 +100,7 @@ jobs:
           path: |
             tidy-build.txt
             guide.log
+            cheat-sheet.log
           if-no-files-found: ignore
   pages:
     if: github.ref == 'refs/heads/main'

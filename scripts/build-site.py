@@ -18,7 +18,7 @@ SOURCE = "formatted-source.tar.gz"
 esc = html.escape
 
 OUT.mkdir(exist_ok=True)
-for name in (PDF, SOURCE, "SHA256SUMS", "tidy-build.txt"):
+for name in (PDF, SOURCE, "SHA256SUMS", "tidy-build.txt", "perl-concurrency-cheat-sheet.pdf", "cheat-sheet.tex"):
     shutil.copy2(DIST / name, OUT / name)
 (OUT / ".nojekyll").touch()
 
@@ -76,13 +76,14 @@ footer{{border-top:1px solid var(--line);padding:1.5rem 1.25rem;color:var(--mute
 <div class="eyebrow">Engineering handbook / Edition 1.3</div>
 <h1>Modern Perl Concurrency and Locking</h1>
 <p>From interpreter threads and process synchronization to transactional databases, distributed leases, fencing, and concurrent web requests.</p>
-<p>Created and written by Scott Muller.</p>
-<div class="actions"><a class="button" href="{PDF}">Read the PDF</a><a class="button secondary" href="{SOURCE}" download>Download source</a><a class="button secondary" href="{esc(release)}">GitHub release</a></div>
+<p>Created and written by Scott Muller · <a href="mailto:scott@21h.io">scott@21h.io</a><br>Software Engineer, Matsch Systems · Owner, 21h Systems (consulting)</p>
+<div class="actions"><a class="button" href="{PDF}">Read the PDF</a><a class="button secondary" href="perl-concurrency-cheat-sheet.pdf">Two-page cheat sheet</a><a class="button secondary" href="{SOURCE}" download>Download source</a><a class="button secondary" href="{esc(release)}">GitHub release</a></div>
 </div></header>
 <main class="wrap">
 <div class="grid"><section class="panel"><h2>Handbook</h2><p>Read the complete, illustrated technical reference with syntax-highlighted code and runnable examples.</p><a href="{PDF}" download>Download PDF</a></section>
 <section class="panel"><h2>Executable laboratory</h2><p>Explore the formatted sources, build scripts and tests.</p><a href="{esc(REPO)}/tree/{SHA}/examples">Browse all examples on GitHub</a></section>
 <section class="panel"><h2>Build provenance</h2><p>Published from commit <code>{SHA[:12]}</code> after formatting checks, available regression tests and PDF compilation. See logs for skipped tests.</p><a href="tidy-build.txt">Verification log</a> · <a href="SHA256SUMS">Checksums</a> · <a href="{esc(run)}">CI run</a></section></div>
+<section class="panel"><h2>Printable cheat sheet</h2><p>Two illustrated pages for quick reference: local Perl synchronization and database/distributed coordination. Print double-sided on US Letter.</p><a href="perl-concurrency-cheat-sheet.pdf">Open PDF</a> · <a href="perl-concurrency-cheat-sheet.pdf" download>Download PDF</a> · <a href="cheat-sheet.tex" download>LaTeX source</a></section>
 <section class="panel"><h2>Contents</h2><ol>{chapter_html}</ol></section>
 <section class="panel"><h2>Source examples</h2><p>Source links point to the exact release commit. Use isolated services for the laboratory.</p><ul class="examples">{example_html}</ul><p><a href="{esc(REPO)}/tree/{SHA}/examples/catalyst-session">Catalyst application source</a></p></section>
 </main><footer><div class="wrap">Modern Perl Concurrency and Locking · <a href="{esc(REPO)}">Project repository</a> · <a href="{esc(REPO)}/releases">All releases</a></div></footer>

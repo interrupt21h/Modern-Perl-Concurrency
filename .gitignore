@@ -11,3 +11,6 @@ __pycache__/
 *.lot
 *.lol
 /guide.pdf
+/cheat-sheet.pdf
+/dist/
+/site-dist/
