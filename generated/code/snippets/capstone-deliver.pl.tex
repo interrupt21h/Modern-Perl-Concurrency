@@ -1,0 +1,24 @@
+\PG{k}{sub}\PG{+w}{ }\PG{n+nf}{deliver}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{db}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sink}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fail}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{\PGZus{}}\PG{p}{;}
+\PG{+w}{    }\PG{n}{tx}\PG{p}{(}
+\PG{+w}{        }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sink}\PG{p}{,}
+\PG{+w}{        }\PG{k}{sub}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sink}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{do}\PG{p}{(}
+\PG{+w}{                }\PG{l+s}{\PGZsq{}INSERT INTO effect VALUES (?,?)}
+\PG{l+s}{             ON CONFLICT(id) DO NOTHING\PGZsq{}}\PG{p}{,}
+\PG{+w}{                }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{id}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{value}\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{            }\PG{p}{)}\PG{p}{;}
+\PG{+w}{            }\PG{k}{my}\PG{+w}{ }\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stored}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sink}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{selectrow\PGZus{}array}\PG{p}{(}
+\PG{+w}{                }\PG{l+s}{\PGZsq{}SELECT value FROM effect WHERE id=?\PGZsq{}}\PG{p}{,}
+\PG{+w}{                }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{id}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{            }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}divergent event\PGZdq{}}\PG{+w}{ }\PG{k}{unless}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stored}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{value}\PG{p}{\PGZcb{}}\PG{p}{;}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nb}{die}\PG{+w}{ }\PG{l+s}{\PGZdq{}injected lost acknowledgement\PGZbs{}n\PGZdq{}}\PG{+w}{ }\PG{k}{if}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{fail}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{changed}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{db}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{k}{do}\PG{p}{(}
+\PG{+w}{        }\PG{l+s+sx}{q\PGZob{}}\PG{l+s+sx}{UPDATE outbox SET state=\PGZsq{}done\PGZsq{},lease\PGZus{}until=0}
+\PG{l+s+sx}{          WHERE id=? AND attempt=? AND state=\PGZsq{}running\PGZsq{}}\PG{l+s+sx}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{id}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{job}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{attempt}\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{return}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{changed}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{;}
+\PG{p}{\PGZcb{}}

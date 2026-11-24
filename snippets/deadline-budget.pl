@@ -9,9 +9,9 @@ sub remaining {
 }
 
 sub process_request {
-    my ($admit, $store, $respond) = @_;
+    my ( $admit, $store, $respond ) = @_;
     my $deadline = clock_gettime(CLOCK_MONOTONIC) + 2;
-    my $job = $admit->(remaining($deadline));
-    my $result = $store->($job, remaining($deadline));
-    return $respond->($result, remaining($deadline));
+    my $job      = $admit->( remaining($deadline) );
+    my $result   = $store->( $job, remaining($deadline) );
+    return $respond->( $result, remaining($deadline) );
 }
