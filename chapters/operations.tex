@@ -1,0 +1,105 @@
+\chapter{Production deployment and observability}
+\label{ch:enterprise-operations}
+\chapterbrief{Budget capacity, drain workers and diagnose contention.}
+\index{Observability}
+\index{Connection budgets}
+\index{Graceful shutdown}
+\index{Metrics}
+
+Concurrency controls must remain valid as worker counts, replicas,
+schedulers and service availability change. A configuration that works on
+a single development process may fail when a production deployment forks
+workers or rolls out multiple replicas.
+
+\strategy{app-operations}{Bounded admission}{A waiting room limits work entering a busy service.}{downstream resources have finite capacity.}{limits are guessed without measuring load.}{worker pools, metrics, deadlines}
+
+\section{Budget workers and connections}
+For a hypothetical deployment of four replicas, six web workers per
+replica and one live database connection per worker, web traffic alone can
+consume 24 database connections. Add batch workers, administrative sessions,
+pool overflow and rollout surge to the budget. A connection limit is not
+a throughput target. Start with bounded concurrency and measure queueing
+and database saturation before increasing parallelism.
+
+Use the same resource ownership discipline with Apache, FastCGI and PSGI
+workers: inspect the actual server lifecycle, avoid inheriting live clients,
+and distinguish process-local from cluster-wide locks. Maintain bounded
+request and job deadlines. Never hold an ordinary synchronization lock
+across an unbounded external call.
+
+\section{Graceful termination and durable recovery}
+\begin{figure}[!htbp]\centering
+\begin{tikzpicture}[node distance=7mm]
+\node[box,text width=2.7cm] (t) {Termination requested};
+\node[okbox,right=of t,text width=2.7cm] (s) {Stop accepting work};
+\node[okbox,right=of s,text width=2.7cm] (d) {Drain bounded in-flight work};
+\node[box,below=of d,text width=2.7cm] (e) {Commit, close, exit};
+\node[badbox,below=of s,text width=2.7cm] (r) {Deadline expires\\reclaim later};
+\draw[arr](t)--(s); \draw[arr](s)--(d); \draw[arr](d)--(e);
+\draw[badarr](d.south west)--(r.north east);
+\end{tikzpicture}
+\caption{Graceful shutdown is an optimization; durable recovery also handles forced termination.}
+\end{figure}
+On a shutdown request, mark the process unready, stop claiming jobs,
+finish bounded in-flight work, then close resources. A Kubernetes
+termination grace period is finite [72]; forced termination must not
+require a final cleanup handler for correctness. Expired attempts,
+idempotent effects and durable checkpoints provide recovery when a
+worker cannot finish.
+
+\section{Measure symptoms, not just CPU}
+\begin{longtable}{L{.33\linewidth}L{.59\linewidth}}
+\toprule Signal & Meaning and action \\ \midrule\endhead
+Lock wait duration & Histogram; increasing tail latency identifies contention. \\
+Lock hold duration & Histogram; investigate slow critical sections or transactions. \\
+Job queue age & Oldest eligible job; detects starvation or insufficient capacity. \\
+Attempt and retry counters & Separate conflicts, transient failures and exhausted budgets. \\
+Database connections & Active, idle and waiting; check saturation and leaked sessions. \\
+Outbox age and backlog & Delivery delay or remote outage; alert on sustained lag. \\
+\bottomrule
+\end{longtable}
+Trace the business operation, transaction, claim and delivery separately.
+Record request ID, job ID, attempt, worker PID and elapsed time in structured
+logs. Keep high-cardinality identifiers out of metric labels; use bounded
+operation and outcome categories instead [73]. Never log tokens, passwords
+or private payloads. Correlate traces and logs with database lock diagnostics.
+
+\tip{Start with a small dashboard: queue age, throughput, retry rate,
+lock wait percentiles, connection usage and failed jobs. Use these signals
+to choose the next concurrency improvement rather than tuning blindly.}
+
+\section{Architecture review checklist}
+\begin{itemize}
+\item Identify every writer and the resource that enforces its invariant.
+\item Document transaction scope, lock order and retry classification.
+\item Bound worker counts, queues, connection use and operation deadlines.
+\item Define durable identities, replay rules and ambiguous-outcome recovery.
+\item Verify crash, timeout, retry and duplicate delivery scenarios.
+\item Establish deployment, rollback and observable failure criteria.
+\end{itemize}
+\section{Metrics and debugging}
+Instrument acquisition wait and hold duration separately, using monotonic time. Count acquisitions, contention, timeouts, renewals, lost leases, rejected fences, retries and errors. Keep label cardinality bounded (lock class, backend, operation), never customer IDs or individual resource names. Structured logs may carry a correlation ID, lock name and fencing token. Trace waiting separately from useful work so that tail latency can be attributed.
+Example 26 provides \code{with_timed_lock}, a wrapper that records wait and hold time for any critical section. Each thread keeps its own samples, so measurement adds no shared contention, and percentiles are computed after \code{join}.
+\CodeFile{perl}{examples/26-lock-metrics.pl}{\nolinkurl{26-lock-metrics.pl}}
+\CodeFile{text}{snippets/guide-08.txt}{Output on the verification host (4 threads, 1 ms of work under the lock)}
+Read this the way you would read production data: waiting (3~ms at the median) dominates useful hold time (1~ms) because four threads queue for one lock, so the fix is shorter or finer-grained critical sections, not faster work. The maximum hold time is nearly three times the p99, a typical sign of a scheduler preemption while the lock was held.
+\CodeFile{bash}{snippets/guide-09.sh}{Linux troubleshooting tools}
+\tip{Export lock \emph{wait} time and lock \emph{hold} time as separate histograms (example 26). Rising wait with flat hold means contention; rising hold means the critical section itself got slower.}
+
+\section{Deployment checklist}
+\begin{itemize}
+\item Identify the synchronization scope and state the invariant; decide whether the lock is for efficiency or correctness.
+\item Document lock identity, acquisition order, maximum wait, cancellation and cleanup behavior.
+\item Ensure all participants cooperate; separate independent resources rather than locking globally.
+\item Never share DBI handles or Redis connections across workers; validate storage engine, isolation and query plans.
+\item Set per-session lock wait timeouts consistent with retry budgets; disable transparent reconnects on coordination connections.
+\item For leases: random owner tokens, owner-checked renewal and release, bounded heartbeats, and destination-enforced fencing for correctness-critical effects.
+\item Give coordination keys a dedicated Redis/Valkey instance with \code{noeviction}, a restricted ACL and TLS on untrusted networks.
+\item Design for process death, pauses, connection loss, retry safety and shutdown before deploying.
+\item Record dependency versions and test each supported Perl, OS and server combination, including legacy hosts.
+\item Observe contention, lost leases, rejected fences and queue age; optimize from measurements.
+\end{itemize}
+
+% ================================================================ glossary
+
+

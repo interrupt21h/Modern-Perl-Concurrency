@@ -2,7 +2,7 @@
 
 **An illustrated engineering handbook and executable laboratory for Perl developers.**
 
-[![Edition](https://img.shields.io/badge/edition-2.0-34546B)](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest)
+[![Edition](https://img.shields.io/badge/edition-2.1-34546B)](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest)
 [![Build and publish](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions/workflows/tidy-handbook.yml/badge.svg?branch=main)](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions/workflows/tidy-handbook.yml)
 
 [Documentation website](https://interrupt21h.github.io/Modern-Perl-Concurrency/) · [Latest release](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest) · [Source examples](examples/) · [Build history](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions)
@@ -33,6 +33,18 @@ Designed for junior developers learning synchronization and experienced engineer
 | **Distributed coordination** | Redis/Valkey leases, atomic scripts, optimistic transactions, fencing, semaphores and Streams |
 | **Application architecture** | Moose and Catalyst object lifetimes, service-layer transactions, resumable batch processing, reliable integrations, migration and concurrency testing |
 | **Web applications and caches** | Catalyst sessions, API credentials, idempotency, rate limiting and Memcached CAS |
+
+## Reading map
+
+| Part | Focus |
+| :--- | :--- |
+| I | Foundations and mental models |
+| II | Perl and operating-system synchronization |
+| III | Database concurrency and application transactions |
+| IV | Distributed coordination |
+| V | Application architecture and the data-processing capstone |
+| VI | Production engineering |
+| Appendices | Native implementation, API security, laboratories, example catalog, glossary, references and subject/API index |
 
 ## Using this repository
 
@@ -169,7 +181,7 @@ authority for correctness-critical operations.
 ## Project layout
 
 - `guide.tex`: main handbook and shared document macros.
-- `enterprise-architecture.tex`: application architecture, processing pipelines, integration and deployment chapters.
+- `chapters/`: application architecture, pipelines, integration, capstone, deployment and reference catalog.
 - `cheat-sheet.tex`: standalone, two-page illustrated quick reference.
 - `distributed-cache.tex`, `catalyst-sessions.tex`, `api-credentials.tex`:
   chapter/section source files.

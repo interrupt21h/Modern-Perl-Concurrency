@@ -1,0 +1,69 @@
+\chapter{Transaction boundaries in layered applications}
+\label{ch:enterprise-transactions}
+\chapterbrief{Place transactions at the business boundary; classify retries.}
+\index{Transactions}
+\index{Savepoints}
+\index{API!txn_do}
+\index{API!txn_scope_guard}
+
+A service operation should define the atomic unit of work. The controller
+validates the request; repository methods participate in the transaction
+rather than committing independently. A database commit belongs to the
+business operation, not to an individual ORM result object.
+
+\begin{figure}[!htbp]\centering
+\begin{tikzpicture}[node distance=5mm]
+\node[box,text width=10cm] (c) {Controller or job handler: validate and assign operation ID};
+\node[okbox,below=of c,text width=10cm] (s) {Service: begin transaction; define retry boundary};
+\node[box,below left=8mm and 0mm of s.south,text width=4.2cm,anchor=north east] (a) {Repository A\\guarded stock update};
+\node[box,below right=8mm and 0mm of s.south,text width=4.2cm,anchor=north west] (b) {Repository B\\audit or outbox insert};
+\node[okbox,below=8mm of $(a.south)!0.5!(b.south)$,text width=10cm] (d) {Commit together or roll back together};
+\draw[arr](c)--(s); \draw[arr](s)--(a); \draw[arr](s)--(b);
+\draw[arr](a)--(d); \draw[arr](b)--(d);
+\node[box,below=of d,text width=10cm] (r) {Return response; relay external effects separately};
+\draw[arr](d)--(r);
+\end{tikzpicture}
+\caption{A layered application has one explicit business transaction boundary.}
+\end{figure}
+
+\strategy{app-transactions}{Service-owned transactions}{One receipt covers all items or none.}{multiple changes must commit together.}{remote effects cannot share the same transaction.}{DBIx::Class, DBI, InnoDB}
+
+\section{DBIx::Class composition}
+Use \code{txn_do} for a complete unit of work or \code{txn_scope_guard}
+when a lexical transaction guard better expresses the lifecycle.
+Nested \code{txn_do} calls do not independently commit: the outer transaction
+owns the commit [65]. Savepoints, when supported and correctly configured,
+allow partial rollback, not independent durability. Do not catch a failed
+nested operation and continue as if the transaction were still valid.
+Avoid mixing raw DBI transaction calls with ORM-managed transaction depth.
+
+\section{Retry the operation, not the final statement}
+InnoDB deadlocks roll back a transaction; a lock-wait timeout normally
+rolls back only the failed statement [67]. Explicitly abandon the failed
+unit before retrying it. Capture driver error details promptly, use a
+bounded retry budget with jitter, and reacquire all data needed by the
+operation. A connection failure during commit can leave the outcome
+unknown. Resolve it by a durable request ID rather than blindly retrying
+a charge, decrement or external notification.
+
+\begin{longtable}{L{.30\linewidth}L{.62\linewidth}}
+\toprule Failure & Service behavior \\ \midrule\endhead
+Validation error & Return a business error; do not retry. \\
+Deadlock & Roll back/reset the unit; retry from the beginning with bounded backoff. \\
+Lock wait timeout & Roll back the entire business operation explicitly before retry. \\
+Unique-key conflict & Determine whether this is a duplicate operation or a different payload. \\
+Lost commit response & Reconcile by durable operation ID; do not assume rollback. \\
+\bottomrule
+\end{longtable}
+
+\section{Laboratory: a reservation and its audit record}
+The example below deliberately fails between a stock decrement and an audit
+insert, verifies rollback, then verifies successful commit and duplicate
+rejection. SQLite is used only to make this application-layer test
+self-contained; the MySQL chapter covers InnoDB-specific lock semantics.
+\CodeFile{perl}{examples/33-layered-transaction.pl}{Example 33: service-owned DBIx::Class transaction}
+
+\tip{Keep expensive computation and network I/O outside the transaction.
+If the computation depends on mutable database state, validate its version
+again inside the transaction before committing.}
+

@@ -11,7 +11,7 @@ from pygments.token import (Text, Whitespace, Error, Comment, Keyword, Name,
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'generated' / 'code'
-CHAPTERS = ('guide.tex', 'distributed-cache.tex', 'catalyst-sessions.tex', 'api-credentials.tex', 'enterprise-architecture.tex')
+CHAPTERS = ('guide.tex', 'distributed-cache.tex', 'catalyst-sessions.tex', 'api-credentials.tex') + tuple(str(p.relative_to(ROOT)) for p in sorted((ROOT / 'chapters').glob('*.tex')))
 
 class HandbookStyle(Style):
     styles = {

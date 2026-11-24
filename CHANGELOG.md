@@ -1,5 +1,12 @@
 # Changelog
 
+## Edition 2.1 — editorial and reproducibility revision
+
+- Reorganize the book into six parts and technical appendices; preserve full listings.
+- Add chapter objectives, strategy cards, reading paths, example catalog and subject/API index.
+- Clarify fencing, delivery guarantees and experimental syntax; add a processing capstone, savepoints, cancellation/retry and contention laboratories.
+- Strengthen service-backed CI and PDF preflight.
+
 ## Edition 2.0 — application concurrency architecture
 
 - Add seven application-oriented chapters, synthetic laboratories 32–35, and architecture diagrams covering object lifetimes, transaction ownership, batch pipelines, cross-system delivery, migration, testing and deployment.

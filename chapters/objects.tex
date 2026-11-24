@@ -1,0 +1,74 @@
+\chapter{Concurrency in object-oriented Perl applications}
+\label{ch:enterprise-objects}
+\chapterbrief{Separate application, worker, request and durable resources.}
+\index{Moose}
+\index{Catalyst}
+\index{Fork}
+\index{Resource ownership}
+
+
+A production Perl application spans many lifetimes: interpreter, worker,
+request, transaction and durable service. In a synthetic inventory application,
+a web controller, an import job and a notification worker may all operate on
+the same record. A lock attached to a Moose object cannot coordinate
+independent processes. Choose the owner of the invariant first.
+
+\strategy{app-objects}{Worker-owned resources}{Each worker has its own toolbox.}{live handles must remain process-local.}{state must coordinate independent workers.}{Moose, DBI, Catalyst}
+
+\section{State ownership and object lifetime}
+\begin{figure}[!htbp]\centering
+\begin{tikzpicture}[node distance=6mm and 12mm]
+\node[box,text width=6cm] (p) {Parent: immutable configuration and class metadata};
+\node[okbox,below left=of p,text width=3.5cm] (a) {Worker A\\PID-owned clients};
+\node[okbox,below right=of p,text width=3.5cm] (b) {Worker B\\PID-owned clients};
+\draw[arr](p)--(a); \draw[arr](p)--(b);
+\node[box,below=of a,text width=3.5cm] (ra) {Request context A};
+\node[box,below=of b,text width=3.5cm] (rb) {Request context B};
+\draw[arr](a)--(ra); \draw[arr](b)--(rb);
+\node[okbox,below=8mm of $(ra.south)!0.5!(rb.south)$,text width=6cm] (db) {Shared authoritative database};
+\draw[arr](ra.south)--(db.north west); \draw[arr](rb.south)--(db.north east);
+\end{tikzpicture}
+\caption{Each process owns its clients; request contexts are transient and shared invariants are enforced at the resource.}
+\end{figure}
+
+\begin{longtable}{L{.22\linewidth}L{.33\linewidth}L{.37\linewidth}}
+\toprule Lifetime & Appropriate state & Avoid \\ \midrule\endhead
+Application & Immutable configuration, class metadata & Current user, mutable totals \\
+Worker & Connection factories, bounded pools, metrics & Assuming other workers see local changes \\
+Request / job & Identity, operation ID, validated input & Storing request context on a reusable singleton \\
+Durable service & Inventory, claims, checkpoints, audit rows & Treating a cache as authoritative \\
+\bottomrule
+\end{longtable}
+
+Moose lazy attributes defer construction; they are not synchronization
+primitives [63]. Catalyst component factories and context-aware lookup
+(\code{COMPONENT} and \code{ACCEPT_CONTEXT}) allow different lifetimes [64].
+Pass request-specific values explicitly instead of storing the active user
+or current transaction on a persistent controller. A process-local singleton
+does not become a deployment-wide singleton. Interpreter threads clone ordinary
+state; an event-loop task can race another task across an \code{await} even
+without parallel CPU execution.
+
+\section{Resource ownership after fork}
+Prefer creating live clients after the server forks. Use documented
+driver-specific fork handling and reconnect behavior. A PID check detects
+inherited state, but cannot make an inherited socket safe to use or destroy.
+DBI's \code{AutoInactiveDestroy} protects against accidental destructor
+interference in a forked child [15]. It does not make a shared connection safe.
+
+\warn{Never use an inherited database handle concurrently in a parent and
+child. Do not call a protocol-level disconnect on an inherited client
+unless its documentation establishes that this is safe.}
+
+The following Moose laboratory uses a plain hash to model resource ownership,
+not a real database connection. The child must initialize its own resource
+and leave the parent unchanged.
+\CodeFile{perl}{examples/32-worker-lifecycle.pl}{Example 32: process-local Moose resource ownership}
+
+\section{Reusable services and invariants}
+Give each service operation explicit inputs, a stable operation ID and
+well-defined results: success, conflict, validation failure or unknown
+outcome. Web, batch and administrative entry points should use the same
+business rules. Prefer a resource-enforced guard or unique constraint so
+that an alternate writer cannot silently bypass an advisory lock.
+

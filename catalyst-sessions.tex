@@ -1,5 +1,11 @@
 % ================================================================ Catalyst chapter
 \chapter{Catalyst sessions and request coordination on Redis}\label{ch:catalyst}
+\chapterbrief{Understand request-local state, concurrent sessions and safe web operations.}
+\index{Catalyst}
+\index{Sessions}
+\index{Idempotency}
+\index{API!Catalyst::Plugin::Session}
+
 A Catalyst application in production is never one interpreter. Starman, Gazelle or uWSGI fork several workers per pod, and Kubernetes runs several pods (Figure~\ref{fig:prefork}). Any request can land on any worker, so sessions, rate limits, duplicate-submission guards and per-user locks must live outside the interpreter. Redis or Valkey is the usual home for that state. This chapter explains how \code{Catalyst::Plugin::Session} uses its store, why the commonly packaged Redis stores need hardening, and how to handle the concurrency problems that sessions create. It also covers idempotency keys, login rate limits, session revocation and, for API clients, hashed API keys, JWT access tokens, refresh-token rotation and signed requests described with OpenAPI~3.2.
 
 Everything here is exercised by a complete application in \code{examples/catalyst-session/} and by two drivers, \code{examples/28-catalyst-sessions.pl} (29 checks) and \code{examples/30-api-tokens.pl} (33 checks). Each starts the application under Starman with four workers and checks its properties against live Redis (Section~\ref{sec:catalyst-lab}).
@@ -30,9 +36,9 @@ Hardened custom store (this chapter) & One atomic \code{SET ... EX}, Sereal with
 
 \section{A hardened Redis store}
 The store below implements the four methods that \code{Catalyst::Plugin::Session::Store} requires. Each write sets the value and its TTL in one command, so a crash can never leave a session that never expires. Records are encoded with Sereal, and the decoder refuses blessed data, so a forged record is discarded and logged rather than revived. Size limits bound the cost of a hostile payload.
-\CodeFile{perl}{examples/catalyst-session/lib/SessionLab/Plugin/Session/Store/RedisSafe.pm}{\nolinkurl{catalyst-session/lib/SessionLab/Plugin/Session/Store/RedisSafe.pm}}
+See the complete implementation in Appendix~\ref{app:catalyst}.
 The connection helper creates one Redis handle per process, lazily, and creates a new one when the PID changes. A preforking server can therefore load the application in its master process without the workers sharing an inherited socket, whose replies would interleave between processes. The helper disables automatic reconnection, so a lost reply is never followed by a silent replay of \code{SET NX} or \code{INCR}, and it caches scripts with an \code{EVALSHA} fallback.
-\CodeFile{perl}{examples/catalyst-session/lib/SessionLab/Redis.pm}{\nolinkurl{catalyst-session/lib/SessionLab/Redis.pm}}
+See the complete implementation in Appendix~\ref{app:catalyst}.
 Refusing objects has a design benefit beyond security: sessions hold plain data only. Store an epoch or an ISO date instead of a \code{DateTime}, and a user ID instead of a \code{DBIx::Class} row.
 
 \section{Session security}
@@ -64,7 +70,7 @@ Per-session lock around load and save & 8 of 8 & Requests in the session run one
 \fig{sessionfixes}{The three cart implementations measured by the laboratory.}
 \note{Default to the atomic pattern: the session holds identity, a CSRF token and small preferences, and anything that several requests change goes into its own Redis structure (hash, set, counter) or into the database, updated with single atomic commands. Use the per-session lock only for routes that must change the session blob itself, and keep those requests short.}
 The lock must cover both the load and the save. \code{lock_session} is called before the action's first \code{$c->session} access, and the application overrides \code{finalize_session} to release the lock \emph{after} the plugin has written the session. The lease has a TTL longer than any request, and release is owner-checked, as in Chapter~\ref{ch:redis}. If a worker dies while holding the lock, it expires on its own.
-\CodeFile{perllua}{examples/catalyst-session/lib/SessionLab.pm}{\nolinkurl{catalyst-session/lib/SessionLab.pm}}
+See the complete implementation in Appendix~\ref{app:catalyst}.
 The same file sets \code{STDERR->autoflush(1)} after \code{setup}. Catalyst's default UTF-8 encoding applies \code{binmode(STDERR, ':encoding(UTF-8)')}, which makes STDERR \emph{buffered}. Without the fix, worker log lines reached the container log late, in batches, and were lost when a worker was killed. The laboratory's log assertion failed until this line was added.
 
 \section{Idempotency keys for unsafe requests}
@@ -90,7 +96,10 @@ The details matter:
 \fig{ratelimit}{A fixed-window rate limit: the counter and its expiry are created together, so the window always ends.}
 The login action counts attempts per username in a fixed one-minute window. \code{INCR} and the first \code{PEXPIRE} run in one script, so a crash can never leave a counter without a TTL, which would amount to a permanent lockout. In production, limit per client address as well as per account, return \code{Retry-After}, and consider GCRA or a sliding window if bursts at window boundaries matter. Account-based lockout can be used to lock out a victim deliberately, so prefer slowing attempts down to hard lockouts for important accounts.
 
-\input{api-credentials.tex}
+\section{API concurrency and security}
+Refresh rotation, nonce consumption, rate limiting and revocation are
+concurrent state transitions. Appendix~\ref{app:api} explains their
+security contracts and server-side operations.
 
 \section{Deployment on Starman and Kubernetes}
 \fig{sessionarch}{Stateless application pods with shared session and coordination state. Session and cache data are split by eviction policy.}
@@ -103,23 +112,7 @@ The login action counts attempts per username in a fixed one-minute window. \cod
 \item \textbf{Monitoring.} \code{evicted_keys} on the session instance must stay at zero. Also watch memory per session, session count, lock waits, and 409, 429 and 503 rates. For the API, alert on refresh outcomes: a rising \code{reuse} count means stolen tokens or a client that does not refresh single-flight.
 \end{itemize}
 
-\section{The laboratory}\label{sec:catalyst-lab}
-\subsection{Session controller and routing}
-The controller implements the session patterns in this chapter. The cart actions differ only in where the data lives and whether a lock is held.
-\CodeFile{perllua}{examples/catalyst-session/lib/SessionLab/Controller/Root.pm}{\nolinkurl{catalyst-session/lib/SessionLab/Controller/Root.pm}}
-\subsection{PSGI entry point}
-\CodeFile{perl}{examples/catalyst-session/app.psgi}{\nolinkurl{catalyst-session/app.psgi}}
-\subsection{Session integration driver}
-The driver starts Starman with four workers on a free port. It acts as several independent browsers, fires concurrent requests from forked processes that share one session cookie, inspects Redis directly, and cleans up only its own key namespaces. Its \code{END} block localizes \code{$?} so that stopping the server cannot mask a failure as success, a bug the first draft had.
-\CodeFile{perl}{examples/28-catalyst-sessions.pl}{\nolinkurl{28-catalyst-sessions.pl}}
-\CodeFile{text}{snippets/catalyst-sessions-01.txt}{Driver output on the verification host (abridged)}
-
-\subsection{API credential helpers}
-The API controller and the token helpers implement Section~\ref{sec:api-tokens}. Secrets come from the environment (\code{SESSIONLAB_JWT_KEY}, \code{SESSIONLAB_REFRESH_KEY}, \code{SESSIONLAB_SIGNING_KEY}); the defaults are for the laboratory only.
-\CodeFile{perl}{examples/catalyst-session/lib/SessionLab/Tokens.pm}{\nolinkurl{catalyst-session/lib/SessionLab/Tokens.pm}}
-\subsection{API controller and atomic Redis operations}
-\CodeFile{perllua}{examples/catalyst-session/lib/SessionLab/Controller/API.pm}{\nolinkurl{catalyst-session/lib/SessionLab/Controller/API.pm}}
-\subsection{API integration driver}
-The driver logs in through the browser flow, creates an API key and token pairs, then attacks its own API: concurrent refreshes from forked processes, tokens it forges with the laboratory key, replayed and forged signatures. It starts the server with a 1.5-second grace window so that the reuse test runs quickly.
-\CodeFile{perl}{examples/30-api-tokens.pl}{\nolinkurl{30-api-tokens.pl}}
-\CodeFile{text}{snippets/catalyst-sessions-02.txt}{Example 30 output on the verification host}
+\section{Laboratory guide}
+The application and verification drivers are collected in Appendix~\ref{app:catalyst}.
+Read the session storage and atomic update patterns here first, then use
+the appendix as a source reference.

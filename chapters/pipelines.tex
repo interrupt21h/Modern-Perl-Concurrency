@@ -1,0 +1,101 @@
+\chapter{Scheduled jobs and resumable processing pipelines}
+\label{ch:enterprise-pipelines}
+\chapterbrief{Build bounded, recoverable scheduled and multi-stage systems.}
+\index{Batch processing}
+\index{Checkpoints}
+\index{Job claims}
+\index{Cron}
+
+Consider an import of measurement files or transaction records, followed by
+validation, enrichment, aggregation and publication. The input can arrive
+twice; a worker can die halfway through a file; a downstream service can
+temporarily fail. The design must preserve completeness and avoid duplicate
+business effects without assuming that a job executes exactly once.
+
+\strategy{app-pipelines}{Durable job claims}{A work ticket names a task and its current attempt.}{work must survive worker failure.}{a short synchronous operation needs no durable queue.}{DBI, worker processes}
+
+\section{Pipeline decomposition}
+\begin{figure}[!htbp]\centering
+\begin{tikzpicture}[node distance=5mm]
+\node[box,text width=2.3cm] (i) {Input\\manifest};
+\node[box,right=of i,text width=2.3cm] (v) {Validate\\and stage};
+\node[okbox,right=of v,text width=2.3cm] (q) {Durable\\job queue};
+\node[box,right=of q,text width=2.3cm] (o) {Publish\\results};
+\draw[arr](i)--(v); \draw[arr](v)--(q);
+\node[badbox,below=of v,text width=2.3cm] (e) {Quarantine\\invalid input};
+\node[okbox,below=of q,text width=2.3cm] (w) {Bounded\\worker pool};
+\draw[badarr](v)--(e); \draw[arr](q)--(w); \draw[arr](w.east)-|(o.south);
+\node[lbl,below=of w,text width=5cm] {Claim, process, checkpoint; retry with the same input identity};
+\end{tikzpicture}
+\caption{A durable processing pipeline separates admission, execution and publication.}
+\end{figure}
+Assign a stable source identity such as a producer ID plus record ID, or
+a file manifest ID plus record offset. Validate the identity and payload
+together. Stage data in chunks, quarantine invalid records, and use a unique
+constraint on the canonical input identity. If a replay changes the payload
+for the same identity, surface a conflict rather than silently overwrite it.
+
+Partition work by a key that owns the invariant: account, device, customer
+or dataset. Independent partitions can run concurrently; dependent updates
+must be ordered or guarded. Use bounded queues and cap the number of workers
+by the downstream connection and write budget. A checkpoint is valid only
+when the effects it describes are durable. A high-water mark alone is
+unsafe when records finish out of order: track completed ranges or individual
+identities until the contiguous prefix is complete.
+
+\section{Prevent overlapping scheduled runs}
+Host-local coordination is appropriate when all launchers execute on the
+same host and share a stable lock file. The Linux util-linux \code{flock}
+command can return a distinct conflict code; preserve it in monitoring.
+\CodeFile{bash}{snippets/enterprise-cron.sh}{Host-local cron wrapper (deployment excerpt)}
+Do not delete or rotate the lock file while a process may hold it.
+Do not let the protected command detach or close the inherited lock
+descriptor. A missed run should be observable; do not confuse it with a
+successful import. Across hosts use durable claims or a suitable shared
+coordinator rather than unrelated local lock files.
+
+\section{Durable claims, attempts and deadlines}
+\begin{figure}[!htbp]\centering
+\begin{tikzpicture}[node distance=9mm]
+\node[box,text width=2.1cm] (r) {Ready};
+\node[okbox,right=of r,text width=2.5cm] (w) {Running\\attempt $n$};
+\node[okbox,right=of w,text width=2.1cm] (d) {Done};
+\node[badbox,below=of w,text width=2.5cm] (x) {Dead letter};
+\draw[arr](r)--(w) node[midway,lbl,above]{claim};
+\draw[arr](w)--(d) node[midway,lbl,above]{complete};
+\draw[badarr](w.south west) to[bend left=20] node[lbl,below left]{expire / retry} (r.south);
+\draw[badarr](w)--(x) node[midway,lbl,right]{budget spent};
+\end{tikzpicture}
+\caption{A claim identifies an attempt, not permanent ownership of a job.}
+\end{figure}
+A worker claims one row in a short transaction, performs expensive work
+outside it, then conditionally completes the matching attempt. A reclaimed
+job has a newer attempt number. The earlier worker must not be allowed
+to mark the replacement's work complete. Enforce uniqueness or fencing at
+the effect destination as well; changing job status alone cannot prevent
+a paused worker from executing a side effect.
+
+\CodeFile{sql}{snippets/outbox-claim.sql}{MySQL claim and conditional completion (SQL sequence)}
+The placeholders represent bound values from the selected row. Use an
+InnoDB job table with a primary key, status, attempt, lease expiry and
+indexes appropriate to the claim predicates; a production scheduler also
+needs a retry budget, next eligible time and dead-letter handling.
+Use \code{SKIP LOCKED} for queue-like access, not for general consistent
+reads. Check each conditional update's affected-row count. If no row is
+selected, roll back and wait using a bounded polling interval.
+
+\section{Operational examples}
+\begin{longtable}{L{.26\linewidth}L{.34\linewidth}L{.32\linewidth}}
+\toprule Scenario & Concurrency boundary & Replay contract \\ \midrule\endhead
+File import & Manifest and input identity & Reject divergent duplicate payloads \\
+Aggregation & Partitioned dataset and period & Recompute or atomically replace a version \\
+Report generation & Consistent read snapshot & Publish completed output by version \\
+Export & Durable delivery job & Retry using stable destination identity \\
+\bottomrule
+\end{longtable}
+For scheduled jobs on Kubernetes, \code{concurrencyPolicy: Forbid} prevents
+overlap only among Jobs belonging to the same CronJob [66]. It is not a
+distributed business lock, and scheduling is approximate. Jobs must remain
+idempotent even when manually started or recreated.
+\CodeFile{yaml}{snippets/enterprise-cronjob.yaml}{Kubernetes scheduling policy (illustrative manifest)}
+

@@ -1,0 +1,71 @@
+\chapter{Concurrency verification in application test suites}
+\label{ch:enterprise-testing}
+\chapterbrief{Force interleavings, isolate fixtures and verify recovery.}
+\index{Concurrency tests}
+\index{Test2}
+\index{Fault injection}
+\index{API!Test2::Harness}
+
+Concurrency tests should prove an invariant, not merely demonstrate that
+two workers finished. Random sleeps can help stress a system but are not
+a reliable method of forcing a specific race. Use rendezvous points,
+independent connections, explicit deadlines and failure injection.
+
+\strategy{app-testing}{Deterministic race tests}{Stop workers at a known point before releasing them.}{a specific interleaving must be reproduced.}{timing or throughput is the quantity under test.}{Thread::Queue, Test2, process fixtures}
+
+\section{Force the interleaving}
+\begin{figure}[!htbp]\centering
+\begin{tikzpicture}[x=1.35cm,y=.8cm]
+\node[anchor=east] at (0,2){Worker A}; \node[anchor=east] at (0,0){Worker B};
+\draw[lane](0,2)--(7.5,2); \draw[lane](0,0)--(7.5,0);
+\foreach \y in {0,2}{
+  \node[box] at (1,\y){Read 0};
+  \node[box] at (3,\y){Ready};
+  \node[badbox] at (5.8,\y){Write 1};
+  \draw[arr](1.65,\y)--(2.3,\y);
+  \draw[arr](3.65,\y)--(5.0,\y);
+}
+\draw[teal,thick](4.4,-.45)--(4.4,2.45);
+\node[lbl,above] at (4.4,2.45){Release both workers};
+\node[badbox] at (7.3,1){Final 1\\expected 2};
+\draw[badarr](6.45,2)--(6.9,1.45);
+\draw[badarr](6.45,0)--(6.9,.55);
+\end{tikzpicture}
+\caption{A deterministic test makes both readers observe the same old value before either writes.}
+\end{figure}
+The laboratory first protects individual reads and writes with locks,
+which is insufficient for a compound update. A pair of queues forces
+the lost-update interleaving. It then locks the complete read-modify-write
+and verifies the exact final count.
+\CodeFile{perl}{examples/35-deterministic-race.pl}{Example 35: reproducible lost update and corrected critical section}
+
+\section{Parallel test isolation}
+Test2::Harness can run multiple test files concurrently [69].
+Parallelizing a test runner is separate from testing concurrency inside a
+single test. Give parallel tests separate schemas or uniquely scoped data,
+independent temporary directories and distinct service namespaces. Do not
+flush a shared cache or reset a shared schema while another test is running.
+Serialize tests that cannot yet be isolated, but treat that as a migration
+constraint rather than a correctness guarantee.
+
+\begin{longtable}{L{.31\linewidth}L{.61\linewidth}}
+\toprule Test scenario & Invariant to assert \\ \midrule\endhead
+Opposing transactions & Conserved totals; no negative balance; bounded retries \\
+Worker crash after claim & Job becomes recoverable; old attempt cannot complete it \\
+Lost remote response & Same event ID results in one durable effect \\
+Duplicate input & Original payload preserved; divergent duplicate rejected \\
+Process fork & Child uses a new connection; parent remains operational \\
+Rolling restart & Admission stops; committed work remains recoverable \\
+\bottomrule
+\end{longtable}
+Use deadlines at both the test and job level so a failed barrier cannot
+hang CI. Run stress tests repeatedly with logged random seeds in addition
+to deterministic tests. A test against SQLite is useful for application
+composition but cannot prove MySQL-specific locking or deadlock behavior.
+Run actual engine integration tests for those claims.
+
+\section{Testing strategy}
+Test correctness with invariants, not timing assumptions. Start competing workers together, vary worker counts and scheduling, inject random delays, and assert final totals, concurrency bounds and the absence of duplicates. Run under a watchdog so a deadlock fails the build instead of stalling it. Add fault injection: throw while holding a lock, kill a process holding a permit, interrupt a database session, provoke a deadlock with reversed row order, pause a lease holder past its TTL (\code{kill -STOP}), restart Redis without persistence, and replay duplicate deliveries. Benchmark throughput, p95/p99 wait, memory per worker and tail latency under realistic contention, and compare a simple mutex against alternatives before adopting a complex primitive.
+\CodeFile{bash}{snippets/guide-10.sh}{Laboratory regression suite}
+\tip{Make races reproducible before fixing them. The laboratory widens race windows with a delay parameter (\code{delay=0.3}) and fires requests from forked processes; a race that fails every run is one you can prove fixed.}
+

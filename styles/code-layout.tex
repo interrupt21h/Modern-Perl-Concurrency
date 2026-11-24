@@ -34,7 +34,7 @@
   overlay middle={\draw[codeborder] ([xshift=21pt]interior.north west)--([xshift=21pt]interior.south west);},
   overlay last={\draw[codeborder] ([xshift=21pt]interior.north west)--([xshift=21pt]interior.south west);}}}
 \newcommand{\CodeFile}[3]{%
-  \par\needspace{6\baselineskip}\refstepcounter{guideListing}%
+  \par\needspace{6\baselineskip}\refstepcounter{guideListing}\label{listing:#2}%
   \begin{tcolorbox}[guidecode,
     colbacktitle=\CodeHeaderColor{#1},
     title={Listing \theguideListing\enspace\textperiodcentered\enspace\CodeLanguage{#1}\\[-1pt]\mdseries #3},

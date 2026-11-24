@@ -1,0 +1,64 @@
+\chapter{Reliable cross-system integration}
+\label{ch:enterprise-outbox}
+\chapterbrief{Record durable intent and safely replay delivery.}
+\index{Transactional outbox}
+\index{Inbox}
+\index{Idempotency}
+\index{Replay}
+
+A local SQL transaction cannot roll back an HTTP request or a message
+already accepted by another system. Holding a local transaction open while
+calling the external system does not solve this problem; it also increases
+lock duration. Instead, separate durable intent from delivery.
+
+\strategy{app-outbox}{Transactional outbox}{Write the shipping instruction on the same receipt as the sale.}{a committed change must trigger a remote effect.}{the effect can be committed in the same local transaction.}{DBI, unique keys, durable queues}
+
+\section{Transactional outbox and inbox}
+\begin{figure}[!htbp]\centering
+\begin{tikzpicture}[node distance=10mm]
+\node[okbox,text width=5cm] (s) {Source database\\business row + outbox event\\one transaction};
+\node[box,right=of s,text width=3cm] (r) {Relay\\claim and send};
+\node[okbox,below=of r,text width=3cm] (d) {Destination\\unique event ID};
+\node[box,left=of d,text width=5cm] (a) {Source acknowledgement\\conditional on claim};
+\draw[arr](s)--(r); \draw[arr](r)--(d) node[midway,lbl,right]{stable ID};
+\draw[arr](d)--(a); \draw[arr](a)--(s);
+\node[badbox,below=of a,text width=5cm] (f) {Crash after remote commit?\\Retry with the same ID};
+\draw[badarr](f.east)-|(d.south);
+\end{tikzpicture}
+\caption{The outbox preserves intent; destination deduplication resolves ambiguous delivery.}
+\end{figure}
+Insert an outbox event alongside the business row in the same transaction
+[71]. A relay claims committed events, delivers them, and records completion
+after acknowledgement. If the response is lost, the relay cannot know
+whether the remote operation happened. Reuse the event ID on retries.
+The receiving application should commit its deduplication record (inbox)
+and effect in a single transaction. A unique inbox row inserted before a
+nontransactional external effect does not, by itself, guarantee exactly
+one effect.
+
+\section{Failure windows and recovery}
+\begin{longtable}{L{.34\linewidth}L{.58\linewidth}}
+\toprule Failure point & Recovery \\ \midrule\endhead
+Before source commit & Neither business state nor intent is committed; replay input. \\
+After source commit & Outbox remains pending; relay later. \\
+After destination commit, before acknowledgement & Retry same event ID; destination returns prior result or deduplicates. \\
+After acknowledgement & No delivery needed; retain audit and dedupe records for the replay horizon. \\
+\bottomrule
+\end{longtable}
+External APIs vary: some support idempotency keys, others offer lookup by a
+client reference, and some offer neither. For the last case, ambiguous
+outcomes may require reconciliation or human review. Compensation is a new
+business operation, not a rollback of history. Preserve ordering by
+aggregate when required, and record failures with correlation identifiers
+rather than credentials or full sensitive payloads.
+
+\section{Laboratory: two independent databases}
+The following laboratory uses separate local SQLite databases, one for
+business state and outbox and one for the receiving effect. It injects a
+failure after the destination commits but before the source acknowledges,
+then replays the same event. It also verifies source rollback and rejects
+reuse of an input identity with a different value. The relay is intentionally
+single-worker; multiple relays need the claim protocol of
+Chapter~\ref{ch:enterprise-pipelines}.
+\CodeFile{perl}{examples/34-replay-outbox.pl}{Example 34: rollback, replay and destination deduplication}
+

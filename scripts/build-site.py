@@ -23,27 +23,13 @@ for name in (PDF, SOURCE, "SHA256SUMS", "tidy-build.txt", "perl-concurrency-chea
 (OUT / ".nojekyll").touch()
 
 chapters = [
-    "Choosing a concurrency architecture",
-    "Synchronization primitives and semantics",
-    "Perl interpreter threads",
-    "Semaphores and condition variables",
-    "Queues, worker pools and event loops",
-    "Reader/writer locking and lock design",
-    "Cross-process synchronization on Linux",
-    "MySQL locking and transaction design",
-    "Redis and Valkey: leases, semaphores and streams",
-    "Catalyst sessions and request coordination on Redis",
-    "Memcached locking and cache coordination",
-    "Production reliability and distributed coordination",
-    "Concurrency in object-oriented Perl applications",
-    "Transaction boundaries in layered applications",
-    "Scheduled jobs and resumable processing pipelines",
-    "Reliable cross-system integration",
-    "Modernizing legacy locking and database access",
-    "Concurrency verification in application test suites",
-    "Production deployment and observability",
-    "Glossary",
-    "References and verification",
+    "Part I — Foundations and mental models",
+    "Part II — Perl and operating-system synchronization",
+    "Part III — Database concurrency and application transactions",
+    "Part IV — Distributed coordination",
+    "Part V — Application architecture and practical scenarios",
+    "Part VI — Engineering for production",
+    "Appendices — Native implementation, API security, laboratories and indexes",
 ]
 chapter_html = "".join(f"<li>{esc(chapter)}</li>" for chapter in chapters)
 examples = sorted(p for p in (ROOT / "examples").iterdir() if p.is_file() and p.suffix in {".pl", ".c", ".sql", ".txt"})
@@ -80,7 +66,7 @@ footer{{border-top:1px solid var(--line);padding:1.5rem 1.25rem;color:var(--mute
 </head>
 <body>
 <header><div class="wrap">
-<div class="eyebrow">Engineering handbook / Edition 2.0</div>
+<div class="eyebrow">Engineering handbook / Edition 2.1</div>
 <h1>Modern Perl Concurrency and Locking</h1>
 <p>From interpreter threads and process synchronization to transactional databases, distributed leases, fencing, concurrent web requests, resumable data pipelines and reliable application integrations.</p>
 <p><strong>Scott Muller</strong> · <a href="mailto:scott@21h.io">scott@21h.io</a><br>Software Engineer, Matsch Systems<br>Owner &amp; Independent Consultant, 21h Systems</p>
