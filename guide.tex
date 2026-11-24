@@ -295,6 +295,39 @@ Bounded admission & deployment & finite capacity & \ref{str:app-operations}\\
 \needspace{4\baselineskip}\section*{Coverage and verification}
 The laboratories demonstrate successful coordination and deliberately reproduced races. Appendix~\ref{ch:refs} identifies the original integration environment and the limits of subsequent verification. The source archive contains the complete examples, build instructions and revision history.
 
+\clearpage
+\section*{Continuously verified technical publishing}
+This handbook and its executable laboratories are maintained as a unified engineering project. Canonical example sources feed both automated tests and generated syntax-highlighted listings. GitHub Actions exercises the laboratories against disposable services, records benchmark observations, compiles the LaTeX documents and checks the resulting PDFs before publication.
+
+\begin{center}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tikzpicture}[node distance=6mm and 8mm]
+\node[box,text width=48mm] (repo) {Versioned repository};
+\node[box,text width=43mm,below left=of repo] (src) {Canonical examples};
+\node[box,text width=43mm,below right=of repo] (tex) {LaTeX manuscript};
+\node[box,text width=43mm,below=of src] (test) {Formatting and laboratory tests};
+\node[box,text width=43mm,below=of tex] (listing) {Generated listings};
+\node[box,text width=43mm,below=of test] (evidence) {Verification and benchmarks};
+\node[box,text width=43mm,below=of listing] (pdf) {Compilation and PDF preflight};
+\node[okbox,text width=70mm,below=12mm of $(evidence.south)!0.5!(pdf.south)$] (release) {Versioned release and documentation portal};
+\draw[arr] (repo) -- (src);
+\draw[arr] (repo) -- (tex);
+\draw[arr] (src) -- (test);
+\draw[arr] (test) -- (listing);
+\draw[arr] (test) -- (evidence);
+\draw[arr] (tex) -- (listing);
+\draw[arr] (listing) -- (pdf);
+\draw[arr] (evidence) -- (pdf);
+\draw[arr] (evidence) -- (release);
+\draw[arr] (pdf) -- (release);
+\end{tikzpicture}
+\end{adjustbox}
+\captionof{figure}{The handbook as a continuously verified release artifact.}
+\end{center}
+
+Release artifacts include the source snapshot, verification manifest, benchmark results, build log and checksums. These provide inspectable evidence of the tested behavior, not a formal proof of concurrency correctness or a substitute for independent review. See Appendix~\ref{sec:current-verification} and the \href{https://github.com/interrupt21h/Modern-Perl-Concurrency/actions}{public build history}.
+
+\clearpage
 \begingroup\footnotesize\setlength{\parskip}{0pt}\tableofcontents\endgroup
 
 % ================================================================ chapter 1
