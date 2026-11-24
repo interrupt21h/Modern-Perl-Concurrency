@@ -104,6 +104,7 @@
 \newcommand{\code@quotes}[1]{\saveexpandmode\expandarg
   \StrSubstitute{#1}{'}{\noexpand\textquotesingle}[\code@tmp]%
   \StrSubstitute{\code@tmp}{`}{\noexpand\textasciigrave}[\code@tmp]%
+  \StrSubstitute{\code@tmp}{::}{::\noexpand\allowbreak}[\code@tmp]%
   \restoreexpandmode\code@tmp}
 \makeatother
 % A single callout system: dedicated title, clear spacing, readable body.
