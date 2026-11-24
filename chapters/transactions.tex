@@ -3,8 +3,8 @@
 \chapterbrief{Place transactions at the business boundary; classify retries.}
 \index{Transactions}
 \index{Savepoints}
-\index{API!txn_do}
-\index{API!txn_scope_guard}
+\index{API!txn_do@\texttt{txn\_do}}
+\index{API!txn_scope_guard@\texttt{txn\_scope\_guard}}
 
 A service operation should define the atomic unit of work. The controller
 validates the request; repository methods participate in the transaction
@@ -69,7 +69,7 @@ again inside the transaction before committing.}
 
 
 \section{Savepoints and retry boundaries}
-\index{API!auto_savepoint}\index{Savepoints}
+\index{API!auto_savepoint@\texttt{auto\_savepoint}}\index{Savepoints}
 Enable \code{auto_savepoint} only with a supported storage driver and
 test the nested failure contract [75]. An inner successful operation is
 not durable until the outermost transaction commits. A failed savepoint

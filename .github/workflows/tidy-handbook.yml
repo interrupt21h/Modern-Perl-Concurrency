@@ -14,26 +14,6 @@ jobs:
     timeout-minutes: 55
     permissions:
       contents: write
-    services:
-      mysql:
-        image: mysql:8.4
-        env:
-          MYSQL_ROOT_PASSWORD: disposable-root
-          MYSQL_DATABASE: concurrency_lab
-          MYSQL_USER: lab
-          MYSQL_PASSWORD: disposable-lab
-        ports:
-          - 3306/tcp
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=5s --health-timeout=5s --health-retries=30
-      valkey:
-        image: valkey/valkey:8.1
-        ports:
-          - 6379/tcp
-        options: >-
-          --health-cmd="valkey-cli ping"
-          --health-interval=5s --health-timeout=5s --health-retries=20
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools and isolated Redis
@@ -49,18 +29,38 @@ jobs:
           redis-cli ping
           sudo systemctl start memcached
           /usr/bin/perl -MFuture::Mutex -MTest2::V0 -e1
+      - name: Start isolated MySQL and Valkey containers
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name handbook-mysql -p 127.0.0.1:13306:3306 \
+            -e MYSQL_ROOT_PASSWORD=disposable-root \
+            -e MYSQL_DATABASE=concurrency_lab -e MYSQL_USER=lab \
+            -e MYSQL_PASSWORD=disposable-lab mysql:8.4
+          docker run -d --name handbook-valkey -p 127.0.0.1:16379:6379 valkey/valkey:8.1
+          for attempt in $(seq 1 90); do
+            if MYSQL_PWD=disposable-lab mysql --protocol=TCP -h 127.0.0.1 -P 13306 -u lab concurrency_lab -e 'SELECT 1' >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+          MYSQL_PWD=disposable-lab mysql --protocol=TCP -h 127.0.0.1 -P 13306 -u lab concurrency_lab -e 'SELECT VERSION()'
+          for attempt in $(seq 1 30); do
+            if redis-cli -p 16379 ping | grep -qx PONG; then break; fi
+            sleep 1
+          done
+          redis-cli -p 16379 ping | grep -qx PONG
       - name: Format, check, test and rebuild
         shell: bash
         env:
           REDIS_SERVER: 127.0.0.1:6379
           MEMCACHED_SERVER: 127.0.0.1:11211
-          DB_DSN: dbi:mysql:database=concurrency_lab;host=127.0.0.1;port=${{ job.services.mysql.ports[3306] }}
+          DB_DSN: dbi:mysql:database=concurrency_lab;host=127.0.0.1;port=13306
           DB_USER: lab
           DB_PASS: disposable-lab
-          MYSQL_PORT: ${{ job.services.mysql.ports[3306] }}
-          VALKEY_SERVER: 127.0.0.1:${{ job.services.valkey.ports[6379] }}
-          REQUIRE_FULL_SUITE: 1
-          NO_PROXY: localhost,127.0.0.1
+          MYSQL_PORT: '13306'
+          VALKEY_SERVER: 127.0.0.1:16379
+          REQUIRE_FULL_SUITE: '1'
           no_proxy: localhost,127.0.0.1
         run: |
           set -euo pipefail
@@ -143,6 +143,11 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: site-dist
+      - name: Capture service diagnostics
+        if: failure()
+        run: |
+          docker logs handbook-mysql > mysql-service.log 2>&1 || true
+          docker logs handbook-valkey > valkey-service.log 2>&1 || true
       - name: Upload diagnostic log on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -152,6 +157,8 @@ jobs:
             tidy-build.txt
             guide.log
             cheat-sheet.log
+            mysql-service.log
+            valkey-service.log
           if-no-files-found: ignore
   pages:
     if: github.ref == 'refs/heads/main'

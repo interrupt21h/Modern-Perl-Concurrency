@@ -420,7 +420,7 @@ Use a fixed pool, join each worker and inspect failures. A thread exception does
 \index{Semaphore}
 \index{Condition variable}
 \index{API!Thread::Semaphore}
-\index{API!cond_wait}
+\index{API!cond_wait@\texttt{cond\_wait}}
 
 \section{Counting semaphores}
 \strategy{semaphore}{Counting semaphore}{A car park with a fixed number of spaces and a counter at the gate. Each car entering takes a ticket (\code{down}); each car leaving returns one (\code{up}). When the counter reaches zero, the next car waits at the barrier.}
@@ -616,7 +616,7 @@ Starman, Gazelle, Hypnotoad and uWSGI serve requests from a pool of forked worke
 \index{API!DBIx::Class}
 \index{API!FOR UPDATE}
 \index{API!SKIP LOCKED}
-\index{API!GET_LOCK}
+\index{API!GET_LOCK@\texttt{GET\_LOCK}}
 
 \section{Lock taxonomy in InnoDB}
 MySQL 8.4 LTS and 9.7 LTS are the documentation baselines; 9.7 is also the last release line with sequential version numbers, after which MySQL adopts calendar versions such as 26.7 [32]. InnoDB uses multi-version concurrency control (MVCC) for ordinary consistent reads and locks for conflicting writes and locking reads. A consistent read can see an older committed snapshot without blocking a writer; it is not a reservation. InnoDB locks index records, not application objects: the query plan and indexes determine which records or ranges are locked [11].
