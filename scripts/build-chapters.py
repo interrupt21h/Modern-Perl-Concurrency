@@ -73,12 +73,23 @@ def chapter_plan(toc, count):
     sections = []
     for level, title, start, dest in toc:
         name = dest.get("nameddest", "")
-        if not TOP.match(name):
+        # The handbook's custom part dividers and index call phantomsection
+        # immediately before addcontentsline, producing section*.N destinations.
+        part = re.match(r"^([IVXLCDM]+)\s+\S", title) if level == 1 else None
+        custom_part = bool(part and name.startswith("section*."))
+        index = title == "Subject and API index"
+        if not TOP.match(name) and not custom_part and not index:
             continue
         if not 1 <= start <= count:
             raise ValueError(f"Invalid destination {name}: {start}")
         match = NUMBERED.fullmatch(name)
-        if match:
+        if custom_part:
+            kind = "part"
+            slug = "part-" + part.group(1).lower()
+            label = title
+        elif index:
+            kind, slug, label = "appendix", "subject-and-api-index", title
+        elif match:
             kind, number = match.groups()
             slug = f"{kind}-{number.lower()}"
             label = f"{kind.title()} {number}: {title}" if kind != "part" else title
@@ -89,8 +100,10 @@ def chapter_plan(toc, count):
         sections.append(dict(title=label, kind=kind, start=start, slug=slug, destination=name))
     if not any(s["kind"] == "chapter" for s in sections):
         raise ValueError("No chapter destinations found in the compiled PDF")
-    if not any(s["kind"] == "appendix" for s in sections):
+    if not any(s["kind"] == "appendix" and s["slug"] != "subject-and-api-index" for s in sections):
         raise ValueError("No appendix destinations found")
+    if sum(s["kind"] == "part" for s in sections) != 6:
+        raise ValueError("Expected six handbook part destinations")
     if not any(s["title"] == "Subject and API index" for s in sections):
         raise ValueError("Missing subject/API index")
     if sections[0]["start"] > 1:
@@ -161,7 +174,7 @@ def render_page(page, number, out, asset, page_files, names):
         if kind == fitz.LINK_NAMED and dest < 0:
             dest = names.get(link.get("nameddest", ""), {}).get("page", -1)
         if kind in (fitz.LINK_GOTO, fitz.LINK_NAMED) and dest + 1 in page_files:
-            href = f"{page_files[dest+1]}#page-{dest+1}"
+            href = f"{page_files[dest+1]}?v={asset}#page-{dest+1}"
             label = f"Go to handbook page {dest+1}"
         elif kind == fitz.LINK_URI and urlsplit(link.get("uri", "")).scheme.lower() in ("https", "http", "mailto"):
             href = link["uri"]
@@ -180,10 +193,10 @@ def render_page(page, number, out, asset, page_files, names):
             f'<div class="transcript" hidden><pre>{esc(transcript)}</pre></div></section>')
 
 
-def navigation(sections, i):
-    prev = f'<a rel="prev" href="{sections[i-1]["file"]}">← Previous</a>' if i else ""
-    nxt = f'<a rel="next" href="{sections[i+1]["file"]}">Next →</a>' if i+1 < len(sections) else ""
-    return f'<nav aria-label="Chapter navigation">{prev}<a href="index.html">All chapters</a>{nxt}<a href="../index.html">Project portal</a></nav>'
+def navigation(sections, i, asset):
+    prev = f'<a rel="prev" href="{sections[i-1]["file"]}?v={asset}">← Previous</a>' if i else ""
+    nxt = f'<a rel="next" href="{sections[i+1]["file"]}?v={asset}">Next →</a>' if i+1 < len(sections) else ""
+    return f'<nav aria-label="Chapter navigation">{prev}<a href="index.html?v={asset}">All chapters</a>{nxt}<a href="../index.html?v={asset}">Project portal</a></nav>'
 
 
 def render(pdf, out, commit, tag):
@@ -209,7 +222,7 @@ def render(pdf, out, commit, tag):
                     subsection_links.append(f'<li><a href="#page-{page}">{esc(heading)}</a></li>')
             jumps = ('<details class="panel section-nav"><summary>Sections in this chapter</summary><ul>'
                      + "".join(subsection_links) + '</ul></details>') if subsection_links else ""
-            nav = navigation(sections, i)
+            nav = navigation(sections, i, asset)
             header = (f'<header><div class="wrap"><div class="eyebrow">Modern Perl Concurrency · Online handbook</div>'
                       f'<h1>{esc(title)}</h1><small>PDF pages {start}–{end} · {esc(tag)} · {esc(commit[:12])}</small>{nav}</div></header>')
             controls = ('<div class="panel controls"><nav aria-label="Reading mode">'
@@ -224,7 +237,7 @@ def render(pdf, out, commit, tag):
             body += '<footer class="wrap"><a href="../index.html">Modern Perl Concurrency</a> · CC BY 4.0</footer>'
             write(out / section["file"], document(title, body, asset, True))
 
-        contents = "".join(f'<li><a href="{s["file"]}">{esc(s["title"])}</a> '
+        contents = "".join(f'<li><a href="{s["file"]}?v={asset}">{esc(s["title"])}</a> '
                            f'<small>pages {s["start"]}–{s["end"]}</small></li>' for s in sections)
         body = ('<header><div class="wrap"><div class="eyebrow">Modern Perl Concurrency</div>'
                 '<h1>Read the handbook online</h1><nav><a href="../index.html">Project portal</a>'
