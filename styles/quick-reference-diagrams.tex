@@ -12,7 +12,7 @@
 \definecolor{pblue}{HTML}{E5EEF6}
 \tikzset{arr/.style={-{Stealth[length=4pt,width=4pt]},draw=teal,line width=.85pt},badarr/.style={-{Stealth[length=4pt,width=4pt]},draw=rust,dashed,line width=.8pt},box/.style={draw=teal,fill=active,rounded corners=2pt,minimum height=15pt,inner xsep=4pt,inner ysep=2pt,align=center},neutral/.style={box,draw=edge,fill=light},blocked/.style={box,draw=rust,fill=wait,dashed},bluebox/.style={box,draw=blue,fill=pblue},smalllabel/.style={font=\fontsize{7.7}{8.5}\selectfont,text=muted}}
 }
-\newcommand{\QRdiagram}[1]{\begingroup\QRSetup\begin{tikzpicture}[x=1pt,y=1pt,font=\fontsize{8.3}{9.3}\selectfont,text=ink,>=Stealth, line width=.65pt,every node/.style={anchor=center,inner sep=2pt}]
+\newcommand{\QRdiagram}[1]{\begingroup\QRSetup\begin{tikzpicture}[x=1pt,y=1pt,font=\sffamily\fontsize{8.3}{9.3}\selectfont,text=ink,>=Stealth, line width=.65pt,every node/.style={anchor=center,inner sep=2pt}]
 \path[use as bounding box] (0,0) rectangle (160,44);
 #1\end{tikzpicture}\endgroup}
 \newcommand{\Dasync}{\QRdiagram{\foreach \x/\t in {19/A,56/B,93/A,130/C}{\node[box,minimum width=28pt] at (\x,23) {\t};}\foreach \x in {33,70,107}{\draw[arr] (\x,23)--++(8,0);}\node[smalllabel] at (80,5){one loop; tasks yield and resume};\node[smalllabel] at (80,40){execution order $\rightarrow$};}}

@@ -88,6 +88,9 @@ jobs:
             latexmk -pdf -interaction=nonstopmode -halt-on-error -file-line-error cheat-sheet.tex
             test "$(pdfinfo cheat-sheet.pdf | awk '/^Pages:/ {print $2}')" = 2
             python3 scripts/pdf-preflight.py cheat-sheet.pdf cheat-sheet.log
+            python3 scripts/check-cheat-sheet-layout.py cheat-sheet.pdf
+            mkdir -p review/cheat-sheet
+            pdftoppm -r 144 -png cheat-sheet.pdf review/cheat-sheet/page
           } 2>&1 | tee tidy-build.txt
           git diff -- examples snippets > tidy-source.diff
           test -s guide.pdf

@@ -1,7 +1,7 @@
 \documentclass[10pt,letterpaper,landscape]{article}
 \usepackage[margin=0pt]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage{lmodern,microtype,xcolor,tikz,hyperref}
+\usepackage{lmodern,microtype,xcolor,tikz,adjustbox,hyperref}
 \usetikzlibrary{arrows.meta,calc}
 \hypersetup{hidelinks,pdftitle={Modern Perl Concurrency - Illustrated Quick Reference},pdfauthor={Scott Muller}}
 \renewcommand\familydefault{\sfdefault}
@@ -20,6 +20,14 @@
 \newcommand{\api}[1]{{\ttfamily #1}}
 \newcommand{\lab}[1]{{\fontsize{8.3}{9.3}\selectfont\bfseries #1}}
 \input{styles/quick-reference-diagrams.tex}
+% Typeset the illustrations before entering the page-level overlay.
+% A nested TikZ picture in an overlay can have a suppressed bounding box.
+% Preserve its real dimensions, fit without clipping, and center the box.
+\newcommand{\QRstore}[2]{%
+  \expandafter\newsavebox\csname QRcard#1\endcsname
+  \expandafter\sbox\csname QRcard#1\endcsname{%
+    \adjustbox{max totalsize={158bp}{46bp}}{#2}}}
+\newcommand{\QRstored}[1]{\expandafter\usebox\csname QRcard#1\endcsname}
 
 % Absolute placement: 4 columns x 3 rows, no automatic column flow.
 % Page coordinates are measured in PDF points, from the top left.
@@ -30,7 +38,7 @@
 \node[anchor=west,inner sep=0pt,font=\fontsize{10.4}{12}\selectfont\bfseries,text=ink] at (9,-13){#4};
 \node[anchor=east,inner sep=0pt,font=\fontsize{7.4}{8}\selectfont,text=muted] at (169,-13){#3};
 \draw[edge!70,line width=.4pt] (8,-24)--(170,-24);
-\node[anchor=north west,inner sep=0pt] at (9,-30){#5};
+\node[anchor=north,inner sep=0pt,outer sep=0pt] at (89,-30){#5};
 \node[anchor=north west,inner sep=0pt,text width=160pt,align=left,font=\fontsize{9.2}{10.6}\selectfont,text=ink] at (9,-80){#6};
 \node[anchor=south west,inner sep=0pt,text width=160pt,align=left,font=\fontsize{8.5}{9.7}\selectfont,text=teal] at (9,-132){#7};
 \end{scope}}
@@ -43,38 +51,62 @@
 \node[anchor=west,text width=720pt,align=left,inner sep=0pt,font=\fontsize{9.2}{10.6}\selectfont,text=ink] at (36,-93.5){#3};}
 \newcommand{\pagefoot}[1]{\draw[edge,line width=.5pt] (28,-560)--(764,-560);\node[anchor=north west,inner sep=0pt,text width=736pt,align=left,font=\fontsize{8.6}{10}\selectfont,text=ink] at (28,-566){#1};\node[anchor=south west,inner sep=0pt,font=\fontsize{8}{9}\selectfont,text=muted] at (28,-597){\href{https://interrupt21h.github.io/Modern-Perl-Concurrency/}{Full handbook, runnable examples and references: interrupt21h.github.io/Modern-Perl-Concurrency/}};\node[anchor=south west,inner sep=0pt,font=\fontsize{8}{9}\selectfont,text=muted] at (28,-587){CC BY 4.0. Independent publication; affiliations do not imply endorsement.};\node[anchor=south east,inner sep=0pt,font=\fontsize{8}{9}\selectfont,text=muted] at (764,-597){Edition 2.1.1 companion \quad / \quad Print at actual size};}
 \begin{document}
+\QRstore{01}{\Dasync}
+\QRstore{02}{\Dthreads}
+\QRstore{03}{\Dfork}
+\QRstore{04}{\Dmutex}
+\QRstore{05}{\Dsem}
+\QRstore{06}{\Dcond}
+\QRstore{07}{\Dqueue}
+\QRstore{08}{\Dbarrier}
+\QRstore{09}{\Drw}
+\QRstore{10}{\Dflock}
+\QRstore{11}{\Dsysv}
+\QRstore{12}{\Dfutex}
+\QRstore{13}{\Datomic}
+\QRstore{14}{\Dpess}
+\QRstore{15}{\Dopt}
+\QRstore{16}{\Dadvisory}
+\QRstore{17}{\Dskip}
+\QRstore{18}{\Dlease}
+\QRstore{19}{\Dwatch}
+\QRstore{20}{\Dlua}
+\QRstore{21}{\Dfence}
+\QRstore{22}{\Ddistributed}
+\QRstore{23}{\Dmem}
+\QRstore{24}{\Didem}
 \noindent\begin{tikzpicture}[remember picture,overlay,x=1bp,y=1bp]
 \begin{scope}[shift={(current page.north west)}]
 \pagehead{1}{Local execution \& synchronization}{\textbf{Choose scope first:} async for I/O, fork/pools for CPU isolation, shared-memory primitives only for genuinely shared state. Solid arrows = progress; dashed arrows = wait, rejection or retry.}
-\card{28}{114}{01}{Async event loop}{\Dasync}{Many I/O tasks interleave at suspension points; state can change across an await. Never block the loop.}{\api{IO::Async}, \api{Future::Mutex}}
-\card{214}{114}{02}{Interpreter threads}{\Dthreads}{Perl clones interpreters; data sharing is explicit. Use a fixed pool for existing threaded code.}{\api{threads}, \api{threads::shared}}
-\card{400}{114}{03}{Fork / worker pool}{\Dfork}{Separate address spaces. Good for CPU work and isolation. Open connections in each worker.}{\api{fork}, \api{MCE::Loop}}
-\card{586}{114}{04}{Mutex}{\Dmutex}{One owner protects a compound update. All workers must lock the same shared variable.}{\api{lock(\$gate)}; scope releases}
-\card{28}{261}{05}{Semaphore}{\Dsem}{N permits cap simultaneous work, not requests per second. Balance acquire and release.}{\api{Thread::Semaphore}: down / up}
-\card{214}{261}{06}{Condition variable}{\Dcond}{Wait with predicate lock held; wait releases and reacquires it. Signal under lock; recheck in a loop.}{\api{cond\_wait}, \api{cond\_signal}}
-\card{400}{261}{07}{Queue}{\Dqueue}{Transfer jobs to consumers instead of sharing mutable data. Bound backlog; drain on shutdown.}{\api{Thread::Queue}: enqueue / dequeue}
-\card{586}{261}{08}{Barrier}{\Dbarrier}{Workers cannot enter the next phase until all arrive. A failed worker can stall everyone.}{Shared count + condition variable}
-\card{28}{408}{09}{Reader / writer lock}{\Drw}{Many readers or one exclusive writer. Consider immutable snapshots; avoid writer starvation.}{Custom shared-state protocol}
-\card{214}{408}{10}{File lock}{\Dflock}{Cooperating processes use a stable lock file. Open it independently after fork. Check success.}{\api{flock}: LOCK\_EX, LOCK\_SH, LOCK\_NB}
-\card{400}{408}{11}{System V semaphore}{\Dsysv}{Kernel-managed permits across processes. Plan initialization, crash handling and removal.}{\api{IPC::Semaphore}; \api{semop}}
-\card{586}{408}{12}{Atomics / futex}{\Dfutex}{Native synchronization building blocks. A Perl scalar is not a C atomic; do not emulate with polling.}{Native C / XS; Linux futex}
+\card{28}{114}{01}{Async event loop}{\QRstored{01}}{Many I/O tasks interleave at suspension points; state can change across an await. Never block the loop.}{\api{IO::Async}, \api{Future::Mutex}}
+\card{214}{114}{02}{Interpreter threads}{\QRstored{02}}{Perl clones interpreters; data sharing is explicit. Use a fixed pool for existing threaded code.}{\api{threads}, \api{threads::shared}}
+\card{400}{114}{03}{Fork / worker pool}{\QRstored{03}}{Separate address spaces. Good for CPU work and isolation. Open connections in each worker.}{\api{fork}, \api{MCE::Loop}}
+\card{586}{114}{04}{Mutex}{\QRstored{04}}{One owner protects a compound update. All workers must lock the same shared variable.}{\api{lock(\$gate)}; scope releases}
+\card{28}{261}{05}{Semaphore}{\QRstored{05}}{N permits cap simultaneous work, not requests per second. Balance acquire and release.}{\api{Thread::Semaphore}: down / up}
+\card{214}{261}{06}{Condition variable}{\QRstored{06}}{Wait with predicate lock held; wait releases and reacquires it. Signal under lock; recheck in a loop.}{\api{cond\_wait}, \api{cond\_signal}}
+\card{400}{261}{07}{Queue}{\QRstored{07}}{Transfer jobs to consumers instead of sharing mutable data. Bound backlog; drain on shutdown.}{\api{Thread::Queue}: enqueue / dequeue}
+\card{586}{261}{08}{Barrier}{\QRstored{08}}{Workers cannot enter the next phase until all arrive. A failed worker can stall everyone.}{Shared count + condition variable}
+\card{28}{408}{09}{Reader / writer lock}{\QRstored{09}}{Many readers or one exclusive writer. Consider immutable snapshots; avoid writer starvation.}{Custom shared-state protocol}
+\card{214}{408}{10}{File lock}{\QRstored{10}}{Cooperating processes use a stable lock file. Open it independently after fork. Check success.}{\api{flock}: LOCK\_EX, LOCK\_SH, LOCK\_NB}
+\card{400}{408}{11}{System V semaphore}{\QRstored{11}}{Kernel-managed permits across processes. Plan initialization, crash handling and removal.}{\api{IPC::Semaphore}; \api{semop}}
+\card{586}{408}{12}{Atomics / futex}{\QRstored{12}}{Native synchronization building blocks. A Perl scalar is not a C atomic; do not emulate with polling.}{Native C / XS; Linux futex}
 \pagefoot{\textbf{Before shipping:} name the invariant; use one global lock order; keep critical sections short; check worker errors; release on every path; test forced interleavings and measure wait/hold time.}
 \end{scope}\end{tikzpicture}\null\newpage
 \noindent\begin{tikzpicture}[remember picture,overlay,x=1bp,y=1bp]
 \begin{scope}[shift={(current page.north west)}]
 \pagehead{2}{Database \& distributed coordination}{\textbf{Correctness vs. efficiency:} duplicate refreshes waste work; duplicate charges corrupt state. Enforce durable invariants at the destination. A cache lease alone is not a correctness guarantee.}
-\card{28}{114}{13}{Atomic SQL update}{\Datomic}{Put the invariant in the WHERE clause; check affected rows. Use unique keys to prevent duplicate effects.}{DBI / DBIx::Class conditional update}
-\card{214}{114}{14}{Pessimistic row lock}{\Dpess}{Lock indexed records in a transaction. Range locks may occur; retry whole deadlocked transactions.}{\api{SELECT ... FOR UPDATE}}
-\card{400}{114}{15}{Optimistic versioning}{\Dopt}{Read a version, then update only if it still matches. Increment version; zero rows means conflict.}{\api{WHERE version = ?}}
-\card{586}{114}{16}{MySQL advisory lock}{\Dadvisory}{Named lock belongs to the connection, not the transaction. Check results and release explicitly.}{\api{GET\_LOCK} / \api{RELEASE\_LOCK}}
-\card{28}{261}{17}{SQL work queue}{\Dskip}{Claim free jobs without waiting for held rows. Commit claim promptly; use attempt IDs and recovery.}{\api{FOR UPDATE SKIP LOCKED}}
-\card{214}{261}{18}{Redis / Valkey lease}{\Dlease}{Use a unique owner token and TTL. Renew or release only by atomic owner check; never GET then DEL.}{\api{SET key token NX PX ttl}}
-\card{400}{261}{19}{Optimistic Redis txn}{\Dwatch}{WATCH, read owner, MULTI, queue change, EXEC. Dedicated connection; retry confirmed conflicts only.}{Perl \api{Redis} client; WATCH / EXEC}
-\card{586}{261}{20}{Redis server script}{\Dlua}{Perl invokes an atomic compare-and-change operation. Same hash slot for cluster keys.}{\api{EVALSHA} / \api{EVAL}; Lua inside Redis}
-\card{28}{408}{21}{Fencing token}{\Dfence}{Issue durable, increasing generations. The destination rejects stale writes; expiry cannot stop a worker.}{Destination-enforced generation check}
-\card{214}{408}{22}{Distributed permits / jobs}{\Ddistributed}{Atomically count permits with expiry. For Streams jobs, reclaim abandoned work and ACK after effect.}{Redis semaphore / Streams groups}
-\card{400}{408}{23}{Memcached add / CAS}{\Dmem}{Best-effort cache stampede control. Owner-check then CAS a tombstone, or let expire. Never delete a successor.}{\api{add}, \api{gets}, \api{cas}; or let expire}
-\card{586}{408}{24}{Sessions / idempotency}{\Didem}{Concurrent requests can lose session updates. Persist a request key, payload identity and outcome.}{Atomic state; unique key / saved result}
+\card{28}{114}{13}{Atomic SQL update}{\QRstored{13}}{Put the invariant in the WHERE clause; check affected rows. Use unique keys to prevent duplicate effects.}{DBI / DBIx::Class conditional update}
+\card{214}{114}{14}{Pessimistic row lock}{\QRstored{14}}{Lock indexed records in a transaction. Range locks may occur; retry whole deadlocked transactions.}{\api{SELECT ... FOR UPDATE}}
+\card{400}{114}{15}{Optimistic versioning}{\QRstored{15}}{Read a version, then update only if it still matches. Increment version; zero rows means conflict.}{\api{WHERE version = ?}}
+\card{586}{114}{16}{MySQL advisory lock}{\QRstored{16}}{Named lock belongs to the connection, not the transaction. Check results and release explicitly.}{\api{GET\_LOCK} / \api{RELEASE\_LOCK}}
+\card{28}{261}{17}{SQL work queue}{\QRstored{17}}{Claim free jobs without waiting for held rows. Commit claim promptly; use attempt IDs and recovery.}{\api{FOR UPDATE SKIP LOCKED}}
+\card{214}{261}{18}{Redis / Valkey lease}{\QRstored{18}}{Use a unique owner token and TTL. Renew or release only by atomic owner check; never GET then DEL.}{\api{SET key token NX PX ttl}}
+\card{400}{261}{19}{Optimistic Redis txn}{\QRstored{19}}{WATCH, read owner, MULTI, queue change, EXEC. Dedicated connection; retry confirmed conflicts only.}{Perl \api{Redis} client; WATCH / EXEC}
+\card{586}{261}{20}{Redis server script}{\QRstored{20}}{Perl invokes an atomic compare-and-change operation. Same hash slot for cluster keys.}{\api{EVALSHA} / \api{EVAL}; Lua inside Redis}
+\card{28}{408}{21}{Fencing token}{\QRstored{21}}{Issue durable, increasing generations. The destination rejects stale writes; expiry cannot stop a worker.}{Destination-enforced generation check}
+\card{214}{408}{22}{Distributed permits / jobs}{\QRstored{22}}{Atomically count permits with expiry. For Streams jobs, reclaim abandoned work and ACK after effect.}{Redis semaphore / Streams groups}
+\card{400}{408}{23}{Memcached add / CAS}{\QRstored{23}}{Best-effort cache stampede control. Owner-check then CAS a tombstone, or let expire. Never delete a successor.}{\api{add}, \api{gets}, \api{cas}; or let expire}
+\card{586}{408}{24}{Sessions / idempotency}{\QRstored{24}}{Concurrent requests can lose session updates. Persist a request key, payload identity and outcome.}{Atomic state; unique key / saved result}
 \pagefoot{\textbf{Before shipping:} define owner, deadline, retry budget, crash recovery and stale-writer policy. A network failure can leave commit outcome unknown; do not blindly repeat side effects.}
 \end{scope}\end{tikzpicture}\null
 \end{document}
