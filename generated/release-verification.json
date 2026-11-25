@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-11-25T03:03:05+00:00",
+  "generated_utc": "2026-11-25T03:12:09+00:00",
   "environment": {
     "os": "Ubuntu 24.04.5 LTS",
     "kernel": "7.0.0-1014-aws",
@@ -13,20 +13,20 @@
     "increments_per_trial": 40000,
     "seconds": {
       "1": [
-        0.111679,
-        0.115236,
-        0.118593
+        0.107468,
+        0.116629,
+        0.115856
       ],
       "4": [
-        0.271838,
-        0.271205,
-        0.266964
+        0.272029,
+        0.275279,
+        0.2711
       ]
     }
   },
-  "ci_run": "45536685114",
+  "ci_run": "45537761394",
   "run_attempt": "1",
-  "trigger_sha": "7da2d5cdf8fd6b99722dbf0dc33d63c8954e6ad2",
+  "trigger_sha": "493b6f86c357cd135b1c80fadb471754292f36fe",
   "primary_tests": {
     "passed": 39,
     "skipped": 0
