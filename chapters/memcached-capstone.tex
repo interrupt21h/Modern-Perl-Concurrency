@@ -1,7 +1,7 @@
 \chapter{Building concurrent Catalyst applications with Memcached}
 \label{ch:memcached-capstone}
 \chapterbrief{Separate disposable cache coordination from durable authorization and transactional invariants.}
-\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} API --- application programming interface; CAS --- compare-and-swap; HTTP --- Hypertext Transfer Protocol; JSON --- JavaScript Object Notation; SQL --- Structured Query Language; TLS --- Transport Layer Security.\par\smallskip
+\par\smallskip\noindent\textbf{Specialized terms:} CAS --- compare-and-swap.\par\smallskip
 
 This companion to the Redis Catalyst laboratory uses four Starman workers, Memcached and InnoDB. Memcached supplies bounded compare-and-swap (CAS) retries and best-effort rate counters. The database owns bearer-token authorization and idempotent order records. No cache entry is authoritative for authentication or financial effects.
 
@@ -19,7 +19,7 @@ This companion to the Redis Catalyst laboratory uses four Starman workers, Memca
 \end{figure}
 
 \section{Authentication and the API contract}
-An application programming interface (API) defines how clients interact with the service. The application serves its OpenAPI 3.1 contract at \code{/openapi.json}. Opaque 256-bit bearer credentials are provisioned by the laboratory driver; only Secure Hash Algorithm 256-bit (SHA-256) digests, scopes and expiration times are stored in the database. Read credentials cannot mutate counters or orders. Revocation removes the credential from the authoritative store. A request already authorized before revocation may complete. Use Transport Layer Security (TLS) outside the loopback laboratory and never log bearer credentials. This example does not implement an OAuth authorization server or browser cookie sessions.
+An application programming interface (API) defines how clients interact with the service. The application serves its OpenAPI 3.2 contract at \code{/openapi.json}. Opaque 256-bit bearer credentials are provisioned by the laboratory driver; only Secure Hash Algorithm 256-bit (SHA-256) digests, scopes and expiration times are stored in the database. Read credentials cannot mutate counters or orders. Revocation removes the credential from the authoritative store. A request already authorized before revocation may complete. Use Transport Layer Security (TLS) outside the loopback laboratory and never log bearer credentials. This example does not implement an OAuth authorization server or browser cookie sessions.
 
 \section{CAS and durable idempotency}
 The counter reads a CAS token and attempts a conditional replacement. Contention triggers a bounded retry with jitter; an absent key is initialized with add-if-absent. Eviction can reset the counter, so it is not a durable total. The rate counter is likewise advisory and can reset on eviction. An unavailable cache returns an error rather than silently bypassing the rate check.
@@ -87,7 +87,7 @@ Read downward in time. A solid arrow represents a request or operation; a dashed
 \caption{Successful order request. Authentication precedes cache access; the database records the simulated effect before success is returned.}
 \end{figure}
 
-\noindent\textbf{Alternative paths.} Missing or expired credentials return 401; insufficient scope returns 403; malformed input returns 400. Cache failure returns 503, and a rate limit breach returns 429. A different amount under the same order key returns 409. None of these paths requires a new durable order.
+\noindent\textbf{Alternative paths.} Missing or expired credentials return 401; insufficient scope returns 403; malformed input returns 400. Cache failure returns 503, and a rate limit breach returns 429. A different amount under the same order key returns 422. None of these paths requires a new durable order.
 
 \begin{figure}[H]\centering
 \begin{adjustbox}{max width=\linewidth}
@@ -176,7 +176,7 @@ Read downward in time. A solid arrow represents a request or operation; a dashed
 
 A rate window uses a key containing the principal and minute number. Concurrent add operations initialize at most one live key; incr updates that key atomically. Expiration removes obsolete windows. Eviction can nevertheless reset a live window, so a strict abuse quota needs a stronger authority. Likewise, the advisory lease in example 14 can coalesce cache refreshes but must not protect a payment: eviction or expiry can admit a second owner. A CAS tombstone avoids deleting a successor's lease, but cannot restore mutual exclusion after the original lease has expired.
 
-\noindent\textbf{Reader exercise.} Trace two requests with the same order key but different amounts. Identify the unique index as the arbitration point, the stored amount as the decision input, and HTTP 409 as the losing request's outcome. Then repeat with an evicted counter key. Explain why only the latter operation may restart its count.
+\noindent\textbf{Reader exercise.} Trace two requests with the same order key but different amounts. Identify the unique index as the arbitration point, the stored amount as the decision input, and HTTP 422 as the losing request's outcome. Then repeat with an evicted counter key. Explain why only the latter operation may restart its count.
 
 \section{Executable laboratory}
 Run example 40 against disposable MySQL and Memcached services. The driver starts four workers, checks the served API contract, exercises missing credentials and insufficient scope, submits eight concurrent increments and eight duplicate orders, deletes cache entries and verifies the durable order remains unique. It then revokes the token and checks that subsequent authentication fails. A successful run prints an explicit final success line; consult the release verification record for observed results.

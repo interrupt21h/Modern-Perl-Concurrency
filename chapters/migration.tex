@@ -1,7 +1,7 @@
 \chapter{Modernizing legacy locking and database access}
 \label{ch:enterprise-migration}
 \chapterbrief{Migrate locks while old and new writers coexist.}
-\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} DBI --- Database Interface; DDL --- data definition language.\par\smallskip
+\par\smallskip\noindent\textbf{Specialized terms:} DDL --- data definition language.\par\smallskip
 
 \index{Migration}
 \index{MyISAM}
@@ -13,7 +13,7 @@ locks around cross-table operations, and transactional row locks in newer
 code. Removing a legacy lock without identifying every writer can create
 a concurrency bug that did not previously exist.
 
-\strategy{app-migration}{Incremental invariant migration}{Install the new guard before taking away the old one.}{multiple generations of writers share state.}{the contracts cannot coexist safely.}{DBI, InnoDB, regression tests}
+\strategy{app-migration}{Incremental invariant migration}{Install the new guard before taking away the old one. During rollout, both generations of writers must obey a compatible invariant.}{old and new application versions write to the same data.}{the contracts cannot coexist safely; quiesce writers before switching.}{DBI, InnoDB constraints and regression tests covering mixed-version writers.}
 
 \section{Inventory before migration}
 \begin{figure}[!htbp]\centering

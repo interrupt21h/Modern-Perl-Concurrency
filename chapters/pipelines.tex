@@ -1,7 +1,7 @@
 \chapter{Scheduled jobs and resumable processing pipelines}
 \label{ch:enterprise-pipelines}
 \chapterbrief{Build bounded, recoverable scheduled and multi-stage systems.}
-\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} DBI --- Database Interface; SQL --- Structured Query Language; ID --- identifier.\par\smallskip
+
 
 \index{Batch processing}
 \index{Checkpoints}
@@ -14,7 +14,7 @@ twice; a worker can die halfway through a file; a downstream service can
 temporarily fail. The design must preserve completeness and avoid duplicate
 business effects without assuming that a job executes exactly once.
 
-\strategy{app-pipelines}{Durable job claims}{A work ticket names a task and its current attempt.}{work must survive worker failure.}{a short synchronous operation needs no durable queue.}{DBI, worker processes}
+\strategy{app-pipelines}{Durable job claims}{A work ticket names a task and its current attempt. If a worker disappears, a replacement receives a newer attempt; the destination must reject stale completion.}{work must survive worker failure or be replayed after interruption.}{a short synchronous operation needs no durable queue.}{DBI, worker processes, indexed claims and conditional completion; see the SQL sequence below.}
 
 \section{Pipeline decomposition}
 \begin{figure}[!htbp]\centering
@@ -81,7 +81,7 @@ a paused worker from executing a side effect.
 \CodeFile{sql}{snippets/outbox-claim.sql}{MySQL claim and conditional completion (SQL sequence)}
 The placeholders represent bound values from the selected row. Use an
 InnoDB job table with a primary key, status, attempt, lease expiry and
-indexes appropriate to the claim predicates; a production scheduler also
+indexes appropriate to the claim predicates. This illustrative status/lease predicate uses an OR across ready and expired running jobs; it can scan more index records than the single visibility-time range in Section~\ref{str:dbqueue}. Prefer the latter for large queues after checking the execution plan; a production scheduler also
 needs a retry budget, next eligible time and dead-letter handling.
 Use \code{SKIP LOCKED} for queue-like access, not for general consistent
 reads. Check each conditional update's affected-row count. If no row is

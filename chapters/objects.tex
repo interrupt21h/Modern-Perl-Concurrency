@@ -1,7 +1,7 @@
 \chapter{Concurrency in object-oriented Perl applications}
 \label{ch:enterprise-objects}
 \chapterbrief{Separate application, worker, request and durable resources.}
-\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} CPU --- central processing unit; DBI --- Database Interface; PID --- process identifier; ID --- identifier.\par\smallskip
+
 
 \index{Moose}
 \index{Catalyst}
@@ -15,7 +15,7 @@ a web controller, an import job and a notification worker may all operate on
 the same record. A lock attached to a Moose object cannot coordinate
 independent processes. Choose the owner of the invariant first.
 
-\strategy{app-objects}{Worker-owned resources}{Each worker has its own toolbox.}{live handles must remain process-local.}{state must coordinate independent workers.}{Moose, DBI, Catalyst}
+\strategy{app-objects}{Worker-owned resources}{Each worker has its own toolbox. A connection belongs to the process that opened it; copying the toolbox across a fork does not create an independent connection.}{prefork workers need database or cache connections with independent lifetimes.}{a shared business invariant needs coordination at the database or another authoritative destination.}{Moose lazy attributes, PID-checked DBI handles and Catalyst worker lifecycle; see the resource ownership examples in this chapter.}
 
 \section{State ownership and object lifetime}
 \begin{figure}[!htbp]\centering

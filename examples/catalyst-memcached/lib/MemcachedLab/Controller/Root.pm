@@ -162,7 +162,7 @@ sub order : Path('/order') Args(0) {
         undef, $a->{principal}, $key
     );
     if ( $stored != $amount ) {
-        reply( $c, 409, { error => 'idempotency_conflict' } );
+        reply( $c, 422, { error => 'idempotency_conflict' } );
         return;
     }
     reply( $c, 200, { request_key => $key, amount => 0 + $stored } );

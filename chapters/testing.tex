@@ -1,5 +1,5 @@
 \chapter{Concurrency verification in application test suites}
-\par\smallskip\noindent\textbf{Abbreviations used in this section:} API --- Application programming interface; ID --- Identifier; TTL --- Time to live.\par\smallskip
+
 \label{ch:enterprise-testing}
 \chapterbrief{Force interleavings, isolate fixtures and verify recovery.}
 \index{Concurrency tests}
@@ -12,7 +12,7 @@ two workers finished. Random sleeps can help stress a system but are not
 a reliable method of forcing a specific race. Use rendezvous points,
 independent connections, explicit deadlines and failure injection.
 
-\strategy{app-testing}{Deterministic race tests}{Stop workers at a known point before releasing them.}{a specific interleaving must be reproduced.}{timing or throughput is the quantity under test.}{Thread::Queue, Test2, process fixtures}
+\strategy{app-testing}{Deterministic race tests}{Stop workers at a known point before releasing them. A rendezvous makes the disputed interleaving repeatable instead of relying on lucky scheduling.}{a regression depends on a particular ordering of operations.}{measuring throughput or latency; use repeated workload trials instead.}{Thread::Queue, Test2 and process fixtures; assert the invariant and check every worker outcome.}
 
 \section{Force the interleaving}
 \begin{figure}[!htbp]\centering

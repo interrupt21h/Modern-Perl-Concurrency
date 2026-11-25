@@ -1,7 +1,7 @@
 \chapter{Transaction boundaries in layered applications}
 \label{ch:enterprise-transactions}
 \chapterbrief{Place transactions at the business boundary; classify retries.}
-\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} DBI --- Database Interface; ID --- identifier; DBD --- Database Driver.\par\smallskip
+
 
 \index{Transactions}
 \index{Savepoints}
@@ -28,7 +28,7 @@ business operation, not to an individual ORM result object.
 \caption{A layered application has one explicit business transaction boundary.}
 \end{figure}
 
-\strategy{app-transactions}{Service-owned transactions}{One receipt covers all items or none.}{multiple changes must commit together.}{remote effects cannot share the same transaction.}{DBIx::Class, DBI, InnoDB}
+\strategy{app-transactions}{Service-owned transactions}{One receipt covers all items or none. The service decides where the transaction begins and ends, while repositories participate using the same connection.}{several local database changes form one business invariant.}{a remote call cannot participate in the local commit; use a durable outbox instead.}{DBIx::Class txn_do, DBI and InnoDB; keep transaction ownership in the service.}
 
 \section{DBIx::Class composition}
 \index{API!txn_do@\texttt{txn\_do}}\index{API!txn_scope_guard@\texttt{txn\_scope\_guard}}

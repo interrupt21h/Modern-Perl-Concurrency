@@ -1,7 +1,7 @@
 \chapter{Reliable cross-system integration}
 \label{ch:enterprise-outbox}
 \chapterbrief{Record durable intent and safely replay delivery.}
-\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} DBI --- Database Interface; HTTP --- Hypertext Transfer Protocol; SQL --- Structured Query Language; ID --- identifier.\par\smallskip
+
 
 \index{Transactional outbox}
 \index{Inbox}
@@ -13,7 +13,7 @@ already accepted by another system. Holding a local transaction open while
 calling the external system does not solve this problem; it also increases
 lock duration. Instead, separate durable intent from delivery.
 
-\strategy{app-outbox}{Transactional outbox}{Write the shipping instruction on the same receipt as the sale.}{a committed change must trigger a remote effect.}{the effect can be committed in the same local transaction.}{DBI, unique keys, durable queues}
+\strategy{app-outbox}{Transactional outbox}{Write the shipping instruction on the same receipt as the sale. A separate worker delivers that instruction after commit and can retry it after a crash.}{a committed database change must trigger a remote effect.}{the effect is entirely local and can be committed directly in the same transaction.}{DBI, unique constraints, durable claims and destination idempotency keys.}
 
 \section{Transactional outbox and inbox}
 \index{Transactional outbox}\index{Idempotency}

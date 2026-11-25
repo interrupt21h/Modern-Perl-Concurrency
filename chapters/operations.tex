@@ -1,5 +1,5 @@
 \chapter{Production deployment and observability}
-\par\smallskip\noindent\textbf{Abbreviations used in this section:} ACL --- Access control list; CPU --- Central processing unit; ID --- Identifier; OS --- Operating system; PID --- Process identifier; PSGI --- Perl Web Server Gateway Interface; TLS --- Transport Layer Security.\par\smallskip
+\par\smallskip\noindent\textbf{Specialized terms:} PSGI --- Perl Web Server Gateway Interface.\par\smallskip
 \label{ch:enterprise-operations}
 \chapterbrief{Budget capacity, drain workers and diagnose contention.}
 \index{Observability}
@@ -12,7 +12,7 @@ schedulers and service availability change. A configuration that works on
 a single development process may fail when a production deployment forks
 workers or rolls out multiple replicas.
 
-\strategy{app-operations}{Bounded admission}{A waiting room limits work entering a busy service.}{downstream resources have finite capacity.}{limits are guessed without measuring load.}{worker pools, metrics, deadlines}
+\strategy{app-operations}{Bounded admission}{A waiting room limits work entering a busy service. Admission stops when the downstream capacity is exhausted, rather than letting every caller compete for the same resource.}{database connections, worker slots or downstream quotas have finite capacity.}{a guessed limit substitutes for measurement or a queue has no bounded waiting policy.}{Bounded worker pools, queue-depth and latency metrics, and end-to-end deadlines.}
 
 \section{Budget workers and connections}
 For a hypothetical deployment of four replicas, six web workers per

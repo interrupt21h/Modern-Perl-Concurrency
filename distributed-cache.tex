@@ -1,7 +1,7 @@
 % ================================================================ chapter 9
 \chapter{Redis and Valkey: leases, semaphores and streams}\label{ch:redis}
 \chapterbrief{Coordinate distributed workers while respecting failure, durability and ownership boundaries.}
-\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} ACL --- access control list; API --- application programming interface; PEL --- pending entries list; SQL --- Structured Query Language; TLS --- Transport Layer Security; TTL --- time to live; AOF --- append-only file; ID --- identifier.\par\smallskip
+\par\smallskip\noindent\textbf{Specialized terms:} PEL --- pending entries list; AOF --- append-only file.\par\smallskip
 
 \index{Redis}\index{Valkey}\index{Fencing}\index{Lease}\index{API!SET NX PX}\index{API!WATCH}\index{API!EVAL}\index{API!XAUTOCLAIM}
 \section{Scope and correctness contract}
@@ -108,7 +108,7 @@ A concurrency limit is not a rate limit. For operations per unit time, use a tok
 Many locks exist only to stop two workers taking the same job. A consumer group removes the need: each entry is delivered to one consumer and stays in that consumer's \emph{pending entries list} (PEL) until acknowledged with \code{XACK}. If a consumer dies, its pending entries remain; any other consumer can adopt entries that have been idle longer than a threshold with \code{XAUTOCLAIM} [38]. Delivery is therefore \emph{at least once}: make the effect idempotent, then acknowledge.
 \fig{streams}{A consumer group with crash recovery, as exercised by example 17.}
 \CodeFile{perl}{examples/17-redis-stream-worker.pl}{\nolinkurl{17-redis-stream-worker.pl}}
-\tested{One of four consumers exited holding ten unacknowledged entries; another consumer reclaimed them. All 200 effects were applied exactly once.}
+\tested{One of four consumers exited holding ten unacknowledged entries; another consumer reclaimed them. All 200 effects were recorded once; this does not establish exactly-once delivery.}
 Production practice: cap stream length with \code{XADD ... MAXLEN ~ n} or trim by minimum ID; read delivery counts with the extended form of \code{XPENDING} and move entries that exceed a retry limit to a dead-letter stream; keep the idle threshold well above normal processing time to avoid needless duplicate execution; and alert on PEL size and oldest pending age. Redis 8.4 adds a \code{CLAIM} option to \code{XREADGROUP} that returns idle pending entries and new entries in a single call [34]. Streams inherit Redis durability: they are not a substitute for a transactional queue when loss of an acknowledged enqueue is unacceptable.
 
 \section{Durability, replication, Redlock and cluster topology}
@@ -136,7 +136,7 @@ Every coordination key used in this handbook has an owner, a type and a TTL. A k
 Use hash tags (\texttt{\{...\}}) wherever a script touches more than one key, so that the keys share a cluster slot. Remember that \code{maxmemory-policy} applies to a whole instance, not to a logical database number. Keep leases, fences, queues and sessions on an instance with \code{noeviction}, and put caches on a separate instance with an LRU or LFU policy.
 
 \section{Security and deployment}\label{sec:redis-security}
-Use a dedicated instance, or at least a dedicated logical database, for coordination keys, and set \code{maxmemory-policy noeviction} so that memory pressure fails writes instead of silently deleting leases. Expiration, restart and failover remain possible even then. Treat out-of-memory errors and network errors as acquisition failure. Never expose the service publicly; keep \code{protected-mode} enabled, authenticate every client, and use TLS with certificate verification (\code{ssl => 1} and \code{SSL_verify_mode} in \code{Redis.pm}) on any network you do not fully control.
+Use a dedicated instance, for coordination keys, and set \code{maxmemory-policy noeviction} so that memory pressure fails writes instead of silently deleting leases. Expiration, restart and failover remain possible even then. Treat out-of-memory errors and network errors as acquisition failure. Never expose the service publicly; keep \code{protected-mode} enabled, authenticate every client, and use TLS with certificate verification (\code{ssl => 1} and \code{SSL_verify_mode} in \code{Redis.pm}) on any network you do not fully control.
 
 Since Redis 6, commands executed inside scripts are checked against the calling user's ACL, so a least-privilege lease user needs both \code{EVALSHA} and the commands its scripts call [39]:
 \CodeFile{bash}{snippets/distributed-cache-03.sh}{Least-privilege ACL for examples 13 and 16 (tested)}
@@ -151,7 +151,7 @@ Track acquisition wait, contention, lost and failed renewals, release failures, 
 % ================================================================ chapter 10
 \chapter{Memcached locking and cache coordination}
 \chapterbrief{Use cache coordination for efficiency without confusing it with durable authority.}
-\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} CAS --- compare-and-swap; TLS --- Transport Layer Security; TTL --- time to live; UDP --- User Datagram Protocol.\par\smallskip
+\par\smallskip\noindent\textbf{Specialized terms:} CAS --- compare-and-swap.\par\smallskip
 
 \index{Memcached}\index{Cache stampede}\index{API!CAS}
 \section{What Memcached can and cannot guarantee}

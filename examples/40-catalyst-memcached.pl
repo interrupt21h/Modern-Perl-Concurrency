@@ -129,7 +129,7 @@ my ($n) = $db->selectrow_array(
     'SELECT COUNT(*) FROM mc_orders WHERE principal=?',
     undef, $principal );
 check( $n == 1, 'one durable order after eight submissions' );
-check( request( 'POST', '/order', $token, 26, 'one' )->{status} == 409,
+check( request( 'POST', '/order', $token, 26, 'one' )->{status} == 422,
     'conflicting replay rejected' );
 my $m = Cache::Memcached::Fast->new(
     { servers => [ $ENV{MEMCACHED_SERVER} ] } );
