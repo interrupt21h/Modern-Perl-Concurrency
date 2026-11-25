@@ -1,6 +1,8 @@
 \chapter{Building concurrent Catalyst applications with Memcached}
 \label{ch:memcached-capstone}
 \chapterbrief{Separate disposable cache coordination from durable authorization and transactional invariants.}
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} API --- application programming interface; CAS --- compare-and-swap; HTTP --- Hypertext Transfer Protocol; JSON --- JavaScript Object Notation; SQL --- Structured Query Language; TLS --- Transport Layer Security.\par\smallskip
+
 This companion to the Redis Catalyst laboratory uses four Starman workers, Memcached and InnoDB. Memcached supplies bounded compare-and-swap (CAS) retries and best-effort rate counters. The database owns bearer-token authorization and idempotent order records. No cache entry is authoritative for authentication or financial effects.
 
 \begin{figure}[H]\centering
