@@ -162,7 +162,7 @@
 \PG{+w}{        }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{a}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{principal}\PG{p}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}
 \PG{+w}{    }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{k}{if}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stored}\PG{+w}{ }\PG{o}{!=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{amount}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{        }\PG{n}{reply}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{409}\PG{p}{,}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{error}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}idempotency\PGZus{}conflict\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{        }\PG{n}{reply}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{422}\PG{p}{,}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{error}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}idempotency\PGZus{}conflict\PGZsq{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{+w}{        }\PG{k}{return}\PG{p}{;}
 \PG{+w}{    }\PG{p}{\PGZcb{}}
 \PG{+w}{    }\PG{n}{reply}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{200}\PG{p}{,}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{request\PGZus{}key}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{key}\PG{p}{,}\PG{+w}{ }\PG{n}{amount}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{o}{+}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stored}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
