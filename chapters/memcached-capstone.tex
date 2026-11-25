@@ -111,23 +111,26 @@ Read downward in time. A solid arrow represents a request or operation; a dashed
 
 \begin{figure}[H]\centering
 \begin{adjustbox}{max width=\linewidth}
-\begin{tikzpicture}[node distance=7mm and 10mm]
-\node[box] (start) {Start: deadline and retry budget};
-\node[box,below=of start] (get) {gets key};
-\node[box,below left=of get,text width=38mm] (cas) {Present: compute next value; CAS};
-\node[box,below right=of get,text width=38mm] (add) {Absent: add initial value};
-\node[okbox,below=22mm of get] (done) {Success: return value};
-\node[badbox,right=of done,text width=36mm] (retry) {Failure: jitter and check budget};
-\node[badbox,below=of retry] (stop) {Exhausted: 503};
+\begin{tikzpicture}[font=\small]
+\node[box] (start) at (0,0) {Start: deadline and retry budget};
+\node[box] (get) at (0,-1.2) {gets key};
+\node[box,text width=37mm] (cas) at (-2.7,-2.7) {Present: compute next value; CAS};
+\node[box,text width=37mm] (add) at (2.7,-2.7) {Absent: add initial value};
+\node[box,text width=36mm] (result) at (0,-4.3) {Conditional write succeeded?};
+\node[okbox,text width=32mm] (done) at (-2.7,-5.9) {Return value};
+\node[badbox,text width=36mm] (retry) at (2.7,-5.9) {Check retry budget};
+\node[badbox] (stop) at (2.7,-7.5) {Exhausted: 503};
+\node[box,text width=21mm] (wait) at (5.4,-4.3) {Jitter; retry};
 \draw[arr] (start)--(get);
-\draw[arr] (get)--(cas);
-\draw[arr] (get)--(add);
-\draw[arr] (cas)--(done);
-\draw[arr] (add)--(done);
-\draw[badarr] (cas.west)--++(-.4,0)|-(retry.south);
-\draw[badarr] (add.east)--++(.4,0)|-(retry.east);
-\draw[badarr] (retry)--(stop);
-\draw[badarr] (retry.north)|-node[pos=.75,above,font=\scriptsize]{budget remains}(get.east);
+\draw[arr] (get.south)--(cas.north);
+\draw[arr] (get.south)--(add.north);
+\draw[arr] (cas.south)--(result.north west);
+\draw[arr] (add.south)--(result.north east);
+\draw[arr] (result.south west)--node[above left,font=\scriptsize]{yes}(done.north);
+\draw[badarr] (result.south east)--node[above right,font=\scriptsize]{no}(retry.north);
+\draw[badarr] (retry.south)--node[right,font=\scriptsize]{no budget}(stop.north);
+\draw[badarr] (retry.east)-|node[pos=.22,below,font=\scriptsize]{budget remains}(wait.south);
+\draw[badarr] (wait.north)|-(get.east);
 \end{tikzpicture}
 \end{adjustbox}
 \caption{Bounded CAS retry control flow. A failed conditional write is not permission to overwrite blindly. Network calls can extend the nominal deadline by their own timeout.}
