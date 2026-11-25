@@ -220,13 +220,14 @@ sub pay : Local : Args(0) {
             $PROVIDER, 2, "charges:$user:$idem", "charges:$user", $fingerprint
         ) };
         if (!$matched) {
-            return (422, { error => 'key reused with a different request' });
+            (422, { error => 'key reused with a different request' });
         }
-    # Laboratory fault injection: die abruptly after the side effect and
-    # before the response is stored, as an OOM kill or node loss would.
-        kill 'KILL', $$
-            if $ENV{SESSIONLAB_FAULTS} && $c->req->params->{crash};
-        ( 201, { charged => $amount, charge_no => $n } );
+        else {
+            # Fault injection: die after the effect, before saving the response.
+            kill 'KILL', $$
+                if $ENV{SESSIONLAB_FAULTS} && $c->req->params->{crash};
+            (201, { charged => $amount, charge_no => $n });
+        }
     };
     unless ($status) {
         # A transport error may have followed a committed provider operation.
