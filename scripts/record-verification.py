@@ -56,7 +56,7 @@ if args.local:
 if not args.suite or not os.environ.get("GITHUB_RUN_ID"):
     raise SystemExit("Release mode requires a completed suite and GitHub run identity")
 summary = re.search(r"^(\d+) passed, (\d+) skipped$", args.suite.read_text(), re.M)
-if not summary or tuple(map(int, summary.groups())) != (38, 0):
+if not summary or tuple(map(int, summary.groups())) != (39, 0):
     raise SystemExit("Expected full 39-laboratory suite with zero skips")
 
 def server_version(port):
@@ -69,7 +69,7 @@ def server_version(port):
 with socket.create_connection(("127.0.0.1", 11211), timeout=5) as sock:
     sock.sendall(b"version\r\n")
     version = sock.makefile("rb").readline().decode().strip().removeprefix("VERSION ")
-info.update({"ci_run": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"], "trigger_sha": os.environ["GITHUB_SHA"], "primary_tests": {"passed": 38, "skipped": 0}, "additional_checks_completed": ["SQLite savepoints", "Test2 via prove and yath", "seven Valkey integration examples", "Perl::Tidy idempotence"], "services": {"MySQL": command("mysql", "--protocol=TCP", "-h", "127.0.0.1", "-P", os.environ["MYSQL_PORT"], "-u", os.environ["DB_USER"], "-Nse", "SELECT VERSION()"), "Redis": server_version(6379), "Valkey": server_version(16379), "Memcached": version, "SQLite": command("perl", "-MDBD::SQLite", "-e", 'print $DBD::SQLite::sqlite_version')}, "modules": {name: module(name) for name in ("DBI", "DBIx::Class", "DBD::SQLite", "DBD::mysql", "Redis", "Cache::Memcached::Fast", "Catalyst", "Moose", "MCE", "Future", "Test2::V0")}})
+info.update({"ci_run": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"], "trigger_sha": os.environ["GITHUB_SHA"], "primary_tests": {"passed": 39, "skipped": 0}, "additional_checks_completed": ["SQLite savepoints", "Test2 via prove and yath", "seven Valkey integration examples", "Perl::Tidy idempotence"], "services": {"MySQL": command("mysql", "--protocol=TCP", "-h", "127.0.0.1", "-P", os.environ["MYSQL_PORT"], "-u", os.environ["DB_USER"], "-Nse", "SELECT VERSION()"), "Redis": server_version(6379), "Valkey": server_version(16379), "Memcached": version, "SQLite": command("perl", "-MDBD::SQLite", "-e", 'print $DBD::SQLite::sqlite_version')}, "modules": {name: module(name) for name in ("DBI", "DBIx::Class", "DBD::SQLite", "DBD::mysql", "Redis", "Cache::Memcached::Fast", "Catalyst", "Moose", "MCE", "Future", "Test2::V0")}})
 (OUT / "release-verification.json").write_text(json.dumps(info, indent=2) + "\n")
 url = f'https://github.com/{os.environ["GITHUB_REPOSITORY"]}/actions/runs/{info["ci_run"]}'
 lines = [r"\textbf{Current run:} " + tex(info["generated_utc"]) + r". \href{" + url + "}{GitHub Actions run " + info["ci_run"] + "}.", "Trigger revision: " + r"\nolinkurl{" + info["trigger_sha"] + "}. The final release commit and PDF checksums are recorded with the downloadable assets.", r"\begin{longtable}{L{.30\linewidth}L{.62\linewidth}}\toprule Component & Recorded value \\ \midrule\endhead"]
