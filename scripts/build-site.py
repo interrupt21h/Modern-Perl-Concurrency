@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Build a dependency-free static handbook portal from validated CI outputs."""
+import hashlib
+import json
 import html
 import os
 import shutil
@@ -18,8 +20,12 @@ SOURCE = "formatted-source.tar.gz"
 esc = html.escape
 
 OUT.mkdir(exist_ok=True)
+assets = {}
 for name in (PDF, SOURCE, "SHA256SUMS", "tidy-build.txt", "perl-concurrency-cheat-sheet.pdf", "cheat-sheet.tex", "verification.json", "benchmark-results.txt"):
     shutil.copy2(DIST / name, OUT / name)
+    digest = hashlib.sha256((DIST / name).read_bytes()).hexdigest()
+    assets[name] = f"{REPO}/releases/download/{quote(TAG, safe='')}/{quote(name)}?sha256={digest}"
+(OUT / "latest.json").write_text(json.dumps({"tag": TAG, "commit": SHA, "run": RUN, "assets": assets}, indent=2) + "\n", encoding="utf-8")
 (OUT / ".nojekyll").touch()
 
 chapters = [
@@ -43,6 +49,9 @@ page = f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Modern Perl Concurrency: Synchronization, Distributed Coordination and Application Architecture. Engineering handbook and executable laboratory.">
 <title>Modern Perl Concurrency</title>
@@ -69,20 +78,28 @@ footer{{border-top:1px solid var(--line);padding:1.5rem 1.25rem;color:var(--mute
 <div class="eyebrow">Engineering handbook / Edition 2.1.1</div>
 <h1>Modern Perl Concurrency</h1>
 <p><strong>Synchronization, Distributed Coordination and Application Architecture</strong></p>
-<p><a href="{REPO}/releases/tag/v2.1.1">Stable edition</a> · <a href="verification.json">Current verification manifest</a> · <a href="benchmark-results.txt">Measured benchmark trials</a></p>
+<p><a href="{REPO}/releases/tag/v2.1.1">Stable edition</a> · <a href="{esc(assets['verification.json'], quote=True)}">Current verification manifest</a> · <a href="{esc(assets['benchmark-results.txt'], quote=True)}">Measured benchmark trials</a></p>
 <p>A six-part engineering reference for local synchronization, persistent state, distributed coordination and production application architecture. Includes a recoverable processing capstone and complete laboratory appendices.</p>
 <p><strong>Scott Muller</strong> · <a href="mailto:scott@21h.io">scott@21h.io</a><br>Software Engineer, Matsch Systems<br>Owner &amp; Independent Consultant, 21h Systems</p>
 <p><em>This work is an independent technical publication. The views and recommendations expressed herein are solely those of the author and do not necessarily reflect those of his employer or affiliated organizations. Professional affiliations do not imply institutional endorsement.</em></p>
-<div class="actions"><a class="button" href="{PDF}">Read the PDF</a><a class="button secondary" href="perl-concurrency-cheat-sheet.pdf">Two-page cheat sheet</a><a class="button secondary" href="{SOURCE}" download>Download source</a><a class="button secondary" href="{esc(release)}">GitHub release</a></div>
+<div class="actions"><a class="button" href="{esc(assets[PDF], quote=True)}">Read the PDF</a><a class="button secondary" href="{esc(assets['perl-concurrency-cheat-sheet.pdf'], quote=True)}">Two-page cheat sheet</a><a class="button secondary" href="{esc(assets[SOURCE], quote=True)}" download>Download source</a><a class="button secondary" href="{esc(release)}">GitHub release</a></div>
 </div></header>
 <main class="wrap">
-<div class="grid"><section class="panel"><h2>Handbook</h2><p>Read the complete, illustrated technical reference with syntax-highlighted code and runnable examples.</p><a href="{PDF}" download>Download PDF</a></section>
+<div class="grid"><section class="panel"><h2>Handbook</h2><p>Read the complete, illustrated technical reference with syntax-highlighted code and runnable examples.</p><a href="{esc(assets[PDF], quote=True)}" download>Download PDF</a></section>
 <section class="panel"><h2>Executable laboratory</h2><p>Explore the formatted sources, build scripts and tests.</p><a href="{esc(REPO)}/tree/{SHA}/examples">Browse all examples on GitHub</a></section>
-<section class="panel"><h2>Build provenance</h2><p>Published from commit <code>{SHA[:12]}</code> after formatting checks, available regression tests and PDF compilation. See logs for skipped tests.</p><a href="tidy-build.txt">Verification log</a> · <a href="SHA256SUMS">Checksums</a> · <a href="{esc(run)}">CI run</a></section></div>
-<section class="panel"><h2>Printable cheat sheet</h2><p>Two illustrated pages for quick reference: local Perl synchronization and database/distributed coordination. Print double-sided on US Letter.</p><a href="perl-concurrency-cheat-sheet.pdf">Open PDF</a> · <a href="perl-concurrency-cheat-sheet.pdf" download>Download PDF</a> · <a href="cheat-sheet.tex" download>LaTeX source</a></section>
+<section class="panel"><h2>Build provenance</h2><p><a href="?refresh={esc(RUN)}" id="refresh-page">Refresh publication</a> · <a href="{REPO}/releases/latest">Latest release on GitHub</a></p><p>Build <code>{esc(TAG)}</code> · published from commit <code>{SHA[:12]}</code> after formatting checks, available regression tests and PDF compilation. See logs for skipped tests.</p><a href="{esc(assets['tidy-build.txt'], quote=True)}">Verification log</a> · <a href="{esc(assets['SHA256SUMS'], quote=True)}">Checksums</a> · <a href="{esc(run)}">CI run</a></section></div>
+<section class="panel"><h2>Printable cheat sheet</h2><p>Two illustrated pages for quick reference: local Perl synchronization and database/distributed coordination. Print double-sided on US Letter.</p><a href="{esc(assets['perl-concurrency-cheat-sheet.pdf'], quote=True)}">Open PDF</a> · <a href="{esc(assets['perl-concurrency-cheat-sheet.pdf'], quote=True)}" download>Download PDF</a> · <a href="{esc(assets['cheat-sheet.tex'], quote=True)}" download>LaTeX source</a></section>
 <section class="panel"><h2>Contents</h2><ol>{chapter_html}</ol></section>
 <section class="panel"><h2>Source examples</h2><p>Source links point to the exact release commit. Use isolated services for the laboratory.</p><ul class="examples">{example_html}</ul><p><a href="{esc(REPO)}/tree/{SHA}/examples/catalyst-session">Catalyst application source</a></p></section>
 </main><footer><div class="wrap">Modern Perl Concurrency · <a href="{esc(REPO)}">Project repository</a> · <a href="{esc(REPO)}/releases">All releases</a></div></footer>
+<script>
+document.getElementById("refresh-page").addEventListener("click", (event) => {{
+  event.preventDefault();
+  const url = new URL(location.href);
+  url.searchParams.set("refresh", Date.now().toString());
+  location.assign(url.href);
+}});
+</script>
 </body></html>"""
 (OUT / "index.html").write_text(page, encoding="utf-8")
 print(f"Created portal with {len(examples)} source links: {OUT}")
