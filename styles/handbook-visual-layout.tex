@@ -1,0 +1,57 @@
+% Compact visual models are integrated into the established strategy cards.
+% Do not add independent floating duplicates or enlarge small artwork to fill a page.
+\newcommand{\QRattach}[2]{\expandafter\def\csname QRvisual@#1\endcsname{#2}}
+\newcommand{\QRplainlabel}{\textbf{\sffamily\color{teal}In plain terms.}}
+\newcommand{\QRstrategyplain}[2]{%
+  \ifcsname QRvisual@#1\endcsname
+    \noindent
+    \begin{minipage}[t]{.53\linewidth}
+      \vspace{0pt}\QRplainlabel\ #2
+    \end{minipage}\hfill
+    \begin{minipage}[t]{.43\linewidth}
+      \vspace{0pt}\centering
+      \adjustbox{max totalsize={\linewidth}{51pt}}{\csname QRvisual@#1\endcsname}%
+      \par\vspace{3pt}{\scriptsize\sffamily\color{muted}Visual model\par}
+    \end{minipage}%
+  \else
+    \QRplainlabel\ #2%
+  \fi}
+% Inline panels are used only where there is no applicable strategy card.
+% The minipage keeps artwork and its explanation together, in reading order.
+\newcommand{\QRinline}[2]{%
+  \par\addvspace{5pt}\noindent
+  \begin{minipage}{\linewidth}
+    \begin{minipage}[c]{.43\linewidth}\centering
+      \adjustbox{max totalsize={\linewidth}{51pt}}{#1}%
+    \end{minipage}\hfill
+    \begin{minipage}[c]{.53\linewidth}
+      \small\sffamily\color{muted}\textbf{Visual model.} #2
+    \end{minipage}
+  \end{minipage}\par\addvspace{5pt}}
+\newcommand{\QRinlinepair}[3]{%
+  \par\addvspace{5pt}\noindent
+  \begin{minipage}{\linewidth}
+    \centering
+    \adjustbox{max totalsize={.45\linewidth}{51pt}}{#1}\hfill
+    \adjustbox{max totalsize={.45\linewidth}{51pt}}{#2}%
+    \par\smallskip{\small\sffamily\color{muted}\textbf{Visual model.} #3\par}
+  \end{minipage}\par\addvspace{5pt}}
+\QRattach{mutex}{\Dmutex}
+\QRattach{semaphore}{\Dsem}
+\QRattach{condvar}{\Dcond}
+\QRattach{barrier}{\Dbarrier}
+\QRattach{queue}{\Dqueue}
+\QRattach{asyncmutex}{\Dasync}
+\QRattach{rwlock}{\Drw}
+\QRattach{flock}{\Dflock}
+\QRattach{sysvsem}{\Dsysv}
+\QRattach{optimistic}{\Dopt}
+\QRattach{rowlocks}{\Dpess}
+\QRattach{advisory}{\Dadvisory}
+\QRattach{dbqueue}{\Dskip}
+\QRattach{redislease}{\Dlease}
+\QRattach{fencing}{\Dfence}
+\QRattach{redissem}{\Ddistributed}
+\QRattach{memcas}{\Dmem}
+\QRattach{idempotency}{\Didem}
+\QRattach{futex}{\Dfutex}

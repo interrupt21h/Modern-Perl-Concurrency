@@ -31,3 +31,7 @@ Claude review, 2026-11-24, 280-page edition. This is a source-level audit, not a
 | Quick-reference graphics | Implemented | all 24 reused from common source; visual review pending |
 
 The prior 288-page publication passed CI in run 45641996246. This review branch requires fresh full CI and visual inspection before publication; prior success does not verify these changes.
+
+## Publication layout follow-up
+
+The floating quick-reference additions were replaced with compact non-floating visual models in the original strategy cards and prose. The 24-diagram source is preserved, as are the original detailed figures and verified technical fixes. See [LAYOUT-GUIDE.md](LAYOUT-GUIDE.md); automated checks and rendered contact sheets are required, and manual visual approval remains distinct from CI success.

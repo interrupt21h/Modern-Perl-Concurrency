@@ -106,15 +106,7 @@
 % ---------------------------------------------------------------- code presentation
 \input{styles/code-layout.tex}
 \input{styles/quick-reference-diagrams.tex}
-\newcommand{\quickfig}[3]{%
-  \begin{figure}[!htbp]\centering
-  \resizebox{.60\linewidth}{!}{#2}%
-  \caption{#3}\label{fig:quick-#1}\end{figure}}
-\newcommand{\quickpair}[4]{%
-  \begin{figure}[!htbp]\centering
-  \resizebox{.46\linewidth}{!}{#2}\hfill
-  \resizebox{.46\linewidth}{!}{#3}%
-  \caption{#4}\label{fig:quick-#1}\end{figure}}
+\input{styles/handbook-visual-layout.tex}
 
 % ---------------------------------------------------------------- macros
 % Inline code: verbatim-safe, with straight quotes and backticks so that
@@ -148,7 +140,7 @@
   colbacktitle=navy,coltitle=white,fonttitle=\sffamily\bfseries\small,title={#1},
   fontupper=\small\raggedright,left=11pt,right=11pt,top=9pt,bottom=10pt,before skip=14pt,after skip=14pt,before upper={\setlength{\parskip}{0pt}}}
 \newcommand{\strategy}[6]{\begin{strategybox}{STRATEGY \textperiodcentered\ #2}\phantomsection\label{str:#1}%
-\textbf{\sffamily\color{teal}In plain terms.} #3\par\medskip
+\QRstrategyplain{#1}{#3}\par\medskip
 \textbf{\sffamily\color{navy}Use it when:} #4\par\medskip
 \textbf{\sffamily\color{rust}Avoid it when:} #5\par\medskip
 \textbf{\sffamily\color{navy}In Perl:} #6\end{strategybox}}
@@ -361,10 +353,10 @@ Release artifacts include the source snapshot, verification manifest, benchmark 
 \index{Invariants}
 
 \section{Execution models}
-\quickpair{models}{\Dthreads}{\Dfork}{Quick reference: explicitly shared thread state (left) versus isolated worker processes (right).}
 A Perl interpreter thread (ithread) runs its own interpreter. Creating one clones much of the parent's interpreter state; ordinary variables are private unless explicitly shared. Ithreads may run in parallel on separate cores; there is no global interpreter lock. The cost of interpreter cloning, object duplication and synchronization makes thread-per-request designs unattractive, and the \code{threads} documentation states that interpreter-based threads are officially discouraged for new code [1,27]. Ithreads remain appropriate for maintaining existing threaded applications and for small, fixed worker pools.
 
 A forked worker has its own address space, initially sharing pages copy-on-write on Unix-like systems. A process crash can be isolated from its supervisor, although inherited descriptors and database connections demand care. An event loop instead multiplexes nonblocking I/O in one interpreter. It avoids memory-sharing races, but logical races still occur between callbacks and across every \code{await}: state read before a suspension point may be stale after it (Section~\ref{sec:async}). Blocking calls stall the whole loop unless dispatched to a worker.
+\QRinlinepair{\Dthreads}{\Dfork}{Explicitly shared thread state (left) versus isolated worker processes (right).}
 \fig{execmodels}{The three execution models available to Perl programs, and how each shares and coordinates state.}
 \begingroup\small\renewcommand{\arraystretch}{1.02}
 \begin{longtable}{L{.22\linewidth}L{.36\linewidth}L{.34\linewidth}}
@@ -430,7 +422,6 @@ Fencing token & Monotonic generation checked by the protected resource & Rejecti
 \bottomrule
 \end{longtable}
 \section{Mutex versus semaphore}
-\quickpair{mutex-semaphore}{\Dmutex}{\Dsem}{Quick reference: exclusive ownership (left) versus a bounded number of simultaneous permit holders (right).}
 \strategy{mutex}{Mutex (lock)}{A mutex is the key to a single-occupancy room. Whoever holds the key may change what is inside; everyone else waits at the door. When the holder leaves the room (the scope ends), the key is handed on automatically.}
 {several threads update the same shared variables and the update takes more than one step (read, change, write).}
 {the work inside would be slow (network calls, sleeps), or when the participants are separate processes or hosts, which cannot see a Perl lock at all.}
@@ -441,7 +432,6 @@ A mutex protects a resource invariant and normally has ownership semantics. A co
 \section{Conditions, barriers and queues}
 A condition notification is not stored as a durable event. Waiters must check the predicate with the protecting lock held and recheck after waking, because wakeups can be spurious or consumed by another waiter. A barrier is a collective rendezvous, not mutual exclusion; one failed participant can strand everyone. A queue can encapsulate synchronization while conveying ownership. Bounded queues apply backpressure, but cyclic dependencies between bounded queues can deadlock.
 \section{Native mechanisms}
-\quickfig{futex}{\Dfutex}{Quick reference: uncontended native atomic operations stay in user space; contention may enter the kernel.}
 Atomic instructions and futexes underlie many operating-system locks.
 Perl applications ordinarily use higher-level primitives; Appendix~\ref{app:native}
 explains the implementation, memory ordering and C laboratory.
@@ -511,7 +501,6 @@ Use a fixed pool, join each worker and inspect failures. A thread exception does
 \CodeFile{perl}{examples/02-semaphore.pl}{\nolinkurl{02-semaphore.pl}}
 A permit is not a database connection. Create a private connection per worker or use a separately designed pool. Do not use \code{down_force} as a normal acquisition operation: it may drive the permit count negative. When acquiring multiple permits, request them together rather than one at a time, which risks partial-capacity deadlock.
 \section{Condition-variable rendezvous}
-\quickfig{condition}{\Dcond}{Quick reference: notification does not imply the predicate is true; recheck it under the same lock.}
 \index{API!cond_wait@\texttt{cond\_wait}}\index{API!cond_signal@\texttt{cond\_signal}}\index{API!cond_broadcast@\texttt{cond\_broadcast}}
 \strategy{condvar}{Condition variable}{A waiting room with a bell. You check the notice board (the predicate) while holding the room key; if your number is not up, you hand back the key and doze until the bell rings, then take the key again and re-read the board.}
 {one thread must wait until another has prepared something: startup readiness, ``queue not empty'', ``all results in''.}
@@ -522,7 +511,6 @@ The predicate is protected by the mutex; the wait atomically releases the lock w
 \CodeFile{perl}{examples/03-condition.pl}{\nolinkurl{03-condition.pl}}
 \note{A timeout is not proof that work was cancelled or that a resource was never acquired elsewhere. Treat timeout outcomes as explicit state transitions. For elapsed-time metrics use \code{CLOCK_MONOTONIC}; \code{cond_timedwait} alone takes a wall-clock epoch deadline and is therefore sensitive to clock steps.}
 \section{Reusable barriers}
-\quickfig{barrier}{\Dbarrier}{Quick reference: all participants must arrive before the next phase proceeds.}
 \strategy{barrier}{Barrier}{A tour group that regroups at each landmark: nobody walks on to the next stop until everyone has arrived.}
 {parallel steps must finish together before the next step starts, as in iterative computations or phased batch jobs.}
 {participants can fail or hang independently; one missing member stalls everyone unless the barrier supports timeouts or a broken state.}
@@ -546,7 +534,6 @@ A generation counter prevents a fast thread entering the next phase from confusi
 \index{API!Future}
 
 \section{Ownership instead of shared state}
-\quickfig{queue}{\Dqueue}{Quick reference: transfer work through a queue instead of sharing mutable state.}
 \index{API!Thread::Queue}\index{API!enqueue}\index{API!dequeue}
 \strategy{queue}{Work queue (ownership transfer)}{A conveyor belt between a kitchen and the waiters. The cook puts plates on the belt; each waiter takes one plate and is then its only owner. Nobody fights over a plate, so nobody needs a lock.}
 {work can be split into independent jobs; this is the default design for worker pools.}
@@ -565,7 +552,6 @@ Example 27 shows the three habits that matter in practice: per-worker setup in \
 \tested{The gathered result matched the closed-form sum exactly, with every chunk received once.}
 \warn{For $N=2{,}000{,}000$, the sum exceeds $2^{53}$; a floating-point computation can round both the result and the reference value alike. Use exact arithmetic or reject inputs beyond the exact integer range, as example 27 does.}
 \section{Event loops and async/await}\label{sec:async}
-\quickfig{async}{\Dasync}{Quick reference: a single loop interleaves tasks at suspension points.}
 \index{API!Future::AsyncAwait}\index{API!Future::Mutex}\index{API!await}
 \strategy{asyncmutex}{Async mutex in an event loop}{One cashier serving many customers: while one customer looks for their wallet (\code{await}), the cashier helps someone else. If both customers are editing the same order, the cashier must not switch between them halfway through.}
 {a read-modify-write of shared state spans an \code{await}.}
@@ -628,7 +614,6 @@ skew; monotonic clock readings cannot be compared between hosts.
 \index{API!defer}
 
 \section{Reader/writer compatibility}
-\quickfig{rw}{\Drw}{Quick reference: multiple readers may hold access together, or one writer holds exclusive access.}
 \strategy{rwlock}{Reader/writer lock}{A museum exhibit: any number of visitors may look at once, but when the curator rearranges it, the room is closed to everyone.}
 {reads are frequent, take noticeable time, and can safely overlap; writes are rare.}
 {critical sections are tiny (a plain mutex is cheaper), or you would need to upgrade a read lock to a write lock.}
@@ -685,7 +670,6 @@ Where \code{defer} is not acceptable, because experimental features are disallow
 \index{API!IPC::Semaphore}
 
 \section{File locks}
-\quickfig{flock}{\Dflock}{Quick reference: cooperating processes open a stable lock file independently.}
 \index{API!flock}\index{API!LOCK_EX@\texttt{LOCK\_EX}}\index{API!LOCK_NB@\texttt{LOCK\_NB}}
 \strategy{flock}{File lock (flock)}{A ``room occupied'' sign on a door that every process on the machine agrees to respect. It is advisory: a program that ignores signs can still walk in.}
 {processes on one host must not run a section at the same time: cron jobs, deploy scripts, single-writer files.}
@@ -702,7 +686,6 @@ Use a private administrator-controlled directory, restrict permissions and avoid
 \tip{Lock a dedicated \code{.lock} file, not the data file itself. Code that rewrites data with write-to-temporary-then-\code{rename} replaces the inode, and a lock taken on the old file then protects nothing.}
 
 \section{System V and POSIX semaphores}
-\quickfig{sysv}{\Dsysv}{Quick reference: kernel-managed permits coordinate independent processes.}
 \index{API!IPC::Semaphore}
 \strategy{sysvsem}{System V semaphore}{The car-park counter again, but kept by the kernel, so unrelated processes can share it. With \code{SEM_UNDO}, the kernel returns a ticket if a car is towed away (the process dies).}
 {forked processes on one host need a shared permit count.}
@@ -771,8 +754,8 @@ Metadata lock & Protects object definitions against conflicting DDL \\
 Named advisory lock & Session-owned application-level name, independent of transaction rollback \\
 \bottomrule\end{longtable}
 \section{Isolation levels}
-\quickpair{sql-atomic-opt}{\Datomic}{\Dopt}{Quick reference: guard the invariant in a single update (left), or check an observed version (right).}
 READ UNCOMMITTED may observe uncommitted data. READ COMMITTED takes a fresh snapshot for each consistent read and generally reduces gap locking, with exceptions such as foreign-key and duplicate-key checks. REPEATABLE READ (the InnoDB default) keeps one snapshot for consistent reads in a transaction and uses next-key locking for many range-locking operations. SERIALIZABLE adds stronger coordination at a corresponding concurrency cost. Locking reads and snapshot reads may see different versions within one transaction. Never use a snapshot check as a substitute for enforcing the constraint in the write itself.
+\QRinline{\Datomic}{Put the invariant in the write itself and check the affected-row count.}
 \CodeFile{sql}{snippets/guide-03.sql}{Atomic guarded update, without an explicit SELECT lock}
 Prefer a single conditional statement or a unique constraint to a check-then-act sequence; enforce idempotency with a unique request ID, not a \code{SELECT} followed by an unprotected \code{INSERT}. Optimistic concurrency uses a version column: \code{UPDATE ... WHERE id=? AND version=?} and increment the version; zero affected rows indicates a conflict or a missing object, and the caller must reread or fail.
 \strategy{optimistic}{Optimistic concurrency (version column)}{Like editing a shared document that shows ``version 7''. You save only if it is still version 7; if someone saved first, you reload and reapply your change instead of overwriting theirs.}
@@ -781,7 +764,6 @@ Prefer a single conditional statement or a unique constraint to a check-then-act
 {\code{UPDATE ... WHERE id = ? AND version = ?} and check the affected-row count; with DBIx::Class, \code{->search({ version => $seen })->update(...)}; example 29.}
 \fig{optimistic}{Optimistic concurrency: the losing writer detects the conflict from a zero-row update.}
 \section{Pessimistic locking reads}
-\quickfig{pess}{\Dpess}{Quick reference: conflicting transaction B waits for transaction A to release its row lock.}
 \index{API!FOR UPDATE}
 \strategy{rowlocks}{Pessimistic row locks (FOR UPDATE, NOWAIT, SKIP LOCKED)}{Reserving the exact items you are about to change, so nobody else changes them before you have finished. NOWAIT means ``if it is reserved, tell me immediately''; SKIP LOCKED means ``give me the next unreserved one''.}
 {a transaction reads rows and then updates them based on what it read, or workers claim rows from a queue table.}
@@ -807,7 +789,6 @@ Error 1213 marks a deadlock victim; InnoDB has rolled back the whole transaction
 \tip{Set \code{innodb_print_all_deadlocks = ON}. \code{SHOW ENGINE INNODB STATUS} keeps only the latest deadlock; with this setting every one is written to the error log, where your log pipeline can count and alert on them.}
 
 \section{Named advisory locks}
-\quickfig{advisory}{\Dadvisory}{Quick reference: a named lock belongs to a database connection.}
 \index{API!GET_LOCK@\texttt{GET\_LOCK}}\index{API!RELEASE_LOCK@\texttt{RELEASE\_LOCK}}
 \strategy{advisory}{Named advisory lock (GET\_LOCK)}{A named token kept at the database's front desk. Your database connection signs it out; if the connection drops, the desk silently takes the token back, even if you are still working.}
 {several hosts must not run a job at once and they already share a MySQL server, but the job does not fit in one transaction.}
@@ -818,7 +799,6 @@ Error 1213 marks a deadlock victim; InnoDB has rolled back the whole transaction
 \CodeFile{perl}{examples/10-mysql-advisory.pl}{\nolinkurl{10-mysql-advisory.pl}}
 \note{A session lock disappears on disconnect while the client may still believe it holds it. For external side effects, use durable idempotency and, where appropriate, fencing tokens validated by the target. A named lock is not a substitute for a transaction.}
 \section{Database work queues}\label{sec:dbqueue}
-\quickfig{skip}{\Dskip}{Quick reference: skip a locked job and claim an eligible free row.}
 \index{API!SKIP LOCKED}\index{Job claims}
 \strategy{dbqueue}{Database work queue with leases}{A ticket rail in a kitchen. A cook takes a ticket and writes their name and a ``back by'' time on it. If they do not finish in time, the ticket returns to the rail for someone else, and the late cook's work is no longer accepted.}
 {jobs must survive crashes and deploys, and workers run on several hosts that share the database.}

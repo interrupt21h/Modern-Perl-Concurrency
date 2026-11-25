@@ -226,6 +226,8 @@ authority for correctness-critical operations.
   chapter/section source files.
 - `styles/code-layout.tex`: shared, page-breakable code box style.
 - `styles/quick-reference-diagrams.tex`: canonical 24 diagrams reused by the handbook and cheat sheet.
+- `styles/handbook-visual-layout.tex`: compact artwork embedded in the established reading flow.
+- [Publication layout contract](LAYOUT-GUIDE.md): reviewed typography, spacing, figure placement and review requirements.
 - [Review status](REVIEW-STATUS.md): source audit and remaining work.
 - `examples/`: original executable programs, schema, protocol transcript and
   Catalyst lab application; edit these, not the highlighted output.
