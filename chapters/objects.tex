@@ -21,11 +21,11 @@ independent processes. Choose the owner of the invariant first.
 \begin{figure}[!htbp]\centering
 \begin{tikzpicture}[node distance=6mm and 12mm]
 \node[box,text width=6cm] (p) {Parent: immutable configuration and class metadata};
-\node[okbox,below left=of p,text width=3.5cm] (a) {Worker A\\PID-owned clients};
-\node[okbox,below right=of p,text width=3.5cm] (b) {Worker B\\PID-owned clients};
+\node[okbox,below left=of p,text width=3.2cm] (a) {Worker A\\PID-owned clients};
+\node[okbox,below right=of p,text width=3.2cm] (b) {Worker B\\PID-owned clients};
 \draw[arr](p)--(a); \draw[arr](p)--(b);
-\node[box,below=of a,text width=3.5cm] (ra) {Request context A};
-\node[box,below=of b,text width=3.5cm] (rb) {Request context B};
+\node[box,below=of a,text width=3.2cm] (ra) {Request context A};
+\node[box,below=of b,text width=3.2cm] (rb) {Request context B};
 \draw[arr](a)--(ra); \draw[arr](b)--(rb);
 \node[okbox,below=8mm of $(ra.south)!0.5!(rb.south)$,text width=6cm] (db) {Shared authoritative database};
 \draw[arr](ra.south)--(db.north west); \draw[arr](rb.south)--(db.north east);

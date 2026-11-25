@@ -122,7 +122,7 @@ Redlock acquires the same key on a majority of independent primaries (typically 
 
 \section{Key design and memory policy}
 Every coordination key used in this handbook has an owner, a type and a TTL. A key without a TTL outlives the process that created it, so every write path below sets one atomically.
-\begin{longtable}{L{.24\linewidth}L{.10\linewidth}L{.22\linewidth}L{.34\linewidth}}\toprule Key pattern & Type & TTL & Purpose \\ \midrule\endhead
+\begin{longtable}{L{.26\linewidth}L{.10\linewidth}L{.21\linewidth}L{.30\linewidth}}\toprule Key pattern & Type & TTL & Purpose \\ \midrule\endhead
 \code{lease:{res}} & string & lease (ms) & Owner token for a fenced lease (13, 18) \\
 \code{fence:{res}} & string & none; re-seed after loss & Monotonic fencing counter, same hash slot as the lease \\
 \code{sem:{pool}} & zset & latest holder expiry & Distributed semaphore holders scored by expiry (16) \\

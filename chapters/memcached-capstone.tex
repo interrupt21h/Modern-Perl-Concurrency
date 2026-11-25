@@ -6,11 +6,11 @@
 This companion to the Redis Catalyst laboratory uses four Starman workers, Memcached and InnoDB. Memcached supplies bounded compare-and-swap (CAS) retries and best-effort rate counters. The database owns bearer-token authorization and idempotent order records. No cache entry is authoritative for authentication or financial effects.
 
 \begin{figure}[H]\centering
-\begin{tikzpicture}[node distance=9mm and 12mm]
+\begin{tikzpicture}[node distance=9mm and 7mm]
 \node[box] (http) {Concurrent HTTP clients};
 \node[box,below=of http] (app) {Catalyst / four Starman workers};
-\node[box,below left=of app,text width=45mm] (cache) {Memcached\\CAS and rate counters};
-\node[okbox,below right=of app,text width=45mm] (db) {InnoDB\\Tokens and unique orders};
+\node[box,below left=of app,text width=40mm] (cache) {Memcached\\CAS and rate counters};
+\node[okbox,below right=of app,text width=40mm] (db) {InnoDB\\Tokens and unique orders};
 \draw[arr] (http)--(app);
 \draw[arr] (app)--(cache);
 \draw[arr] (app)--(db);
