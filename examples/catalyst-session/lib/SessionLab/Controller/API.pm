@@ -265,8 +265,9 @@ sub _principal {
         );
     }
     if ( defined( my $key = $c->req->header('X-API-Key') ) ) {
-        my $kid  = token_hash($key);
-        my ( $user, $expires ) = $r->hmget( "apikey:$kid", 'user', 'expires_at' );
+        my $kid = token_hash($key);
+        my ( $user, $expires ) =
+            $r->hmget( "apikey:$kid", 'user', 'expires_at' );
         return unless $user && defined $expires && $expires > time;
         return ( $user, { type => 'api_key', kid => $kid } );
     }
@@ -274,7 +275,7 @@ sub _principal {
 }
 
 sub me : Path('me') : Args(0) {
-    my ( $self, $c )    = @_;
+    my ( $self, $c ) = @_;
     return unless _method( $c, 'GET' );
     my ( $user, $cred ) = _principal($c)
         or return _json( $c, 401, { error => 'unauthenticated' } );
@@ -282,7 +283,7 @@ sub me : Path('me') : Args(0) {
 }
 
 sub logout : Path('logout') : Args(0) {
-    my ( $self, $c )    = @_;
+    my ( $self, $c ) = @_;
     return unless _method( $c, 'POST' );
     my ( $user, $cred ) = _principal($c);
     return _json( $c, 401, { error => 'bearer token required' } )
@@ -316,7 +317,7 @@ LUA
 my ( $QUOTA, $WINDOW ) = ( 10, 60 );
 
 sub limited : Path('limited') : Args(0) {
-    my ( $self, $c )    = @_;
+    my ( $self, $c ) = @_;
     return unless _method( $c, 'GET' );
     my ( $user, $cred ) = _principal($c);
     return _json( $c, 401, { error => 'API key required' } )

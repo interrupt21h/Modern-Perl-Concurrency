@@ -443,6 +443,12 @@
 \PG{+w}{    }\PG{l+s}{\PGZsq{}/api/keys\PGZsq{}}\PG{p}{,}\PG{+w}{   }\PG{l+s}{\PGZsq{}/api/token\PGZsq{}}\PG{p}{,}\PG{+w}{   }\PG{l+s}{\PGZsq{}/api/refresh\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/api/me\PGZsq{}}\PG{p}{,}
 \PG{+w}{    }\PG{l+s}{\PGZsq{}/api/logout\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/api/limited\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/api/signed\PGZsq{}}\PG{p}{,}\PG{+w}{  }\PG{l+s}{\PGZsq{}/pay\PGZsq{}}
 \PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/api/token\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{)}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{405}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}credential issuance rejects GET\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}
+\PG{+w}{    }\PG{p}{(}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/api/me\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{)}\PG{p}{[}\PG{l+m+mi}{0}\PG{p}{]}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{405}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}resource rejects undocumented method\PGZsq{}}
+\PG{p}{)}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{missing}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{grep}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{o}{!}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{doc}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{paths}\PG{p}{\PGZcb{}}\PG{p}{\PGZob{}}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{tested}\PG{p}{;}
 \PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{o}{!}\PG{n+nv}{@}\PG{n+nv}{missing}\PG{p}{,}
 \PG{+w}{    }\PG{l+s}{\PGZsq{}every tested route is documented\PGZsq{}}
@@ -455,6 +461,11 @@
 \PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{tested}\PG{p}{;}
 \PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{o}{!}\PG{n+nv}{@}\PG{n+nv}{unsecured}\PG{p}{,}
 \PG{+w}{    }\PG{l+s}{\PGZsq{}every operation states its security requirement explicitly\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+
+\PG{k}{for}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pattern}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZsq{}apikey:*\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}rtfam:*\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}rt:*\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{persistent}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{grep}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{ttl}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{p}{)}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n}{scan\PGZus{}keys}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pattern}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{o}{!}\PG{n+nv}{@}\PG{n+nv}{persistent}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}no persistent credential keys in \PGZdl{}pattern\PGZdq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{\PGZcb{}}
 
 \PG{n}{clear\PGZus{}namespaces}\PG{p}{(}\PG{p}{)}\PG{p}{;}
 \PG{k}{print}

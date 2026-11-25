@@ -62,8 +62,13 @@
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sid}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{sessionid}\PG{p}{;}
 
 \PG{+w}{    }\PG{c+c1}{\PGZsh{} Index sessions per user so they can all be revoked together.}
-\PG{+w}{    }\PG{n}{\PGZus{}redis}\PG{p}{(}\PG{p}{)}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{sadd}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZdq{}user\PGZhy{}sessions:\PGZdl{}user\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sid}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
-\PG{+w}{    }\PG{n}{\PGZus{}redis}\PG{p}{(}\PG{p}{)}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{expire}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZdq{}user\PGZhy{}sessions:\PGZdl{}user\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{SESSION\PGZus{}TTL}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n+nn}{SessionLab::Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{run\PGZus{}script}\PG{p}{(}
+\PG{+w}{        }\PG{l+s+sx}{q\PGZob{}}
+\PG{l+s+sx}{        redis.call(\PGZsq{}SADD\PGZsq{}, KEYS[1], ARGV[1])}
+\PG{l+s+sx}{        redis.call(\PGZsq{}EXPIRE\PGZsq{}, KEYS[1], ARGV[2])}
+\PG{l+s+sx}{        return 1}
+\PG{l+s+sx}{    }\PG{l+s+sx}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}user\PGZhy{}sessions:\PGZdl{}user\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sid}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{SESSION\PGZus{}TTL}
+\PG{+w}{    }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{n}{\PGZus{}redis}\PG{p}{(}\PG{p}{)}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{del}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZdq{}ratelimit:login:\PGZdq{}}\PG{+w}{ }\PG{o}{.}\PG{+w}{ }\PG{n+nb}{lc}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{user}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{n}{\PGZus{}json}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{200}\PG{p}{,}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{user}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{user}\PG{p}{,}\PG{+w}{ }\PG{n}{rotated}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{before}\PG{+w}{ }\PG{p}{?}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{:}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}
@@ -109,8 +114,13 @@
 \PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{sid}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{sessionid}
 \PG{+w}{        }\PG{l+s+sr}{//}\PG{+w}{ }\PG{k}{do}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{session}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{created}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{time}\PG{p}{;}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{sessionid}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{;}
 \PG{+w}{    }\PG{n+nb}{sleep}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{req}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nn}{params}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{delay}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{l+s+sr}{//}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
-\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{\PGZus{}redis}\PG{p}{(}\PG{p}{)}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{hincrby}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZdq{}cart:\PGZob{}\PGZdl{}sid\PGZcb{}\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{item}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
-\PG{+w}{    }\PG{n}{\PGZus{}redis}\PG{p}{(}\PG{p}{)}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{expire}\PG{p}{(}\PG{+w}{ }\PG{l+s}{\PGZdq{}cart:\PGZob{}\PGZdl{}sid\PGZcb{}\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{SESSION\PGZus{}TTL}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nn}{SessionLab::Redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{run\PGZus{}script}\PG{p}{(}
+\PG{+w}{        }\PG{l+s+sx}{q\PGZob{}}
+\PG{l+s+sx}{        local n = redis.call(\PGZsq{}HINCRBY\PGZsq{}, KEYS[1], ARGV[1], 1)}
+\PG{l+s+sx}{        redis.call(\PGZsq{}EXPIRE\PGZsq{}, KEYS[1], ARGV[2])}
+\PG{l+s+sx}{        return n}
+\PG{l+s+sx}{    }\PG{l+s+sx}{\PGZcb{}}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}cart:\PGZob{}\PGZdl{}sid\PGZcb{}\PGZdq{}}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{item}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{SESSION\PGZus{}TTL}
+\PG{+w}{    }\PG{p}{)}\PG{p}{;}
 \PG{+w}{    }\PG{n}{\PGZus{}json}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{c}\PG{p}{,}\PG{+w}{ }\PG{l+m+mi}{200}\PG{p}{,}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{item}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{n}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 \PG{p}{\PGZcb{}}
 

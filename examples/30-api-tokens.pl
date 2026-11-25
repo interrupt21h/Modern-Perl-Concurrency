@@ -445,8 +445,10 @@ my @tested = (
 );
 check( ( request( $alice, 'GET', '/api/token' ) )[0] == 405,
     'credential issuance rejects GET' );
-check( ( request( undef, 'POST', '/api/me' ) )[0] == 405,
-    'resource rejects undocumented method' );
+check(
+    ( request( undef, 'POST', '/api/me' ) )[0] == 405,
+    'resource rejects undocumented method'
+);
 my @missing = grep { !$doc->{paths}{$_} } @tested;
 check( !@missing,
     'every tested route is documented'

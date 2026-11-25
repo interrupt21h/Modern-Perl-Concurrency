@@ -62,11 +62,13 @@ sub login : Local : Args(0) {
     my $sid = $c->sessionid;
 
     # Index sessions per user so they can all be revoked together.
-    SessionLab::Redis->run_script( q{
+    SessionLab::Redis->run_script(
+        q{
         redis.call('SADD', KEYS[1], ARGV[1])
         redis.call('EXPIRE', KEYS[1], ARGV[2])
         return 1
-    }, 1, "user-sessions:$user", $sid, $SESSION_TTL );
+    }, 1, "user-sessions:$user", $sid, $SESSION_TTL
+    );
     _redis()->del( "ratelimit:login:" . lc $user );
     _json( $c, 200, { user => $user, rotated => ( $before ? 1 : 0 ) } );
 }
@@ -112,11 +114,13 @@ sub cart_atomic : Local : Args(1) {
     my $sid = $c->sessionid
         // do { $c->session->{created} = time; $c->sessionid };
     sleep( $c->req->params->{delay} // 0 );
-    my $n = SessionLab::Redis->run_script( q{
+    my $n = SessionLab::Redis->run_script(
+        q{
         local n = redis.call('HINCRBY', KEYS[1], ARGV[1], 1)
         redis.call('EXPIRE', KEYS[1], ARGV[2])
         return n
-    }, 1, "cart:{$sid}", $item, $SESSION_TTL );
+    }, 1, "cart:{$sid}", $item, $SESSION_TTL
+    );
     _json( $c, 200, { $item => $n } );
 }
 

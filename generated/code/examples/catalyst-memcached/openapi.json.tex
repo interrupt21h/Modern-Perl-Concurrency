@@ -11,6 +11,19 @@
 \PG{+w}{        }\PG{n+nt}{\PGZdq{}scheme\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}bearer\PGZdq{}}\PG{p}{,}
 \PG{+w}{        }\PG{n+nt}{\PGZdq{}bearerFormat\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}opaque\PGZdq{}}
 \PG{+w}{      }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{\PGZcb{},}
+\PG{+w}{    }\PG{n+nt}{\PGZdq{}schemas\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{      }\PG{n+nt}{\PGZdq{}Error\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}object\PGZdq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}required\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[}
+\PG{+w}{          }\PG{l+s+s2}{\PGZdq{}error\PGZdq{}}
+\PG{+w}{        }\PG{p}{],}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}properties\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}error\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}string\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{      }\PG{p}{\PGZcb{}}
 \PG{+w}{    }\PG{p}{\PGZcb{}}
 \PG{+w}{  }\PG{p}{\PGZcb{},}
 \PG{+w}{  }\PG{n+nt}{\PGZdq{}paths\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
@@ -21,6 +34,23 @@
 \PG{+w}{        }\PG{n+nt}{\PGZdq{}responses\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}200\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}405\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Unsupported HTTP method\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}headers\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}Allow\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}string\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{},}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{}}
 \PG{+w}{        }\PG{p}{\PGZcb{}}
 \PG{+w}{      }\PG{p}{\PGZcb{}}
@@ -35,10 +65,53 @@
 \PG{+w}{        }\PG{p}{],}
 \PG{+w}{        }\PG{n+nt}{\PGZdq{}responses\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}200\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}object\PGZdq{}}\PG{p}{,}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}required\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[}
+\PG{+w}{                    }\PG{l+s+s2}{\PGZdq{}principal\PGZdq{}}\PG{p}{,}
+\PG{+w}{                    }\PG{l+s+s2}{\PGZdq{}scope\PGZdq{}}
+\PG{+w}{                  }\PG{p}{],}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}properties\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                    }\PG{n+nt}{\PGZdq{}principal\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                      }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}string\PGZdq{}}
+\PG{+w}{                    }\PG{p}{\PGZcb{},}
+\PG{+w}{                    }\PG{n+nt}{\PGZdq{}scope\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                      }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}string\PGZdq{}}
+\PG{+w}{                    }\PG{p}{\PGZcb{}}
+\PG{+w}{                  }\PG{p}{\PGZcb{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{},}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}401\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid token\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid token\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}405\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Unsupported HTTP method\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}headers\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}Allow\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}string\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{},}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{}}
 \PG{+w}{        }\PG{p}{\PGZcb{}}
 \PG{+w}{      }\PG{p}{\PGZcb{}}
@@ -53,10 +126,49 @@
 \PG{+w}{        }\PG{p}{],}
 \PG{+w}{        }\PG{n+nt}{\PGZdq{}responses\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}200\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}object\PGZdq{}}\PG{p}{,}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}required\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[}
+\PG{+w}{                    }\PG{l+s+s2}{\PGZdq{}revoked\PGZdq{}}
+\PG{+w}{                  }\PG{p}{],}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}properties\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                    }\PG{n+nt}{\PGZdq{}revoked\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                      }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}boolean\PGZdq{}}
+\PG{+w}{                    }\PG{p}{\PGZcb{}}
+\PG{+w}{                  }\PG{p}{\PGZcb{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{},}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}401\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid token\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid token\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}405\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Unsupported HTTP method\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}headers\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}Allow\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}string\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{},}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{}}
 \PG{+w}{        }\PG{p}{\PGZcb{}}
 \PG{+w}{      }\PG{p}{\PGZcb{}}
@@ -71,16 +183,69 @@
 \PG{+w}{        }\PG{p}{],}
 \PG{+w}{        }\PG{n+nt}{\PGZdq{}responses\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}200\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}object\PGZdq{}}\PG{p}{,}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}required\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[}
+\PG{+w}{                    }\PG{l+s+s2}{\PGZdq{}value\PGZdq{}}
+\PG{+w}{                  }\PG{p}{],}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}properties\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                    }\PG{n+nt}{\PGZdq{}value\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                      }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}integer\PGZdq{}}
+\PG{+w}{                    }\PG{p}{\PGZcb{}}
+\PG{+w}{                  }\PG{p}{\PGZcb{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{},}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}401\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid token\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid token\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{},}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}403\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Insufficient scope\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Insufficient scope\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}405\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Unsupported HTTP method\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}headers\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}Allow\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}string\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{},}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{},}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}503\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Cache unavailable\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Cache unavailable\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{}}
 \PG{+w}{        }\PG{p}{\PGZcb{}}
 \PG{+w}{      }\PG{p}{\PGZcb{}}
@@ -95,25 +260,103 @@
 \PG{+w}{        }\PG{p}{],}
 \PG{+w}{        }\PG{n+nt}{\PGZdq{}responses\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}200\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}object\PGZdq{}}\PG{p}{,}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}required\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[}
+\PG{+w}{                    }\PG{l+s+s2}{\PGZdq{}request\PGZus{}key\PGZdq{}}\PG{p}{,}
+\PG{+w}{                    }\PG{l+s+s2}{\PGZdq{}amount\PGZdq{}}
+\PG{+w}{                  }\PG{p}{],}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}properties\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                    }\PG{n+nt}{\PGZdq{}request\PGZus{}key\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                      }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}string\PGZdq{}}
+\PG{+w}{                    }\PG{p}{\PGZcb{},}
+\PG{+w}{                    }\PG{n+nt}{\PGZdq{}amount\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                      }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}integer\PGZdq{}}
+\PG{+w}{                    }\PG{p}{\PGZcb{}}
+\PG{+w}{                  }\PG{p}{\PGZcb{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{},}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}400\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid request\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid request\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{},}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}401\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid token\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid token\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{},}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}403\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Insufficient scope\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Insufficient scope\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}405\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Unsupported HTTP method\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}headers\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}Allow\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}string\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{},}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{},}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}422\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Idempotency conflict\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Idempotency conflict\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{},}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}429\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Rate limited\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Rate limited\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{},}
 \PG{+w}{          }\PG{n+nt}{\PGZdq{}503\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
-\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Cache unavailable\PGZdq{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Cache unavailable\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}application/json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}\PGZdl{}ref\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZsh{}/components/schemas/Error\PGZdq{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
 \PG{+w}{          }\PG{p}{\PGZcb{}}
 \PG{+w}{        }\PG{p}{\PGZcb{},}
 \PG{+w}{        }\PG{n+nt}{\PGZdq{}parameters\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[}
