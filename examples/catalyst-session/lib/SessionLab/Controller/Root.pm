@@ -220,8 +220,7 @@ sub pay : Local : Args(0) {
             $PROVIDER, 2, "charges:$user:$idem", "charges:$user", $fingerprint
         ) };
         if (!$matched) {
-            SessionLab::Redis->run_script($RELEASE_CLAIM, 1, $key, $pending);
-            return _json($c, 422, { error => 'key reused with a different request' });
+            return (422, { error => 'key reused with a different request' });
         }
     # Laboratory fault injection: die abruptly after the side effect and
     # before the response is stored, as an OOM kill or node loss would.
@@ -233,6 +232,11 @@ sub pay : Local : Args(0) {
         # A transport error may have followed a committed provider operation.
         # Preserve the claim until expiration; reconciliation uses the same key.
         return _json( $c, 502, { error => 'payment outcome unknown' } );
+    }
+
+    if ($status == 422) {
+        SessionLab::Redis->run_script($RELEASE_CLAIM, 1, $key, $pending);
+        return _json($c, $status, $body);
     }
 
     # Completed: keep the stored response for 24 hours of safe retries.
