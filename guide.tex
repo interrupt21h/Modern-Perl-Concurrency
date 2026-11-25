@@ -929,6 +929,58 @@ The driver logs in through the browser flow, creates an API key and token pairs,
 \input{chapters/capstone-listings.tex}
 \input{chapters/example-catalog.tex}
 \chapter{Glossary}\label{ch:glossary}
+\section*{Abbreviations and initialisms}
+\addcontentsline{toc}{section}{Abbreviations and initialisms}
+\begin{longtable}{L{.20\linewidth}L{.72\linewidth}}
+\toprule Term & Expansion and meaning\\\midrule\endhead
+ACL & Access control list: permissions assigned to a principal.\\
+ACID & Atomicity, consistency, isolation and durability: transaction properties.\\
+API & Application programming interface: a contract for interacting with software.\\
+CAS & Compare-and-swap (compare-and-set in some interfaces): conditional replacement using an expected value or version.\\
+CI / CD & Continuous integration / continuous delivery or deployment.\\
+CPU & Central processing unit.\\
+CSRF & Cross-site request forgery.\\
+CSPRNG & Cryptographically secure pseudorandom number generator.\\
+DBI / DBD & Database Interface / Database Driver: Perl database interface and driver namespaces.\\
+DDL / DML & Data definition language / data manipulation language.\\
+FIFO / LIFO & First in, first out / last in, first out.\\
+FTS & Full-text search.\\
+GCC & GNU Compiler Collection; GNU is a recursive acronym for GNU's Not Unix.\\
+HMAC & Hash-based message authentication code.\\
+HTTP / HTTPS & Hypertext Transfer Protocol / HTTP over TLS.\\
+ID & Identifier.\\
+I/O & Input/output.\\
+IPC & Interprocess communication.\\
+JSON & JavaScript Object Notation.\\
+JWT & JSON Web Token.\\
+MCE & Many-Core Engine, a Perl parallel processing framework.\\
+MVCC & Multi-version concurrency control.\\
+OAuth & Open Authorization, commonly used name for the authorization framework.\\
+OIDC & OpenID Connect, an identity layer over OAuth 2.0.\\
+OS & Operating system.\\
+PDF & Portable Document Format.\\
+PEL & Pending entries list, in Redis Streams.\\
+PID & Process identifier.\\
+POSIX & Portable Operating System Interface.\\
+PSGI & Perl Web Server Gateway Interface.\\
+RDB / AOF & Redis database snapshot / append-only file.\\
+REST & Representational state transfer.\\
+RPC & Remote procedure call.\\
+SHA-256 & Secure Hash Algorithm with a 256-bit digest.\\
+SQL & Structured Query Language.\\
+SSE & Server-sent events.\\
+TCP / UDP & Transmission Control Protocol / User Datagram Protocol.\\
+TLS & Transport Layer Security.\\
+TTL & Time to live.\\
+URI / URL & Uniform Resource Identifier / Uniform Resource Locator.\\
+UUID & Universally unique identifier.\\
+WAL & Write-ahead log.\\
+YAML & YAML Ain't Markup Language (recursive name).\\
+ZAB & ZooKeeper Atomic Broadcast.\\
+\bottomrule
+\end{longtable}
+\section*{Technical terms}
+
 \begin{description}[style=unboxed,leftmargin=0pt,labelsep=.5em,itemsep=3pt,parsep=0pt,font=\sffamily\bfseries\color{navy}]\small
 \item[Advisory lock] A lock that only works if every participant checks it; nothing stops code that ignores it. Perl's \code{lock}, \code{flock} and MySQL \code{GET_LOCK} are advisory.
 \item[At-least-once delivery] Under the transport's durability, retention and acknowledgement assumptions, an unacknowledged message is eligible for redelivery. Duplicates are possible; consumers must make effects idempotent. Data loss outside those assumptions is not excluded.
@@ -936,7 +988,7 @@ The driver logs in through the browser flow, creates an API key and token pairs,
 \item[Attempt ID] A generation associated with a particular job claim; a late worker cannot complete a replacement worker's claim.
 \item[Backoff and jitter] Waiting longer after each failed attempt (backoff), with a random component (jitter), so that competing retries do not collide again in lockstep.
 \item[Barrier] A meeting point where a group of threads waits until all members have arrived.
-\item[CAS (compare-and-swap)] Update a value only if it still equals what you last read; otherwise do nothing and report a conflict.
+\item[CAS (compare-and-swap)] Update a value only if its expected value or version still matches; otherwise do nothing and report a conflict. Memcached compares a server-issued version token.
 \item[Checkpoint] Durable progress recorded with the effects it describes, allowing a restarted pipeline to resume without losing committed work.
 \item[Consensus] A protocol (Raft, ZAB) that lets a group of servers agree on one ordered history even when some fail; etcd and ZooKeeper are built on it.
 \item[Consumer group] A Redis Streams feature that delivers each entry to one member of a group and tracks unacknowledged entries in a pending entries list (PEL).
@@ -947,7 +999,7 @@ The driver logs in through the browser flow, creates an API key and token pairs,
 \item[Fencing token] A number that increases with every new lock holder and is checked by the protected resource, which rejects older numbers.
 \item[Gap lock, next-key lock] InnoDB locks on the space between index records (gap) or on a record plus the gap before it (next-key); they block inserts into ranges.
 \item[Grace window] A short period after a refresh token is rotated during which presenting it again returns the same successor instead of revoking the family; it absorbs concurrent and retried refreshes.
-\item[HMAC] A keyed hash (for example HMAC-SHA256). Only holders of the key can compute it, so it proves that a message came from them and was not altered.
+\item[HMAC] Hash-based message authentication code: a keyed construction (for example HMAC-SHA256). Only holders of the key can compute it, so it proves that a message came from them and was not altered.
 \item[Idempotent] Safe to repeat: doing it twice has the same effect as doing it once.
 \item[Isolation level] How much of other transactions' work a transaction can see (READ COMMITTED, REPEATABLE READ, and so on), and therefore which locks it takes.
 \item[JWT] JSON Web Token: a signed set of claims (user, audience, expiry) that a server can verify without a lookup. Used here as a short-lived access token.
