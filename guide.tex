@@ -335,6 +335,8 @@ Release artifacts include the source snapshot, verification manifest, benchmark 
 \partstart{I / Foundations}{Foundations and mental models}{Begin with the invariant and owner of state before selecting an implementation.}
 \chapter{Choosing a concurrency architecture}
 \chapterbrief{Select an execution model and identify the owner of shared state.}
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} CPU --- central processing unit; DBI --- Database Interface; IPC --- interprocess communication; MCE --- Many-Core Engine; DBD --- Database Driver.\par\smallskip
+
 \index{Execution models}
 \index{Ownership}
 \index{Invariants}
@@ -464,6 +466,8 @@ Use a fixed pool, join each worker and inspect failures. A thread exception does
 
 \chapter{Semaphores and condition variables}
 \chapterbrief{Bound concurrency and wait on predicates.}
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} API --- application programming interface; CPU --- central processing unit; IPC --- interprocess communication.\par\smallskip
+
 \index{Semaphore}
 \index{Condition variable}
 \index{API!Thread::Semaphore}
@@ -502,6 +506,8 @@ A generation counter prevents a fast thread entering the next phase from confusi
 
 \chapter{Queues, worker pools and event loops}
 \chapterbrief{Transfer ownership and bound asynchronous work.}
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} API --- application programming interface; DBI --- Database Interface; MCE --- Many-Core Engine.\par\smallskip
+
 \index{Queues}
 \index{Worker pools}
 \index{Event loop}
@@ -583,6 +589,8 @@ skew; monotonic clock readings cannot be compared between hosts.
 
 \chapter{Reader/writer locking and lock design}
 \chapterbrief{Choose granularity, acquisition order and cleanup.}
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} FIFO --- first in, first out; PID --- process identifier.\par\smallskip
+
 \index{Reader/writer locks}
 \index{Lock ordering}
 \index{Lock striping}
@@ -633,6 +641,8 @@ Where \code{defer} is not acceptable, because experimental features are disallow
 
 \chapter{Cross-process synchronization on Linux}
 \chapterbrief{Coordinate processes and handle descriptor lifetimes.}
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} API --- application programming interface; DBI --- Database Interface; IPC --- interprocess communication; MCE --- Many-Core Engine; PID --- process identifier; POSIX --- Portable Operating System Interface.\par\smallskip
+
 \index{File locking}
 \index{Fork}
 \index{System V IPC}
@@ -695,6 +705,8 @@ Starman, Gazelle, Hypnotoad and uWSGI serve requests from a pool of forked worke
 \partstart{III / Database concurrency}{Database concurrency and application transactions}{Persistent state demands storage-engine guarantees, business transaction boundaries and durable identities.}
 \chapter{MySQL locking and transaction design}
 \chapterbrief{Understand storage-engine locks, isolation, guarded updates and DBI/DBIx::Class ownership.}
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} API --- application programming interface; DBI --- Database Interface; DDL --- data definition language; MVCC --- multi-version concurrency control; SQL --- Structured Query Language; ID --- identifier; DBD --- Database Driver.\par\smallskip
+
 \index{MySQL}
 \index{InnoDB}
 \index{Isolation levels}
@@ -807,6 +819,8 @@ Validate index selection with \code{EXPLAIN} before deploying locking queries. E
 \input{distributed-cache.tex}
 \chapter{Failure boundaries and authoritative coordination}\label{ch:failure-boundaries}
 \chapterbrief{Separate safety from progress; choose a coordinator with the required failure contract.}
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} HTTP --- Hypertext Transfer Protocol; TTL --- time to live; ID --- identifier.\par\smallskip
+
 \index{Consensus}
 \index{Leader election}
 \index{Fencing}
@@ -878,6 +892,8 @@ Duplicate effects & Constraints and transactions & Resource guard required & Not
 \clearpage\appendix
 \renewcommand{\currentpart}{Technical appendices}
 \chapter{Native synchronization implementation}\label{app:native}
+
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} CPU --- central processing unit.\par\smallskip
 \section{Futexes, atomics and memory ordering}
 \strategy{futex}{Atomic operations and futexes}{Underneath every lock is a single memory word that the CPU can test and change in one indivisible step. If the word says ``free'', a thread flips it to ``taken'' without asking the operating system. Only when it must wait does it ask the kernel to put it to sleep.}
 {you need to understand lock performance, read \code{strace} output, or write native (XS or C) code.}
@@ -898,8 +914,12 @@ Do not use raw futex calls against Perl scalars: Perl SV storage is not a stable
 % ================================================================ chapter 3
 
 \chapter{API security and concurrent state transitions}\label{app:api}
+
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} API --- application programming interface.\par\smallskip
 \input{api-credentials.tex}
 \chapter{Complete Catalyst application laboratory}\label{app:catalyst}
+
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} API --- application programming interface; PSGI --- Perl Web Server Gateway Interface.\par\smallskip
 The following listings retain the full implementation accompanying Chapter~\ref{ch:catalyst}.
 \section{Session storage and application coordination}
 \CodeFile{perl}{examples/catalyst-session/lib/SessionLab/Plugin/Session/Store/RedisSafe.pm}{\nolinkurl{catalyst-session/lib/SessionLab/Plugin/Session/Store/RedisSafe.pm}}
