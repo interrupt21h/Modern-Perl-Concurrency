@@ -10,7 +10,7 @@
 
 A Catalyst application in production is never one interpreter. Starman, Gazelle or uWSGI fork several workers per pod, and Kubernetes runs several pods (Figure~\ref{fig:prefork}). Any request can land on any worker, so sessions, rate limits, duplicate-submission guards and per-user locks must live outside the interpreter. Redis or Valkey is the usual home for that state. This chapter explains how \code{Catalyst::Plugin::Session} uses its store, why the commonly packaged Redis stores need hardening, and how to handle the concurrency problems that sessions create. It also covers idempotency keys, login rate limits, session revocation and, for API clients, hashed API keys, JWT access tokens, refresh-token rotation and signed requests described with OpenAPI~3.2.
 
-Everything here is exercised by a complete application in \code{examples/catalyst-session/} and by two drivers, \code{examples/28-catalyst-sessions.pl} (29 checks) and \code{examples/30-api-tokens.pl} (33 checks). Each starts the application under Starman with four workers and checks its properties against live Redis (Section~\ref{sec:catalyst-lab}).
+Everything here is exercised by a complete application in \code{examples/catalyst-session/} and by two drivers, \code{examples/28-catalyst-sessions.pl} (including invariant and expiration checks) and \code{examples/30-api-tokens.pl} (33 checks). Each starts the application under Starman with four workers and checks its properties against live Redis (Section~\ref{sec:catalyst-lab}).
 
 \section{How Catalyst::Plugin::Session uses its store}
 The plugin keeps three records per session, each keyed by the session ID: \code{session:SID} holds the data hash, \code{expires:SID} the expiry time in epoch seconds, and \code{flash:SID} the flash data. The session state plugin (normally \code{Session::State::Cookie}) only carries the ID; everything else is in the store.
@@ -86,14 +86,14 @@ The same file sets \code{STDERR->autoflush(1)} after \code{setup}. Catalyst's de
 \strategy{idempotency}{Idempotency key}{A cloakroom ticket for a request. Hand in the same ticket twice and you get the same coat back, not a second coat. While the attendant is still fetching your coat, a second ticket holder is told to wait.}
 {a client might send an unsafe request more than once: payments, orders, filings, account changes.}
 {the operation is naturally idempotent (setting a value, deleting by ID) or read-only.}
-{\code{SET key pending NX EX 120}, then store the response with \code{SET XX EX 86400}; scope keys per user and fingerprint the body; example 28.}
+{\code{SET key pending NX EX 120}, then store the response with an atomic owner comparison and expiry; scope keys per user and fingerprint the body; example 28.}
 A payment, order or filing must not execute twice because a user double-clicked or a client retried after a timeout. The client sends an \code{Idempotency-Key} header. The server claims that key atomically with \code{SET NX}, performs the side effect once, and stores the response so that duplicates receive the same answer (Figure~\ref{fig:idemstates}).
 \fig{idemstates}{Idempotency-key lifecycle. Scope keys per user, and fingerprint the request so a reused key with a different body is rejected.}
 The details matter:
 \begin{itemize}
 \item \textbf{Two TTLs.} A pending claim expires after two minutes; a completed one is kept for 24 hours. With a single 24-hour TTL, a worker killed between the side effect and storing the response would block every retry for a day.
-\item \textbf{Unknown outcomes stay blocked.} The laboratory kills a worker with \code{SIGKILL} right after the charge. The client sees an error, the charge has happened, and an immediate retry receives 409 rather than a second charge. Pass the same key to the payment provider so that its own deduplication covers the window after the claim expires.
-\item \textbf{Failure before the effect} deletes the claim, so the client can retry at once.
+\item \textbf{Unknown outcomes stay blocked.} The laboratory kills a worker with \code{SIGKILL} right after the charge. The client sees an error, the charge has happened, and an immediate retry receives 409 rather than a second charge. Pass the same key to the payment provider so that its own deduplication covers the window after the claim expires. The laboratory models that provider with a separate, non-expiring effect ledger and tests the retry after deleting the admission claim. This models the identity contract, not a durable external payment system.
+\item \textbf{Owner-checked completion.} A worker may publish a response only if its exact pending claim is still present. An ambiguous error preserves the claim until expiry; release early only when the absence of a side effect is known and ownership still matches.
 \end{itemize}
 \tested{Six simultaneous submissions produced exactly one 201 and five 409s. A later retry replayed the stored 201 with \code{Idempotent-Replayed: true}, and the customer was charged once. A reused key with a different amount received 422. After the injected crash, the retry received 409, no second charge occurred, and the pending key expired 120 seconds later.}
 

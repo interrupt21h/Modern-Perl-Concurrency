@@ -242,6 +242,19 @@ my $stuck_ttl = $redis->ttl("idem:alice:$crash_key");
 check( $stuck_ttl > 0 && $stuck_ttl <= 120,
     "abandoned pending key expires in $stuck_ttl s, not 24 h" );
 
+# Force expiry of the admission claim without waiting two minutes.
+# The provider's separate ledger must still reject a different fingerprint
+# and replay the original charge without incrementing its effect count.
+$redis->del("idem:alice:$crash_key");
+($rs) = request($alice, 'POST', '/pay',
+    form => { amount => 99 }, headers => { 'Idempotency-Key' => $crash_key });
+check($rs == 422, 'provider rejects changed request after claim expiry');
+($rs, $rb) = request($alice, 'POST', '/pay',
+    form => { amount => 40 }, headers => { 'Idempotency-Key' => $crash_key });
+check($rs == 201 && $rb->{charge_no} == 2, 'provider replays the original charge after expiry');
+(undef, $body) = request($alice, 'GET', '/charges');
+check($body->{charges} == 2, 'no duplicate effect after admission expiry');
+
 # ---------------------------------------------------------------- 5. rate limit
 print "Login rate limiting\n";
 my $bob      = client();

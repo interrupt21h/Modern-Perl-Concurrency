@@ -49,6 +49,8 @@ sub login : Local : Args(0) {
         $c->res->header( 'Retry-After' => 60 );
         return _json( $c, 429, { error => 'too many attempts' } );
     }
+    # Lab-only fixed credentials: production must verify a password hash
+    # using a vetted password-verification library, not compare plaintext.
     return _json( $c, 401, { error => 'invalid credentials' } )
         unless exists $USERS{$user} && $USERS{$user} eq $pass;
 
@@ -85,9 +87,10 @@ sub logout_everywhere : Local : Args(0) {
     my $user = $c->sessionid ? $c->session->{user} : undef;
     return _json( $c, 401, { error => 'not logged in' } ) unless $user;
     my @sids = _redis()->smembers("user-sessions:$user");
+    my $prefix = $c->_session_plugin_config->{redis_prefix} // 'sess:';
     _redis()->del(
         map {
-            ( "sess:session:$_", "sess:expires:$_", "sess:flash:$_" )
+            ( "${prefix}session:$_", "${prefix}expires:$_", "${prefix}flash:$_" )
         } @sids
     );
     _redis()->del("user-sessions:$user");
@@ -153,6 +156,32 @@ sub cart : Local : Args(0) {
 # ------------------------------------------------------------------ payments
 # Idempotency keys: a retried or double-submitted request with the same key
 # performs the side effect once and replays the stored response.
+# A simulated provider ledger, separate from the expiring admission claim.
+# Single Redis instance, no eviction; intentionally retained until test cleanup.
+# Production must use the actual provider's durable idempotency contract.
+my $PROVIDER = <<'LUA';
+local prior = redis.call('HGET', KEYS[1], 'fp')
+if prior then
+    if prior ~= ARGV[1] then return {0, 0} end
+    return {1, tonumber(redis.call('HGET', KEYS[1], 'number'))}
+end
+local n = redis.call('INCR', KEYS[2])
+redis.call('HSET', KEYS[1], 'fp', ARGV[1], 'number', n)
+return {1, n}
+LUA
+
+my $COMPLETE = <<'LUA';
+if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 0 end
+redis.call('SET', KEYS[1], ARGV[2], 'EX', 86400)
+return 1
+LUA
+my $RELEASE_CLAIM = <<'LUA';
+if redis.call('GET', KEYS[1]) == ARGV[1] then
+    return redis.call('DEL', KEYS[1])
+end
+return 0
+LUA
+
 sub pay : Local : Args(0) {
     my ( $self, $c ) = @_;
     my $user = $c->sessionid ? $c->session->{user} : undef;
@@ -167,11 +196,10 @@ sub pay : Local : Args(0) {
 
     # A short TTL while pending: if this worker dies mid-request, the key
     # frees itself in two minutes instead of blocking retries for a day.
-    my $claimed =
-        _redis()
-        ->set( $key,
-        $JSON->encode( { state => 'pending', fp => $fingerprint } ),
-        'NX', 'EX', 120 );
+    my $pending = $JSON->encode({
+        state => 'pending', fp => $fingerprint, owner => $c->random_hex(16)
+    });
+    my $claimed = _redis()->set($key, $pending, 'NX', 'EX', 120);
     unless ($claimed) {
         my $prior =
             $JSON->decode( _redis()->get($key) // '{"state":"pending"}' );
@@ -187,9 +215,14 @@ sub pay : Local : Args(0) {
     }
 
     my ( $status, $body ) = eval {
-        sleep(0.2);    # call the payment provider,
-        my $n =
-            _redis()->incr("charges:$user");    # passing $idem through to it
+        sleep(0.2);
+        my ($matched, $n) = @{ SessionLab::Redis->run_script(
+            $PROVIDER, 2, "charges:$user:$idem", "charges:$user", $fingerprint
+        ) };
+        if (!$matched) {
+            SessionLab::Redis->run_script($RELEASE_CLAIM, 1, $key, $pending);
+            return _json($c, 422, { error => 'key reused with a different request' });
+        }
     # Laboratory fault injection: die abruptly after the side effect and
     # before the response is stored, as an OOM kill or node loss would.
         kill 'KILL', $$
@@ -197,13 +230,14 @@ sub pay : Local : Args(0) {
         ( 201, { charged => $amount, charge_no => $n } );
     };
     unless ($status) {
-        _redis()->del($key);    # failed before any effect: allow a clean retry
-        return _json( $c, 502, { error => 'payment failed' } );
+        # A transport error may have followed a committed provider operation.
+        # Preserve the claim until expiration; reconciliation uses the same key.
+        return _json( $c, 502, { error => 'payment outcome unknown' } );
     }
 
     # Completed: keep the stored response for 24 hours of safe retries.
-    _redis()->set(
-        $key,
+    my $saved = SessionLab::Redis->run_script(
+        $COMPLETE, 1, $key, $pending,
         $JSON->encode(
             {
                 state  => 'done',
@@ -211,9 +245,9 @@ sub pay : Local : Args(0) {
                 status => $status,
                 body   => $body
             }
-        ),
-        'XX', 'EX', 86_400
+        )
     );
+    $c->log->warn('payment response not cached: claim expired or ownership changed') unless $saved;
     _json( $c, $status, $body );
 }
 

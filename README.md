@@ -225,6 +225,8 @@ authority for correctness-critical operations.
 - `distributed-cache.tex`, `catalyst-sessions.tex`, `api-credentials.tex`:
   chapter/section source files.
 - `styles/code-layout.tex`: shared, page-breakable code box style.
+- `styles/quick-reference-diagrams.tex`: canonical 24 diagrams reused by the handbook and cheat sheet.
+- [Review status](REVIEW-STATUS.md): source audit and remaining work.
 - `examples/`: original executable programs, schema, protocol transcript and
   Catalyst lab application; edit these, not the highlighted output.
 - `snippets/`: original inline excerpts extracted verbatim into separate files.

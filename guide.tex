@@ -210,7 +210,7 @@ Contact: \href{mailto:scott@21h.io}{scott@21h.io}.\par
 Author-owned prose and illustrations: \href{https://creativecommons.org/licenses/by/4.0/}{CC BY 4.0}. Author-owned example code and build tooling: MIT. See the source package's license notices; third-party material retains its own terms.\par\bigskip
 \color{muted}
 Documentation baseline: Perl 5.44; MySQL 8.4 LTS and 9.7 LTS; Redis 7.0--8.4; Valkey 8.1--9.0; Catalyst 5.90; DBIx::Class 0.0828.\\
-Verified environment: see Section~\ref{sec:current-verification}. Documentation coverage is not a claim that every version or feature was executed. \\
+Verified on: Ubuntu 24.04 CI runner with the installed Perl and disposable service versions recorded in Section~\ref{sec:current-verification}. Documentation coverage is not a claim that every version or feature was executed. \\
 Current release verification: Appendix~\ref{sec:current-verification}; historical results are retained separately.\par\medskip
 The original laboratory verification record is retained in Appendix~\ref{ch:refs}. The application-architecture laboratories are separately identified in the verification chapter. Current release logs distinguish executed tests from optional skips; full publication requires the configured laboratories.
 Examples that create, flush or delete data must be run only against disposable, isolated services.\par}
@@ -644,8 +644,10 @@ A reader/writer lock can improve throughput when read sections are substantial a
 {acquire \code{lock}s in a documented global order; hold a variable number by recursion; examples 23 and 11 (MySQL rows in primary-key order).}
 Coarse locks are easy to audit but serialize unrelated operations. Fine-grained locks can improve parallelism while introducing ordering constraints and memory overhead. Lock striping hashes keys onto a fixed set of mutexes; unrelated keys can collide, but lock storage stays bounded. Multi-key operations must acquire unique stripes in sorted order and release in reverse order. Avoid calling user callbacks under a lock unless that is an intentional, documented contract.
 
+In Perl ithreads, access to shared data also takes the internal synchronization of \code{threads::shared}. Independent application locks do not remove that shared-data bottleneck. Example 39 measures this limitation: striping is useful for bounded lock identities and global acquisition order, not a presumed throughput optimization for ithreads. For parallel counter updates, consider isolated processes or a native implementation, and measure under the intended workload.
+
 Example 23 applies this to 64 accounts guarded by 8 stripe locks. A transfer locks its two stripes in ascending order; an auditor locks \emph{all} stripes, also in ascending order, to read a consistent total while transfers continue. Because \code{lock} releases at scope exit, a variable number of locks is held by recursion, one stripe per stack frame.
-\fig{striping}{Lock striping: a transfer locks only its two stripes, in ascending order, so unrelated transfers run in parallel.}
+\fig{striping}{Lock striping: a transfer locks only its two stripes, in ascending order, so unrelated transfers do not need the same application lock; this does not guarantee parallel shared-memory access in ithreads.}
 \CodeFile{perl}{examples/23-lock-striping.pl}{\nolinkurl{23-lock-striping.pl}}
 \tested{Four threads completed 19{,}589 transfers while the auditor took 17{,}771 consistent totals; money was neither created nor destroyed and no balance went negative.}
 \fig{deadlock}{A wait-for cycle and how a global acquisition order removes it.}
@@ -754,7 +756,7 @@ Starman, Gazelle, Hypnotoad and uWSGI serve requests from a pool of forked worke
 
 \section{Lock taxonomy in InnoDB}
 MySQL 8.4 LTS and 9.7 LTS are the documentation baselines; 9.7 is also the last release line with sequential version numbers, after which MySQL adopts calendar versions such as 26.7 [32]. InnoDB uses multi-version concurrency control (MVCC) for ordinary consistent reads and locks for conflicting writes and locking reads. A consistent read can see an older committed snapshot without blocking a writer; it is not a reservation. InnoDB locks index records, not application objects: the query plan and indexes determine which records or ranges are locked [11].
-\fig{nextkey}{Locks observed in \texttt{performance\_schema.data\_locks} for one range query on a secondary index.}
+\fig{nextkey}{Locks observed on MySQL 8.0.46 in \texttt{performance\_schema.data\_locks} for one range query on a secondary index.}
 The figure shows what MySQL 8.0.46 reported for a four-row table with a secondary index on \code{v}. Under REPEATABLE READ the range 15--25 took next-key locks covering $(10,20]$ and $(20,30]$, plus record locks on the matching primary-key rows. That blocks inserts anywhere from 11 to 30 and locks the row with $v=30$, which lies outside the range. An equality search for the absent value 25 took a gap lock before 30. Under READ COMMITTED the same query locked only the record $v=20$.
 
 The plan matters as much as the isolation level. A \code{FOR UPDATE} range on the \emph{primary key} of the same table, \code{WHERE id BETWEEN 2 AND 3}, was executed as a full scan of the covering secondary index. It locked every index record and the supremum pseudo-record, blocking all inserts into the table. Check \code{EXPLAIN} and \code{data_locks} for every locking query before it reaches production.
