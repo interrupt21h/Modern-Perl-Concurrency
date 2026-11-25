@@ -216,7 +216,7 @@ paths:
     post:
       operationId: signedRequest
       tags: [resources]
-      summary: Accept a signed request once (nonce replay protection).
+      summary: Accept a signed request once.
       security: [ { signedRequest: [] } ]
       parameters:
         - name: X-Key-Id
@@ -239,77 +239,17 @@ paths:
         '405': { $ref: '#/components/responses/MethodNotAllowed' }
         '200': { description: Signature valid and nonce unused. }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '409':
-          description: Nonce already used (replay).
+        '409': { description: Nonce already used (replay). }
 
   /pay:
     post:
       operationId: pay
       tags: [resources]
-      summary: Idempotent payment (Chapter 10 laboratory).
+      summary: Idempotent payment laboratory.
       security: [ { sessionCookie: [] } ]
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       responses:
-        '405': { $ref: '#/components/responses/MethodNotAllowed' }
-        '201': { description: Charged (or replayed with Idempotent-Replayed true). }
-        '409': { description: Same key still in progress. }
-        '422': { description: 'Same key, different request.' }
- }
-        - name: X-Timestamp
-          in: header
-          required: true
-          schema: { type: integer }
-        - name: X-Nonce
-          in: header
-          required: true
-          schema: { type: string, pattern: '^[0-9a-f]{32}
-      requestBody:
-        content:
-          application/json:
-            schema: { type: object }
-      responses:
-        '405': { $ref: '#/components/responses/MethodNotAllowed' }
-        '200': { description: Signature valid and nonce unused. }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '409':
-          description: Nonce already used (replay).
-
-  /pay:
-    post:
-      operationId: pay
-      tags: [resources]
-      summary: Idempotent payment (Chapter 10 laboratory).
-      security: [ { sessionCookie: [] } ]
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-      responses:
-        '405': { $ref: '#/components/responses/MethodNotAllowed' }
-        '201': { description: Charged (or replayed with Idempotent-Replayed true). }
-        '409': { description: Same key still in progress. }
-        '422': { description: 'Same key, different request.' }
- }
-      requestBody:
-        content:
-          application/json:
-            schema: { type: object }
-      responses:
-        '405': { $ref: '#/components/responses/MethodNotAllowed' }
-        '200': { description: Signature valid and nonce unused. }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '409':
-          description: Nonce already used (replay).
-
-  /pay:
-    post:
-      operationId: pay
-      tags: [resources]
-      summary: Idempotent payment (Chapter 10 laboratory).
-      security: [ { sessionCookie: [] } ]
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-      responses:
-        '405': { $ref: '#/components/responses/MethodNotAllowed' }
-        '201': { description: Charged (or replayed with Idempotent-Replayed true). }
+        '201': { description: Charged or replayed. }
         '409': { description: Same key still in progress. }
         '422': { description: 'Same key, different request.' }
