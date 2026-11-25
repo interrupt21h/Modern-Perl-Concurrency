@@ -57,7 +57,7 @@ if not args.suite or not os.environ.get("GITHUB_RUN_ID"):
     raise SystemExit("Release mode requires a completed suite and GitHub run identity")
 summary = re.search(r"^(\d+) passed, (\d+) skipped$", args.suite.read_text(), re.M)
 if not summary or tuple(map(int, summary.groups())) != (38, 0):
-    raise SystemExit("Expected full 38-laboratory suite with zero skips")
+    raise SystemExit("Expected full 39-laboratory suite with zero skips")
 
 def server_version(port):
     result = command("redis-cli", "-p", str(port), "INFO", "server")
@@ -73,7 +73,7 @@ info.update({"ci_run": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["G
 (OUT / "release-verification.json").write_text(json.dumps(info, indent=2) + "\n")
 url = f'https://github.com/{os.environ["GITHUB_REPOSITORY"]}/actions/runs/{info["ci_run"]}'
 lines = [r"\textbf{Current run:} " + tex(info["generated_utc"]) + r". \href{" + url + "}{GitHub Actions run " + info["ci_run"] + "}.", "Trigger revision: " + r"\nolinkurl{" + info["trigger_sha"] + "}. The final release commit and PDF checksums are recorded with the downloadable assets.", r"\begin{longtable}{L{.30\linewidth}L{.62\linewidth}}\toprule Component & Recorded value \\ \midrule\endhead"]
-for k, v in [("Primary suite", "38 passed; 0 skipped"), ("Additional checks", "; ".join(info["additional_checks_completed"])), ("Operating system", os_label), ("Perl", perl + "; ithreads " + threads), *info["services"].items(), *info["modules"].items()]:
+for k, v in [("Primary suite", "39 passed; 0 skipped"), ("Additional checks", "; ".join(info["additional_checks_completed"])), ("Operating system", os_label), ("Perl", perl + "; ithreads " + threads), *info["services"].items(), *info["modules"].items()]:
     lines.append(tex(k) + " & " + tex(v) + r"\\")
 lines.extend([r"\bottomrule\end{longtable}", "The manifest records the test phase before compilation. The release is published only after subsequent PDF preflight and packaging succeed. It does not establish compatibility with untested versions."])
 (OUT / "release-verification.tex").write_text("\n".join(lines) + "\n")
