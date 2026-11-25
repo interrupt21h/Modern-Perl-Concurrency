@@ -1,6 +1,8 @@
 % ================================================================ chapter 9
 \chapter{Redis and Valkey: leases, semaphores and streams}\label{ch:redis}
 \chapterbrief{Coordinate distributed workers while respecting failure, durability and ownership boundaries.}
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} ACL --- access control list; API --- application programming interface; PEL --- pending entries list; SQL --- Structured Query Language; TLS --- Transport Layer Security; TTL --- time to live; AOF --- append-only file; ID --- identifier.\par\smallskip
+
 \index{Redis}\index{Valkey}\index{Fencing}\index{Lease}\index{API!SET NX PX}\index{API!WATCH}\index{API!EVAL}\index{API!XAUTOCLAIM}
 \section{Scope and correctness contract}
 Redis serializes commands, and scripts, against a single authoritative primary. A key with a finite lifetime is a \emph{lease}, not a kernel mutex. Independent processes, interpreter threads and hosts can compete for the same key, provided they agree on endpoint, database, key namespace and resource identity. A disconnected or paused client can keep executing after its ownership has expired, and asynchronous replication can lose an acknowledged acquisition during failover. Redis coordination is therefore excellent for efficiency: suppressing duplicate work, coalescing cache refreshes, bounding load on a downstream service and distributing jobs. Persistent business invariants belong in database transactions, or behind a fencing check enforced by the protected resource (Section~\ref{sec:fencing}).
@@ -149,6 +151,8 @@ Track acquisition wait, contention, lost and failed renewals, release failures, 
 % ================================================================ chapter 10
 \chapter{Memcached locking and cache coordination}
 \chapterbrief{Use cache coordination for efficiency without confusing it with durable authority.}
+\par\smallskip\noindent\textbf{Abbreviations used in this chapter:} CAS --- compare-and-swap; TLS --- Transport Layer Security; TTL --- time to live; UDP --- User Datagram Protocol.\par\smallskip
+
 \index{Memcached}\index{Cache stampede}\index{API!CAS}
 \section{What Memcached can and cannot guarantee}
 Memcached is a volatile cache with atomic per-item operations, not a durable coordination authority. \code{add} stores a value only when the key is absent; \code{cas} updates an item only if its version is unchanged. These operations can suppress a cache stampede across threads, processes and hosts. Eviction, restart, flush, expiry or a change in client routing can erase a claim while its holder is still working. Never use Memcached as the sole mechanism for financial correctness, unique job execution, inventory allocation or irreversible effects [22,23].
