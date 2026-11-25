@@ -96,6 +96,14 @@ fi
 if [ -n "${MEMCACHED_SERVER:-}" ]; then run 14-memcached-lease.pl
 else skipped 14-memcached-lease.pl 'MEMCACHED_SERVER not set'; fi
 
+if [ -n "${MEMCACHED_SERVER:-}" ] && [ -n "${DB_DSN:-}" ] \
+   && command -v starman >/dev/null 2>&1 \
+   && perl -MCatalyst -MCache::Memcached::Fast -MDBI -e1 2>/dev/null; then
+    run 40-catalyst-memcached.pl
+else
+    skipped 40-catalyst-memcached.pl 'needs Memcached, MySQL, Catalyst and Starman'
+fi
+
 # Architecture laboratories use isolated, synthetic data.
 if perl -MMoose -e1 2>/dev/null; then run 32-worker-lifecycle.pl
 else skipped 32-worker-lifecycle.pl 'Moose not installed'; fi
