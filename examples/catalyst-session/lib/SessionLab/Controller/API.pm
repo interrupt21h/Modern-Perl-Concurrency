@@ -73,14 +73,30 @@ sub _session_user {
 # ------------------------------------------------------------------ API keys
 # The key is shown once; Redis stores only its SHA-256. The HMAC signing
 # secret is derived from the key hash, so it is never stored either.
+my $ISSUE_KEY = <<'LUA';
+redis.call('HSET', KEYS[1], 'user', ARGV[1], 'created', ARGV[2],
+    'expires_at', ARGV[3])
+redis.call('EXPIRE', KEYS[1], ARGV[4])
+return 1
+LUA
+
+my $ISSUE_FAMILY = <<'LUA';
+redis.call('HSET', KEYS[1], 'user', ARGV[1], 'current', ARGV[2])
+redis.call('EXPIRE', KEYS[1], ARGV[3])
+redis.call('HSET', KEYS[2], 'state', 'active', 'user', ARGV[1])
+redis.call('EXPIRE', KEYS[2], ARGV[3])
+return 1
+LUA
+
 sub create_key : Path('keys') : Args(0) {
     my ( $self, $c ) = @_;
     my $user = _session_user($c)
         or return _json( $c, 401, { error => 'login required' } );
     my $key = new_api_key();
     my $kid = token_hash($key);
-    _redis()->hset( "apikey:$kid", user => $user, created => time );
-    _redis()->expire( "apikey:$kid", $KEY_TTL );
+    my $now = time;
+    SessionLab::Redis->run_script( $ISSUE_KEY, 1, "apikey:$kid",
+        $user, $now, $now + $KEY_TTL, $KEY_TTL );
     _redis()->sadd( "user-apikeys:$user", $kid );
     _json(
         $c, 201,
@@ -105,11 +121,8 @@ sub create_token : Path('token') : Args(0) {
     my $family  = new_family();
     my $refresh = new_refresh($family);
     my $rh      = token_hash($refresh);
-    my $r       = _redis();
-    $r->hset( "rtfam:{$family}", user => $user, current => $rh );
-    $r->expire( "rtfam:{$family}", $REFRESH_TTL );
-    $r->hset( "rt:{$family}:$rh", state => 'active', user => $user );
-    $r->expire( "rt:{$family}:$rh", $REFRESH_TTL );
+    SessionLab::Redis->run_script( $ISSUE_FAMILY, 2,
+        "rtfam:{$family}", "rt:{$family}:$rh", $user, $rh, $REFRESH_TTL );
     my ($jwt) = issue_access_token( sub => $user, fam => $family );
     _json(
         $c, 201,
@@ -241,7 +254,8 @@ sub _principal {
     }
     if ( defined( my $key = $c->req->header('X-API-Key') ) ) {
         my $kid  = token_hash($key);
-        my $user = $r->hget( "apikey:$kid", 'user' ) or return;
+        my ( $user, $expires ) = $r->hmget( "apikey:$kid", 'user', 'expires_at' );
+        return unless $user && defined $expires && $expires > time;
         return ( $user, { type => 'api_key', kid => $kid } );
     }
     return;
@@ -319,7 +333,7 @@ sub signed : Path('signed') : Args(0) {
     my $sig   = $c->req->header('X-Signature') // '';
     return _json( $c, 401, { error => 'unknown key' } )
         unless $kid =~ /\A[0-9a-f]{64}\z/
-        && _redis()->exists("apikey:$kid");
+        && ( _redis()->hget( "apikey:$kid", 'expires_at' ) // 0 ) > time;
     return _json( $c, 401, { error => 'stale or future timestamp' } )
         unless $ts =~ /\A\d+\z/ && abs( time - $ts ) <= $SKEW;
     return _json( $c, 400, { error => 'bad nonce' } )

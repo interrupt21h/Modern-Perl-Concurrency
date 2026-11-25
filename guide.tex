@@ -932,6 +932,9 @@ Duplicate effects & Constraints and transactions & Resource guard required & Not
 \partstart{V / Application architecture}{Application architecture and practical scenarios}{Combine the mechanisms into object-oriented applications, web requests and recoverable processing pipelines.}
 \input{chapters/objects.tex}
 \input{catalyst-sessions.tex}
+\chapter{API authentication and token lifecycle}\label{app:api}
+\chapterbrief{Design credential validation, rotation, revocation and replay protection around explicit concurrency boundaries.}
+\input{api-credentials.tex}
 \input{chapters/memcached-capstone.tex}
 \input{chapters/pipelines.tex}
 \input{chapters/outbox.tex}
@@ -964,10 +967,6 @@ Do not use raw futex calls against Perl scalars: Perl SV storage is not a stable
 
 % ================================================================ chapter 3
 
-\chapter{API security and concurrent state transitions}\label{app:api}
-
-
-\input{api-credentials.tex}
 \chapter{Complete Catalyst application laboratory}\label{app:catalyst}
 
 \par\smallskip\noindent\textbf{Specialized terms:} PSGI --- Perl Web Server Gateway Interface.\par\smallskip

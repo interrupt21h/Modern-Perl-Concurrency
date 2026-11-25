@@ -456,6 +456,11 @@ my @unsecured = grep {
 check( !@unsecured,
     'every operation states its security requirement explicitly' );
 
+for my $pattern ( 'apikey:*', 'rtfam:*', 'rt:*' ) {
+    my @persistent = grep { $redis->ttl($_) == -1 } scan_keys($pattern);
+    check( !@persistent, "no persistent credential keys in $pattern" );
+}
+
 clear_namespaces();
 print
 "API tokens: all checks passed (naive refresh left $live live tokens)\n";
