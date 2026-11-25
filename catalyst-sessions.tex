@@ -40,7 +40,9 @@ Hardened custom store (this chapter) & One atomic \code{SET ... EX}, Sereal with
 \index{API!Catalyst::Plugin::Session}
 The store below implements the four methods that \code{Catalyst::Plugin::Session::Store} requires. Each write sets the value and its TTL in one command, so a crash can never leave a session that never expires. Records are encoded with Sereal, and the decoder refuses blessed data, so a forged record is discarded and logged rather than revived. Size limits bound the cost of a hostile payload.
 See the complete implementation in Appendix~\ref{app:catalyst}.
+
 The connection helper creates one Redis handle per process, lazily, and creates a new one when the PID changes. A preforking server can therefore load the application in its master process without the workers sharing an inherited socket, whose replies would interleave between processes. The helper disables automatic reconnection, so a lost reply is never followed by a silent replay of \code{SET NX} or \code{INCR}, and it caches scripts with an \code{EVALSHA} fallback.
+
 See the complete implementation in Appendix~\ref{app:catalyst}.
 Refusing objects has a design benefit beyond security: sessions hold plain data only. Store an epoch or an ISO date instead of a \code{DateTime}, and a user ID instead of a \code{DBIx::Class} row.
 
@@ -75,6 +77,7 @@ Per-session lock around load and save & 8 of 8 & Requests in the session run one
 \note{Default to the atomic pattern: the session holds identity, a CSRF token and small preferences, and anything that several requests change goes into its own Redis structure (hash, set, counter) or into the database, updated with single atomic commands. Use the per-session lock only for routes that must change the session blob itself, and keep those requests short.}
 The lock must cover both the load and the save. \code{lock_session} is called before the action's first \code{$c->session} access, and the application overrides \code{finalize_session} to release the lock \emph{after} the plugin has written the session. The lease has a TTL longer than any request, and release is owner-checked, as in Chapter~\ref{ch:redis}. If a worker dies while holding the lock, it expires on its own.
 See the complete implementation in Appendix~\ref{app:catalyst}.
+
 The same file sets \code{STDERR->autoflush(1)} after \code{setup}. Catalyst's default UTF-8 encoding applies \code{binmode(STDERR, ':encoding(UTF-8)')}, which makes STDERR \emph{buffered}. Without the fix, worker log lines reached the container log late, in batches, and were lost when a worker was killed. The laboratory's log assertion failed until this line was added.
 
 \section{Idempotency keys for unsafe requests}

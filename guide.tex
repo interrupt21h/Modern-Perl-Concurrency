@@ -1,8 +1,10 @@
 \documentclass[11pt,openany]{book}
-\usepackage[letterpaper,margin=0.9in,headheight=15pt]{geometry}
+\usepackage[letterpaper,margin=1.05in,headheight=15pt]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{microtype}
+\usepackage{setspace}
+\setstretch{1.12}
 \usepackage{xcolor}
 \usepackage{booktabs,longtable,array}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
@@ -52,7 +54,7 @@
 \fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\sffamily\color{muted}\thepage\quad\textperiodcentered\quad Scott Muller}\renewcommand{\headrulewidth}{0pt}}
 \raggedbottom
 \setlength{\emergencystretch}{3em}
-\setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}\setlength{\parskip}{8pt plus 1pt minus 1pt}
 \setcounter{tocdepth}{2}
 \makeatletter
 \renewcommand*\l@section{\@dottedtocline{1}{1.5em}{3.1em}}
@@ -60,12 +62,12 @@
 \makeatother
 \setlength{\LTpre}{6pt}
 \setlength{\LTpost}{7pt}
-\renewcommand{\arraystretch}{1.10}
+\renewcommand{\arraystretch}{1.20}
 \clubpenalty=10000
 \widowpenalty=10000
-\setlength{\textfloatsep}{14pt plus 3pt minus 3pt}
-\setlength{\intextsep}{12pt plus 3pt minus 3pt}
-\setlist{itemsep=2pt,topsep=4pt,parsep=0pt}
+\setlength{\textfloatsep}{19pt plus 3pt minus 3pt}
+\setlength{\intextsep}{17pt plus 3pt minus 3pt}
+\setlist{itemsep=4pt,topsep=6pt,parsep=2pt}
 
 \titleformat{\chapter}[display]
   {\sffamily\bfseries\color{navy}}
@@ -74,10 +76,11 @@
 \titlespacing*{\chapter}{0pt}{-12pt}{16pt}
 \titleformat{\section}{\sffamily\bfseries\Large\color{navy}}{\thesection}{0.75em}{}
 \titleformat{\subsection}{\sffamily\bfseries\large\color{navy}}{\thesubsection}{0.75em}{}
-\titlespacing*{\section}{0pt}{14pt}{4pt}
+\titlespacing*{\section}{0pt}{19pt}{8pt}
+\titlespacing*{\subsection}{0pt}{15pt}{6pt}
 
 \captionsetup{font={small,sf},labelfont={bf,color=navy},textfont={color=muted},
-  singlelinecheck=false,skip=4pt}
+  singlelinecheck=false,skip=8pt}
 
 % ---------------------------------------------------------------- figures
 \tikzset{
@@ -97,7 +100,7 @@
   badspan/.style={line width=5pt,draw=rust},
   waitspan/.style={line width=5pt,draw=muted!35},
 }
-\captionsetup[figure]{font={small,sf},labelfont={bf,color=navy},textfont={color=muted},skip=6pt}
+\captionsetup[figure]{font={small,sf},labelfont={bf,color=navy},textfont={color=muted},skip=9pt}
 \newcommand{\fig}[2]{\begin{figure}[!htbp]\centering\begin{adjustbox}{max width=\linewidth}\input{figures/#1}\end{adjustbox}\caption{#2}\label{fig:#1}\end{figure}}
 
 % ---------------------------------------------------------------- code presentation
@@ -118,13 +121,13 @@
 % A single callout system: dedicated title, clear spacing, readable body.
 \newtcolorbox{callout}[2]{enhanced,breakable,sharp corners,
   colback=#1!3!white,colframe=#1!45!white,boxrule=.45pt,
-  leftrule=2.6pt,left=9pt,right=9pt,top=6pt,bottom=7pt,
+  leftrule=2.6pt,left=11pt,right=11pt,top=9pt,bottom=10pt,
   colbacktitle=#1!8!white,coltitle=#1,
   fonttitle=\sffamily\bfseries\small,title={#2},
   lefttitle=9pt,righttitle=9pt,toptitle=5pt,bottomtitle=5pt,
   title after break={#2\space(continued)},
-  fontupper=\small\raggedright,
-  before skip=11pt,after skip=11pt,pad at break=5pt}
+  fontupper=\small\raggedright,before upper={\setlength{\parskip}{7pt}},
+  before skip=14pt,after skip=14pt,pad at break=5pt}
 \newcommand{\note}[1]{\begin{callout}{teal}{Engineering note}#1\end{callout}}
 \newcommand{\warn}[1]{\begin{callout}{rust}{Correctness warning}#1\end{callout}}
 \newcommand{\version}[1]{\begin{callout}{gold}{Version note}#1\end{callout}}
@@ -133,11 +136,11 @@
 % Strategy card: key, name, plain terms, use when, avoid when, Perl tools
 \newtcolorbox{strategybox}[1]{enhanced,colback=white,colframe=navy,boxrule=0.6pt,arc=2pt,
   colbacktitle=navy,coltitle=white,fonttitle=\sffamily\bfseries\small,title={#1},
-  fontupper=\small,left=7pt,right=7pt,top=5pt,bottom=5pt,before skip=10pt,after skip=10pt}
+  fontupper=\small\raggedright,left=11pt,right=11pt,top=9pt,bottom=10pt,before skip=14pt,after skip=14pt,before upper={\setlength{\parskip}{0pt}}}
 \newcommand{\strategy}[6]{\begin{strategybox}{STRATEGY \textperiodcentered\ #2}\phantomsection\label{str:#1}%
-\textbf{\sffamily\color{teal}In plain terms.} #3\par\smallskip
-\textbf{\sffamily\color{navy}Use it when:} #4\par\smallskip
-\textbf{\sffamily\color{rust}Avoid it when:} #5\par\smallskip
+\textbf{\sffamily\color{teal}In plain terms.} #3\par\medskip
+\textbf{\sffamily\color{navy}Use it when:} #4\par\medskip
+\textbf{\sffamily\color{rust}Avoid it when:} #5\par\medskip
 \textbf{\sffamily\color{navy}In Perl:} #6\end{strategybox}}
 \newcommand{\refdoc}[2]{\par\hangindent=1.5em\hangafter=1\textbf{#1.} \url{#2}\par}
 
@@ -437,8 +440,13 @@ explains the implementation, memory ordering and C laboratory.
 Load \code{threads} before \code{threads::shared}. Declare shared variables before creating workers. A shared container may hold scalars and references to shareable values; use \code{shared_clone} for nested structures and verify object compatibility. Lock the same stable shared variable in every participant; a dedicated, never-reassigned lock variable avoids confusion about what is protected. Locking a container does not recursively lock nested values. A plain increment is a read-modify-write and is not atomic [2].
 \fig{ithreads}{The ithreads memory model: separate interpreters, one explicitly shared store.}
 \CodeFile{perl}{examples/01-mutex.pl}{\nolinkurl{01-mutex.pl}}
-The lock is recursive for the owning thread and released when its enclosing scope exits, including exit by exception. Holding a lock across a slow network operation expands contention and risks lock inversion; keep the critical section focused on the invariant. There is no timed acquisition for \code{lock}; use \code{Thread::Semaphore::down_timed} or a condition variable with a deadline when acquisition must be bounded.
-Shared nested data needs a publication discipline. Example 22 builds each configuration version privately, clones it into shared memory \emph{outside} the lock, then swaps a single shared reference under the lock. A published structure is never modified again, so a reader that grabs the current reference sees a self-consistent version for as long as it holds it, with no further locking. A reader that wants to edit its view takes a private deep copy.
+The lock is recursive for the owning thread and released when its enclosing scope exits, including exit by exception. Holding a lock across a slow network operation expands contention and risks lock inversion; keep the critical section focused on the invariant. 
+
+There is no timed acquisition for \code{lock}; use \code{Thread::Semaphore::down_timed} or a condition variable with a deadline when acquisition must be bounded.
+
+Shared nested data needs a publication discipline. Example 22 builds each configuration version privately, clones it into shared memory \emph{outside} the lock, then swaps a single shared reference under the lock. 
+
+A published structure is never modified again, so a reader that grabs the current reference sees a self-consistent version for as long as it holds it, with no further locking. A reader that wants to edit its view takes a private deep copy.
 \strategy{snapshot}{Immutable snapshot publication}{Instead of editing a notice while people are reading it, print a new notice and swap it onto the board in one motion. Readers holding the old copy keep a complete, consistent version; the next reader picks up the new one.}
 {data is read often and changed rarely: configuration, routing tables, feature flags, reference data.}
 {many writers change the data frequently, or readers must always see the very latest value at the instant it changes.}
@@ -611,6 +619,7 @@ A reader/writer lock can improve throughput when read sections are substantial a
 {a single lock is fast enough: every extra lock adds ordering rules that every future maintainer must follow.}
 {acquire \code{lock}s in a documented global order; hold a variable number by recursion; examples 23 and 11 (MySQL rows in primary-key order).}
 Coarse locks are easy to audit but serialize unrelated operations. Fine-grained locks can improve parallelism while introducing ordering constraints and memory overhead. Lock striping hashes keys onto a fixed set of mutexes; unrelated keys can collide, but lock storage stays bounded. Multi-key operations must acquire unique stripes in sorted order and release in reverse order. Avoid calling user callbacks under a lock unless that is an intentional, documented contract.
+
 Example 23 applies this to 64 accounts guarded by 8 stripe locks. A transfer locks its two stripes in ascending order; an auditor locks \emph{all} stripes, also in ascending order, to read a consistent total while transfers continue. Because \code{lock} releases at scope exit, a variable number of locks is held by recursion, one stripe per stack frame.
 \fig{striping}{Lock striping: a transfer locks only its two stripes, in ascending order, so unrelated transfers run in parallel.}
 \CodeFile{perl}{examples/23-lock-striping.pl}{\nolinkurl{23-lock-striping.pl}}

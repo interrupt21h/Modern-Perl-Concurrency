@@ -80,6 +80,7 @@ to choose the next concurrency improvement rather than tuning blindly.}
 \end{itemize}
 \section{Metrics and debugging}
 Instrument acquisition wait and hold duration separately, using monotonic time. Count acquisitions, contention, timeouts, renewals, lost leases, rejected fences, retries and errors. Keep label cardinality bounded (lock class, backend, operation), never customer IDs or individual resource names. Structured logs may carry a correlation ID, lock name and fencing token. Trace waiting separately from useful work so that tail latency can be attributed.
+
 Example 26 provides \code{with_timed_lock}, a wrapper that records wait and hold time for any critical section. Each thread keeps its own samples, so measurement adds no shared contention, and percentiles are computed after \code{join}.
 \CodeFile{perl}{examples/26-lock-metrics.pl}{\nolinkurl{26-lock-metrics.pl}}
 \CodeFile{text}{snippets/guide-08.txt}{Output on the verification host (4 threads, 1 ms of work under the lock)}
