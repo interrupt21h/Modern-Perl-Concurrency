@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Build a dependency-free static handbook portal from validated CI outputs."""
+"""Build a static handbook portal and full chapter reader from validated CI outputs."""
 import hashlib
 import json
 import html
 import os
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 from urllib.parse import quote
 
@@ -28,16 +30,20 @@ for name in (PDF, SOURCE, "SHA256SUMS", "tidy-build.txt", "perl-concurrency-chea
 (OUT / "latest.json").write_text(json.dumps({"tag": TAG, "commit": SHA, "run": RUN, "assets": assets}, indent=2) + "\n", encoding="utf-8")
 (OUT / ".nojekyll").touch()
 
-chapters = [
-    "Part I — Foundations and mental models",
-    "Part II — Perl and operating-system synchronization",
-    "Part III — Database concurrency and application transactions",
-    "Part IV — Distributed coordination",
-    "Part V — Application architecture and practical scenarios",
-    "Part VI — Engineering for production",
-    "Appendices — Native implementation, API security, laboratories and indexes",
-]
-chapter_html = "".join(f"<li>{esc(chapter)}</li>" for chapter in chapters)
+subprocess.run([sys.executable, str(ROOT / "scripts/build-chapters.py"), str(DIST / PDF),
+                str(OUT / "book"), "--commit", SHA, "--tag", TAG], check=True)
+book = json.loads((OUT / "book/manifest.json").read_text(encoding="utf-8"))
+if book["pdf_sha256"] != hashlib.sha256((DIST / PDF).read_bytes()).hexdigest():
+    raise SystemExit("HTML and PDF publication inputs differ")
+chapter_html = "".join(
+    f'<li><a href="book/{esc(chapter["file"], quote=True)}?v={quote(TAG)}">{esc(chapter["title"])}</a>'
+    f' <small>pages {chapter["start"]}–{chapter["end"]}</small></li>'
+    for chapter in book["chapters"]
+)
+latest = json.loads((OUT / "latest.json").read_text(encoding="utf-8"))
+latest["html"] = {"contents": "book/index.html", "manifest": "book/manifest.json",
+                  "page_count": book["page_count"], "pdf_sha256": book["pdf_sha256"]}
+(OUT / "latest.json").write_text(json.dumps(latest, indent=2) + "\n", encoding="utf-8")
 examples = sorted(p for p in (ROOT / "examples").iterdir() if p.is_file() and p.suffix in {".pl", ".c", ".sql", ".txt"})
 example_html = "".join(
     f'<li><a href="{REPO}/blob/{SHA}/{quote(p.relative_to(ROOT).as_posix())}">{esc(p.name)}</a></li>'
@@ -82,14 +88,14 @@ footer{{border-top:1px solid var(--line);padding:1.5rem 1.25rem;color:var(--mute
 <p>A six-part engineering reference for local synchronization, persistent state, distributed coordination and production application architecture. Includes a recoverable processing capstone and complete laboratory appendices.</p>
 <p><strong>Scott Muller</strong> · <a href="mailto:scott@21h.io">scott@21h.io</a><br>Software Engineer, Matsch Systems<br>Owner &amp; Independent Consultant, 21h Systems</p>
 <p><em>This work is an independent technical publication. The views and recommendations expressed herein are solely those of the author and do not necessarily reflect those of his employer or affiliated organizations. Professional affiliations do not imply institutional endorsement.</em></p>
-<div class="actions"><a class="button" href="{esc(assets[PDF], quote=True)}">Read the PDF</a><a class="button secondary" href="{esc(assets['perl-concurrency-cheat-sheet.pdf'], quote=True)}">Two-page cheat sheet</a><a class="button secondary" href="{esc(assets[SOURCE], quote=True)}" download>Download source</a><a class="button secondary" href="{esc(release)}">GitHub release</a></div>
+<div class="actions"><a class="button" href="book/index.html?v={quote(TAG)}">Read online</a><a class="button secondary" href="{esc(assets[PDF], quote=True)}">Read the PDF</a><a class="button secondary" href="{esc(assets['perl-concurrency-cheat-sheet.pdf'], quote=True)}">Two-page cheat sheet</a><a class="button secondary" href="{esc(assets[SOURCE], quote=True)}" download>Download source</a><a class="button secondary" href="{esc(release)}">GitHub release</a></div>
 </div></header>
 <main class="wrap">
-<div class="grid"><section class="panel"><h2>Handbook</h2><p>Read the complete, illustrated technical reference with syntax-highlighted code and runnable examples.</p><a href="{esc(assets[PDF], quote=True)}" download>Download PDF</a></section>
+<div class="grid"><section class="panel"><h2>Handbook</h2><p>Read the complete, illustrated technical reference with syntax-highlighted code and runnable examples.</p><a href="book/index.html?v={quote(TAG)}">Read all chapters online</a> · <a href="{esc(assets[PDF], quote=True)}" download>Download PDF</a></section>
 <section class="panel"><h2>Executable laboratory</h2><p>Explore the formatted sources, build scripts and tests.</p><a href="{esc(REPO)}/tree/{SHA}/examples">Browse all examples on GitHub</a></section>
 <section class="panel"><h2>Build provenance</h2><p><a href="?refresh={esc(RUN)}" id="refresh-page">Refresh publication</a> · <a href="{REPO}/releases/latest">Latest release on GitHub</a></p><p>Build <code>{esc(TAG)}</code> · published from commit <code>{SHA[:12]}</code> after formatting checks, available regression tests and PDF compilation. See logs for skipped tests.</p><a href="{esc(assets['tidy-build.txt'], quote=True)}">Verification log</a> · <a href="{esc(assets['SHA256SUMS'], quote=True)}">Checksums</a> · <a href="{esc(run)}">CI run</a></section></div>
 <section class="panel"><h2>Printable cheat sheet</h2><p>Two illustrated pages for quick reference: local Perl synchronization and database/distributed coordination. Print double-sided on US Letter.</p><a href="{esc(assets['perl-concurrency-cheat-sheet.pdf'], quote=True)}">Open PDF</a> · <a href="{esc(assets['perl-concurrency-cheat-sheet.pdf'], quote=True)}" download>Download PDF</a> · <a href="{esc(assets['cheat-sheet.tex'], quote=True)}" download>LaTeX source</a></section>
-<section class="panel"><h2>Contents</h2><ol>{chapter_html}</ol></section>
+<section class="panel"><h2>Full chapter contents</h2><p>All {book["page_count"]} verified PDF pages, with illustrated HTML layout and a text reading mode. <a href="book/index.html?v={quote(TAG)}">Open the chapter reader</a>.</p><ol>{chapter_html}</ol></section>
 <section class="panel"><h2>Source examples</h2><p>Source links point to the exact release commit. Use isolated services for the laboratory.</p><ul class="examples">{example_html}</ul><p><a href="{esc(REPO)}/tree/{SHA}/examples/catalyst-session">Catalyst application source</a></p></section>
 </main><footer><div class="wrap">Modern Perl Concurrency · <a href="{esc(REPO)}">Project repository</a> · <a href="{esc(REPO)}/releases">All releases</a></div></footer>
 <script>

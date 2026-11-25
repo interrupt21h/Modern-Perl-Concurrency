@@ -7,13 +7,13 @@
 [![Edition](https://img.shields.io/badge/edition-2.1.1-34546B)](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest)
 [![Build and publish](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions/workflows/tidy-handbook.yml/badge.svg?branch=main)](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions/workflows/tidy-handbook.yml)
 
-[Documentation website](https://interrupt21h.github.io/Modern-Perl-Concurrency/) · [Latest release](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest) · [Source examples](examples/) · [Build history](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions)
+[Documentation website](https://interrupt21h.github.io/Modern-Perl-Concurrency/) · [Read the full handbook online](https://interrupt21h.github.io/Modern-Perl-Concurrency/book/) · [Latest release](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest) · [Source examples](examples/) · [Build history](https://github.com/interrupt21h/Modern-Perl-Concurrency/actions)
 
 ## Read and download
 
 | Publication | Description | Download |
 | :--- | :--- | :--- |
-| **Engineering handbook** | In-depth explanations, illustrated strategy cards, architecture diagrams and syntax-highlighted examples. | [PDF](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/modern-perl-concurrency.pdf) |
+| **Engineering handbook** | In-depth explanations, illustrated strategy cards, architecture diagrams and syntax-highlighted examples. | [HTML chapters](https://interrupt21h.github.io/Modern-Perl-Concurrency/book/) · [PDF](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/modern-perl-concurrency.pdf) |
 | **Illustrated cheat sheet** | Two landscape US Letter pages with 24 reference diagrams. Designed for double-sided printing. | [PDF](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/perl-concurrency-cheat-sheet.pdf) · [LaTeX](cheat-sheet.tex) |
 | **Source and laboratory** | Complete LaTeX project, executable examples, diagrams and build tooling. | [Source archive](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/formatted-source.tar.gz) |
 | **Build verification** | Formatter output, regression results, compilation log and download integrity. | [Build log](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/tidy-build.txt) · [SHA-256](https://github.com/interrupt21h/Modern-Perl-Concurrency/releases/latest/download/SHA256SUMS) |
@@ -231,6 +231,7 @@ authority for correctness-critical operations.
 - `figures/`: TikZ figure sources.
 - `generated/code/`: generated TeX token streams and palette; do not edit by hand.
 - `scripts/highlight.py`: language-aware highlighting and source-preservation check.
+- `scripts/build-chapters.py`: full chapter-by-chapter HTML reader from the verified PDF, with vector pages, selectable text, cross-page links and a text reading mode.
 
 The code listings use Perl, C, SQL, Shell, Lua, YAML and plain-text output
 lexers. Long listings repeat their title on continuation pages; wrapping does
@@ -273,7 +274,18 @@ standalone Lua, C, SQL and other non-Perl files are intentionally untouched.
 Review the source diff and run integration tests against disposable services
 before publication. No formatter can prove semantic equivalence by itself.
 
-The [Build, test and publish handbook](.github/workflows/tidy-handbook.yml) workflow runs on updates to `main` and manual dispatch. Successful builds persist validated formatting, create a versioned release containing the handbook and cheat sheet PDFs, and deploy the documentation portal. CI artifacts include build logs and source differences.
+The [Build, test and publish handbook](.github/workflows/tidy-handbook.yml) workflow runs on updates to `main` and manual dispatch. Successful builds persist validated formatting, create a versioned release containing the handbook and cheat sheet PDFs, and deploy the documentation portal. CI artifacts include build logs, source differences and the complete HTML reader. The HTML reader is generated before release from the same PDF, with chapter boundaries taken from Hyperref bookmarks, exact page coverage checked, and commit/tag/PDF SHA-256 recorded in `book/manifest.json`. The illustrated reading mode retains all diagrams and code formatting; the reflowable text mode is a PDF-derived transcript, not a semantic LaTeX conversion. Canonical source files remain the authority for runnable code.
+
+To render a local HTML reader after `make pdf`:
+
+```sh
+python3 scripts/build-chapters.py guide.pdf site-dist/book \
+  --commit "$(git rev-parse HEAD)" --tag local
+cp guide.pdf site-dist/modern-perl-concurrency.pdf
+python3 -m http.server --directory site-dist 8000
+```
+
+Open `http://localhost:8000/book/`. The full portal is assembled in CI.
 
 ## Verification and revision history
 

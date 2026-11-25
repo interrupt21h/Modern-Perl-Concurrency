@@ -114,6 +114,16 @@ jobs:
           cp generated/release-verification.json dist/verification.json
           cp verification-benchmark.txt dist/benchmark-results.txt
           (cd dist && sha256sum modern-perl-concurrency.pdf perl-concurrency-cheat-sheet.pdf cheat-sheet.tex formatted-source.tar.gz verification.json benchmark-results.txt > SHA256SUMS)
+      - name: Build and validate full HTML handbook
+        run: |
+          set -euo pipefail
+          .venv/bin/python scripts/build-site.py
+      - name: Upload HTML handbook for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: handbook-html
+          path: site-dist/book/
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: tidied-perl-handbook
@@ -146,9 +156,6 @@ jobs:
               --target "$PUBLISHED_SHA" --title "Modern Perl Concurrency — Edition 2.1.1" \
               --notes "Stable edition snapshot. Automated verification: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. See verification.json and SHA256SUMS for provenance. Independent peer review is not implied."
           fi
-      - name: Build static handbook portal
-        if: github.ref == 'refs/heads/main'
-        run: python3 scripts/build-site.py
       - name: Upload GitHub Pages artifact
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
