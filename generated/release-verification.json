@@ -1,9 +1,9 @@
 {
-  "generated_utc": "2026-11-24T23:56:23+00:00",
+  "generated_utc": "2026-11-25T00:24:39+00:00",
   "environment": {
     "os": "Ubuntu 24.04.5 LTS",
-    "kernel": "7.0.0-1017-azure",
-    "cpu": "AMD EPYC 7763 64-Core Processor",
+    "kernel": "7.0.0-1014-aws",
+    "cpu": "Intel(R) Xeon(R) 6975P-C",
     "logical_cpus_available": 4,
     "perl": "v5.38.2",
     "ithreads": "define"
@@ -13,22 +13,22 @@
     "increments_per_trial": 40000,
     "seconds": {
       "1": [
-        0.292152,
-        0.305151,
-        0.301534
+        0.11236,
+        0.11499,
+        0.115851
       ],
       "4": [
-        0.401691,
-        0.401098,
-        0.397134
+        0.280791,
+        0.27946,
+        0.276457
       ]
     }
   },
-  "ci_run": "45513390688",
+  "ci_run": "45517252287",
   "run_attempt": "1",
-  "trigger_sha": "faeea6fe0196bc47050981d6f82190a6e28b9ced",
+  "trigger_sha": "fa780acf211ab86c314a1979d8ff79803907cf0f",
   "primary_tests": {
-    "passed": 38,
+    "passed": 39,
     "skipped": 0
   },
   "additional_checks_completed": [

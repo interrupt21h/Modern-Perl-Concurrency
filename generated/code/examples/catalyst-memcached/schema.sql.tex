@@ -1,0 +1,12 @@
+\PG{k}{CREATE}\PG{+w}{ }\PG{k}{TABLE}\PG{+w}{ }\PG{k}{IF}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{EXISTS}\PG{+w}{ }\PG{n}{mc\PGZus{}tokens}\PG{+w}{ }\PG{p}{(}
+\PG{+w}{ }\PG{n}{token\PGZus{}hash}\PG{+w}{ }\PG{n+nb}{CHAR}\PG{p}{(}\PG{l+m+mi}{64}\PG{p}{)}\PG{+w}{ }\PG{k}{PRIMARY}\PG{+w}{ }\PG{k}{KEY}\PG{p}{,}
+\PG{+w}{ }\PG{n}{principal}\PG{+w}{ }\PG{n+nb}{VARCHAR}\PG{p}{(}\PG{l+m+mi}{64}\PG{p}{)}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{ }\PG{k}{scope}\PG{+w}{ }\PG{n+nb}{VARCHAR}\PG{p}{(}\PG{l+m+mi}{16}\PG{p}{)}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{ }\PG{n}{expires\PGZus{}at}\PG{+w}{ }\PG{n+nb}{BIGINT}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}
+\PG{p}{)}\PG{+w}{ }\PG{n}{ENGINE}\PG{o}{=}\PG{n}{InnoDB}\PG{p}{;}
+\PG{k}{CREATE}\PG{+w}{ }\PG{k}{TABLE}\PG{+w}{ }\PG{k}{IF}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{EXISTS}\PG{+w}{ }\PG{n}{mc\PGZus{}orders}\PG{+w}{ }\PG{p}{(}
+\PG{+w}{ }\PG{n}{principal}\PG{+w}{ }\PG{n+nb}{VARCHAR}\PG{p}{(}\PG{l+m+mi}{64}\PG{p}{)}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{ }\PG{n}{request\PGZus{}key}\PG{+w}{ }\PG{n+nb}{VARCHAR}\PG{p}{(}\PG{l+m+mi}{64}\PG{p}{)}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{ }\PG{n}{amount}\PG{+w}{ }\PG{n+nb}{INT}\PG{+w}{ }\PG{n}{UNSIGNED}\PG{+w}{ }\PG{k}{NOT}\PG{+w}{ }\PG{k}{NULL}\PG{p}{,}
+\PG{+w}{ }\PG{k}{PRIMARY}\PG{+w}{ }\PG{k}{KEY}\PG{+w}{ }\PG{p}{(}\PG{n}{principal}\PG{p}{,}\PG{+w}{ }\PG{n}{request\PGZus{}key}\PG{p}{)}
+\PG{p}{)}\PG{+w}{ }\PG{n}{ENGINE}\PG{o}{=}\PG{n}{InnoDB}\PG{p}{;}

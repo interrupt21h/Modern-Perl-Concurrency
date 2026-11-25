@@ -1,0 +1,153 @@
+\PG{p}{\PGZob{}}
+\PG{+w}{  }\PG{n+nt}{\PGZdq{}openapi\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}3.1.0\PGZdq{}}\PG{p}{,}
+\PG{+w}{  }\PG{n+nt}{\PGZdq{}info\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n+nt}{\PGZdq{}title\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Memcached Catalyst laboratory\PGZdq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n+nt}{\PGZdq{}version\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}1.0.0\PGZdq{}}
+\PG{+w}{  }\PG{p}{\PGZcb{},}
+\PG{+w}{  }\PG{n+nt}{\PGZdq{}components\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n+nt}{\PGZdq{}securitySchemes\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{      }\PG{n+nt}{\PGZdq{}bearerAuth\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}http\PGZdq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}scheme\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}bearer\PGZdq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}bearerFormat\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}opaque\PGZdq{}}
+\PG{+w}{      }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{+w}{  }\PG{p}{\PGZcb{},}
+\PG{+w}{  }\PG{n+nt}{\PGZdq{}paths\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{n+nt}{\PGZdq{}/openapi.json\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{      }\PG{n+nt}{\PGZdq{}get\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}operationId\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}openapi\PGZdq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}security\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[],}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}responses\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}200\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{      }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{\PGZcb{},}
+\PG{+w}{    }\PG{n+nt}{\PGZdq{}/whoami\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{      }\PG{n+nt}{\PGZdq{}get\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}operationId\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}whoami\PGZdq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}security\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[}
+\PG{+w}{          }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}bearerAuth\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[]}
+\PG{+w}{          }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{],}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}responses\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}200\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}401\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid token\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{      }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{\PGZcb{},}
+\PG{+w}{    }\PG{n+nt}{\PGZdq{}/revoke\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{      }\PG{n+nt}{\PGZdq{}post\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}operationId\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}revoke\PGZdq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}security\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[}
+\PG{+w}{          }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}bearerAuth\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[]}
+\PG{+w}{          }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{],}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}responses\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}200\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}401\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid token\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{      }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{\PGZcb{},}
+\PG{+w}{    }\PG{n+nt}{\PGZdq{}/counter\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{      }\PG{n+nt}{\PGZdq{}post\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}operationId\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}counter\PGZdq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}security\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[}
+\PG{+w}{          }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}bearerAuth\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[]}
+\PG{+w}{          }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{],}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}responses\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}200\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}401\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid token\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}403\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Insufficient scope\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}503\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Cache unavailable\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{      }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{\PGZcb{},}
+\PG{+w}{    }\PG{n+nt}{\PGZdq{}/order\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{      }\PG{n+nt}{\PGZdq{}post\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}operationId\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}order\PGZdq{}}\PG{p}{,}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}security\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[}
+\PG{+w}{          }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}bearerAuth\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[]}
+\PG{+w}{          }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{],}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}responses\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}200\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Success\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}400\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid request\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}401\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Invalid token\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}403\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Insufficient scope\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}409\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Idempotency conflict\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}429\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Rate limited\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{},}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}503\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}description\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Cache unavailable\PGZdq{}}
+\PG{+w}{          }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{\PGZcb{},}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}parameters\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[}
+\PG{+w}{          }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}name\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}Idempotency\PGZhy{}Key\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}in\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}header\PGZdq{}}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}required\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{k+kc}{true}\PG{p}{,}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}string\PGZdq{}}\PG{p}{,}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}pattern\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}\PGZca{}[A\PGZhy{}Za\PGZhy{}z0\PGZhy{}9\PGZus{}\PGZhy{}]\PGZob{}1,64\PGZcb{}\PGZdl{}\PGZdq{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
+\PG{+w}{          }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{],}
+\PG{+w}{        }\PG{n+nt}{\PGZdq{}requestBody\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}required\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{k+kc}{true}\PG{p}{,}
+\PG{+w}{          }\PG{n+nt}{\PGZdq{}content\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{            }\PG{n+nt}{\PGZdq{}application/x\PGZhy{}www\PGZhy{}form\PGZhy{}urlencoded\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{              }\PG{n+nt}{\PGZdq{}schema\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}object\PGZdq{}}\PG{p}{,}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}required\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{[}
+\PG{+w}{                  }\PG{l+s+s2}{\PGZdq{}amount\PGZdq{}}
+\PG{+w}{                }\PG{p}{],}
+\PG{+w}{                }\PG{n+nt}{\PGZdq{}properties\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                  }\PG{n+nt}{\PGZdq{}amount\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{p}{\PGZob{}}
+\PG{+w}{                    }\PG{n+nt}{\PGZdq{}type\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+s+s2}{\PGZdq{}integer\PGZdq{}}\PG{p}{,}
+\PG{+w}{                    }\PG{n+nt}{\PGZdq{}minimum\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+m+mi}{1}\PG{p}{,}
+\PG{+w}{                    }\PG{n+nt}{\PGZdq{}maximum\PGZdq{}}\PG{p}{:}\PG{+w}{ }\PG{l+m+mi}{999999}
+\PG{+w}{                  }\PG{p}{\PGZcb{}}
+\PG{+w}{                }\PG{p}{\PGZcb{}}
+\PG{+w}{              }\PG{p}{\PGZcb{}}
+\PG{+w}{            }\PG{p}{\PGZcb{}}
+\PG{+w}{          }\PG{p}{\PGZcb{}}
+\PG{+w}{        }\PG{p}{\PGZcb{}}
+\PG{+w}{      }\PG{p}{\PGZcb{}}
+\PG{+w}{    }\PG{p}{\PGZcb{}}
+\PG{+w}{  }\PG{p}{\PGZcb{}}
+\PG{p}{\PGZcb{}}
