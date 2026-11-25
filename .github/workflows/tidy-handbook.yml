@@ -109,7 +109,7 @@ jobs:
           git archive --format=tar.gz --prefix=perl-concurrency/ -o dist/formatted-source.tar.gz HEAD
           cp guide.pdf dist/modern-perl-concurrency.pdf
           cp cheat-sheet.pdf dist/perl-concurrency-cheat-sheet.pdf
-          cp cheat-sheet.tex dist/
+          python3 -c 'from pathlib import Path; p=Path("cheat-sheet.tex").read_text(); Path("dist/cheat-sheet.tex").write_text(p.replace(r"\input{styles/quick-reference-diagrams.tex}", Path("styles/quick-reference-diagrams.tex").read_text()))'
           cp tidy-build.txt tidy-source.diff dist/
           cp generated/release-verification.json dist/verification.json
           cp verification-benchmark.txt dist/benchmark-results.txt

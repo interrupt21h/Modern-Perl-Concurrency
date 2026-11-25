@@ -39,6 +39,7 @@ Whichever client you use, create the connection after \code{fork} or inside the 
 \bottomrule\end{longtable}
 
 \section{Acquisition, renewal and release}
+\quickpair{lease-script}{\Dlease}{\Dlua}{Quick reference: acquire with a unique owner token and expiration (left); perform an atomic server-side compare-and-change (right).}
 \index{API!SET NX PX}\index{API!EVAL}\index{API!DELEX}
 \strategy{redislease}{Redis or Valkey lease}{A parking permit with an expiry time printed on it. Whoever holds a valid permit may park; if they do not renew it in time, it lapses and someone else can take the spot, even if the first driver has not left yet.}
 {processes on different hosts must avoid duplicate work (a nightly report, a cache rebuild, one active scheduler) and an occasional overlap is tolerable.}
@@ -54,6 +55,7 @@ In Redis Cluster, all keys used by one script must hash to the same slot. A comm
 \tip{Name lease keys after what they protect (\code{lock:invoice:42}, not \code{lock:1}) and log the owner token on acquire and release. During an incident, \code{SCAN MATCH lock:*} plus the logs then tell you who holds what, and since when.}
 
 \subsection{Perl-only orchestration with optimistic transactions}\label{sec:redis-watch}
+\quickfig{watch}{\Dwatch}{Quick reference: watch a key, read its owner, queue a conditional change and retry a confirmed conflict.}
 \index{API!WATCH}\index{API!MULTI}\index{API!EXEC}
 When native conditional commands are unavailable, Perl can use \code{WATCH}, read the owner, then queue the update with \code{MULTI}/\code{EXEC}. Redis aborts if a watched key changes, including expiry on Redis 6.0.9 or later [61,62]. Retry only confirmed conflicts, with bounded randomized backoff. A lost reply is ambiguous; never assume an ambiguous renewal authorizes additional work.
 \begin{longtable}{L{.25\linewidth}L{.32\linewidth}L{.35\linewidth}}\toprule Approach & Benefits & Trade-offs \\ \midrule\endhead
@@ -75,6 +77,7 @@ The client-side deadline is a soft budget: an in-flight command can complete aft
 Create a client inside each thread or after \code{fork}; never use one connection concurrently from unrelated execution contexts. Keep acquisition retries bounded and randomized. If work outlives the TTL, renew before expiry (for example every third of the TTL) with the original token, and stop after a configured maximum total duration. A failed or ambiguous renewal means: stop issuing protected operations and cancel the worker where possible. A heartbeat cannot recall work already sent to another service; that is the job of fencing. An event loop must use an asynchronous client or offload blocking calls.
 
 \section{Owner tokens versus fencing tokens}\label{sec:fencing}
+\quickfig{fence}{\Dfence}{Quick reference: only the protected destination can reject a stale generation.}
 \index{Fencing}
 \strategy{fencing}{Fencing token}{Every new permit carries a higher serial number, and the gatekeeper at the protected resource remembers the highest number it has seen. A late arrival waving permit 41 after permit 42 has been used is turned away at the gate, whatever it believes.}
 {a lease protects anything where a stale holder's late write would cause harm.}
@@ -89,6 +92,7 @@ Initialize \code{last_fence} to zero, use a 64-bit unsigned column, bind the sam
 \warn{A Redis \code{INCR} counter can regress after data loss, an unpersisted restart or asynchronous failover. With destination-enforced fencing this \emph{fails safe}: new tokens fall below \code{last_fence}, so writes are rejected rather than corrupting data. The laboratory reproduced this by deleting the counter. Recovery must re-seed the counter above the destination's maximum (for example \code{SET fence:{report} <max>} before reopening traffic), or allocate generations transactionally in the database that owns the resource.}
 
 \section{Distributed semaphores}
+\quickfig{distributed}{\Ddistributed}{Quick reference: expired permits return capacity; queue acknowledgment follows the durable effect.}
 \strategy{redissem}{Distributed counting semaphore}{The car-park counter, kept in Redis so that cars arriving at any of several entrances share it. Each ticket has its own expiry, so a car that broke down inside is eventually removed from the count.}
 {several hosts must not exceed a concurrency limit on a shared dependency, such as a licence pool, a fragile service or an API quota.}
 {you need requests per second (rate limiting), or a single host suffices (use \code{Thread::Semaphore} or System~V).}
@@ -168,6 +172,7 @@ Memcached is a volatile cache with atomic per-item operations, not a durable coo
 Use short relative TTLs. Zero means no expiry; values above 30 days are interpreted as absolute Unix timestamps. Expiry has one-second granularity, so a TTL of 1 can expire almost immediately. Use one fixed server or an identical, stable routing configuration across all workers: rehashing keys during a failure creates independent ownership domains. Never treat a cache miss as proof that previous work has stopped.
 
 \section{Classic text protocol and Perl CAS release}
+\quickfig{mem}{\Dmem}{Quick reference: a cache lease can disappear by expiration, eviction or restart.}
 \index{API!CAS}\index{API!Cache::Memcached::Fast}
 \strategy{memcas}{Memcached add/CAS lease}{A sticky note on a shared whiteboard saying ``I'm rebuilding this''. Anyone can see it and back off, but the cleaner (eviction) may wipe the board at any time.}
 {many web workers would otherwise rebuild the same expensive cache entry at once.}

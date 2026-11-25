@@ -81,6 +81,7 @@ See the complete implementation in Appendix~\ref{app:catalyst}.
 The same file sets \code{STDERR->autoflush(1)} after \code{setup}. Catalyst's default UTF-8 encoding applies \code{binmode(STDERR, ':encoding(UTF-8)')}, which makes STDERR \emph{buffered}. Without the fix, worker log lines reached the container log late, in batches, and were lost when a worker was killed. The laboratory's log assertion failed until this line was added.
 
 \section{Idempotency keys for unsafe requests}
+\quickfig{idem}{\Didem}{Quick reference: duplicate requests share a durable request identity and recorded outcome.}
 \index{Idempotency}
 \strategy{idempotency}{Idempotency key}{A cloakroom ticket for a request. Hand in the same ticket twice and you get the same coat back, not a second coat. While the attendant is still fetching your coat, a second ticket holder is told to wait.}
 {a client might send an unsafe request more than once: payments, orders, filings, account changes.}
