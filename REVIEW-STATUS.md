@@ -35,3 +35,7 @@ The prior 288-page publication passed CI in run 45641996246. This review branch 
 ## Publication layout follow-up
 
 The floating quick-reference additions were replaced with compact non-floating visual models in the original strategy cards and prose. The 24-diagram source is preserved, as are the original detailed figures and verified technical fixes. See [LAYOUT-GUIDE.md](LAYOUT-GUIDE.md); automated checks and rendered contact sheets are required, and manual visual approval remains distinct from CI success.
+
+## Full publication style refinement
+
+See [STYLE-REVIEW.md](STYLE-REVIEW.md) for the rendered-document review and [LAYOUT-GUIDE.md](LAYOUT-GUIDE.md) for the updated semantic color and typography contract. The changes preserve technical content and existing illustrations; the current CI build is the verification authority.

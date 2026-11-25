@@ -7,7 +7,7 @@
 \renewcommand{\theguideListing}{\thechapter.\arabic{guideListing}}
 \definecolor{codebackground}{HTML}{FAFBFC}
 \definecolor{codeborder}{HTML}{C9D5DD}
-\definecolor{codeheader}{HTML}{E9EFF3}
+\definecolor{codeheader}{HTML}{DEEAF0}
 \renewcommand{\theFancyVerbLine}{\sffamily\scriptsize\color{muted}\arabic{FancyVerbLine}}
 \newcommand{\CodeLanguage}[1]{\ifcsname code@lang@#1\endcsname\csname code@lang@#1\endcsname\else#1\fi}
 \makeatletter
@@ -17,9 +17,10 @@
 \def\code@lang@bash{Shell}
 \def\code@lang@lua{Redis server-side operation (Lua)}
 \def\code@lang@perllua{Perl application (embedded Redis script)}
-\definecolor{serverheader}{HTML}{F4E9DB}
+\definecolor{serverheader}{HTML}{F0E1CC}
 \newcommand{\CodeHeaderColor}[1]{\ifcsname code@header@#1\endcsname\csname code@header@#1\endcsname\else codeheader\fi}
 \def\code@header@lua{serverheader}
+\def\code@header@perllua{serverheader}
 \def\code@lang@yaml{YAML}
 \def\code@lang@text{Output / transcript}
 \makeatother

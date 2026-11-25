@@ -1,16 +1,16 @@
 % Compact visual models are integrated into the established strategy cards.
-% Do not add independent floating duplicates or enlarge small artwork to fill a page.
+% Do not add independent floating duplicates. Strategy visuals may be enlarged within the bounded side panel for legibility.
 \newcommand{\QRattach}[2]{\expandafter\def\csname QRvisual@#1\endcsname{#2}}
 \newcommand{\QRplainlabel}{\textbf{\sffamily\color{teal}In plain terms.}}
 \newcommand{\QRstrategyplain}[2]{%
   \ifcsname QRvisual@#1\endcsname
     \noindent
-    \begin{minipage}[t]{.53\linewidth}
+    \begin{minipage}[t]{.49\linewidth}
       \vspace{0pt}\QRplainlabel\ #2
     \end{minipage}\hfill
-    \begin{minipage}[t]{.43\linewidth}
+    \begin{minipage}[t]{.47\linewidth}
       \vspace{0pt}\centering
-      \adjustbox{max totalsize={\linewidth}{51pt}}{\csname QRvisual@#1\endcsname}%
+      \adjustbox{width=.98\linewidth,max totalheight=58pt}{\csname QRvisual@#1\endcsname}%
       \par\vspace{3pt}{\scriptsize\sffamily\color{muted}Visual model\par}
     \end{minipage}%
   \else
