@@ -24,6 +24,155 @@ The counter reads a CAS token and attempts a conditional replacement. Contention
 
 The order endpoint uses a unique database key scoped to the authenticated principal. Concurrent identical submissions return the same stored amount; reuse with a different amount returns a conflict. The database row is the simulated effect, not a real payment. External effects require a transactional outbox and downstream idempotency.
 
+
+\section{Responsibility map: who owns what?}
+A worker is a process, not a shared object. Each request may reach a different worker. Perl variables in one worker cannot coordinate another worker. Shared state therefore lives behind a service boundary. The following map distinguishes the owner of a decision from the component that merely executes it.
+
+\begin{figure}[H]\centering
+\begin{adjustbox}{max width=\linewidth}
+\begin{tikzpicture}[node distance=7mm and 8mm]
+\node[box,text width=95mm] (client) {HTTP client: supplies bearer credential, operation and idempotency key};
+\node[box,below=of client,text width=95mm] (server) {Starman: accepts connections and dispatches requests};
+\node[box,below=of server,text width=95mm] (workers) {Catalyst workers: validate method and input, authorize, orchestrate, return HTTP status};
+\node[okbox,below left=of workers,text width=48mm] (cache) {Memcached\\Disposable counters\\CAS version tokens\\Advisory rate windows};
+\node[box,draw=navy,fill=navy!8,below right=of workers,text width=48mm] (db) {MySQL / InnoDB\\Credential digests and expiry\\Principal and scope\\Unique durable order rows};
+\node[badbox,below=of cache,text width=48mm] (loss) {Eviction may reset counts; outage may reject requests};
+\node[box,below=of db,text width=48mm] (safe) {Committed order survives cache loss; database outage must not authorize};
+\draw[arr] (client)--(server);
+\draw[arr] (server)--(workers);
+\draw[arr] (workers)--node[left,font=\scriptsize]{cache commands}(cache);
+\draw[thinarr] (workers)--node[right,font=\scriptsize]{SQL}(db);
+\draw[badarr] (cache)--(loss);
+\draw[thinarr] (db)--(safe);
+\end{tikzpicture}
+\end{adjustbox}
+\caption{Responsibility boundaries. Arrows show requests or consequences; responses return to the caller. No worker-local variable is the shared authority.}
+\end{figure}
+
+\begin{center}\small
+\begin{tabular}{p{.25\linewidth}p{.30\linewidth}p{.35\linewidth}}
+\toprule Resource & Owner and mechanism & Why this owner?\\\midrule
+HTTP routing & Starman and Catalyst & Process isolation and request dispatch\\
+Authorization & InnoDB lookup per request & Revocation must survive cache loss\\
+Counter & Memcached CAS & Single-key conditional replacement avoids lost updates\\
+Rate window & Memcached add and incr & Atomic increment, inexpensive disposable state\\
+Order identity & InnoDB composite primary key & Durable uniqueness across workers\\
+API contract & Served OpenAPI file & Describes interface; does not itself enforce authorization\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Reading sequence diagrams}
+Read downward in time. A solid arrow represents a request or operation; a dashed arrow represents a returned result. Two worker lanes represent independent processes, not two threads sharing Perl variables. The diagrams below show representative interleavings, not a promise about scheduling.
+
+\begin{figure}[H]\centering
+\begin{adjustbox}{max width=\linewidth}
+\begin{tikzpicture}[x=3.5cm,y=.75cm,font=\small]
+\foreach \x/\name in {0/Client,1/Catalyst,2/InnoDB,3/Memcached}{
+\node[box] at (\x,0) {\name}; \draw[densely dotted,gray] (\x,-.4)--(\x,-10.5);}
+\draw[arr] (0,-1)--node[above,font=\scriptsize]{POST /order + bearer}(1,-1);
+\draw[arr] (1,-2)--node[above,font=\scriptsize]{lookup SHA-256 digest}(2,-2);
+\draw[thinarr,dashed] (2,-3)--node[above,font=\scriptsize]{principal, scope, expiry}(1,-3);
+\node[okbox,font=\scriptsize] at (1,-4) {Validate input and scope};
+\draw[arr] (1,-5)--node[above,font=\scriptsize]{add window; incr}(3,-5);
+\draw[thinarr,dashed] (3,-6)--node[above,font=\scriptsize]{count within limit}(1,-6);
+\draw[arr] (1,-7)--node[above,font=\scriptsize]{insert or retain row}(2,-7);
+\draw[arr] (1,-8)--node[above,font=\scriptsize]{select stored amount}(2,-8);
+\draw[thinarr,dashed] (2,-9)--node[above,font=\scriptsize]{committed amount}(1,-9);
+\draw[thinarr,dashed] (1,-10)--node[above,font=\scriptsize]{200 JSON response}(0,-10);
+\end{tikzpicture}
+\end{adjustbox}
+\caption{Successful order request. Authentication precedes cache access; the database records the simulated effect before success is returned.}
+\end{figure}
+
+\noindent\textbf{Alternative paths.} Missing or expired credentials return 401; insufficient scope returns 403; malformed input returns 400. Cache failure returns 503, and a rate limit breach returns 429. A different amount under the same order key returns 409. None of these paths requires a new durable order.
+
+\begin{figure}[H]\centering
+\begin{adjustbox}{max width=\linewidth}
+\begin{tikzpicture}[x=4cm,y=.8cm,font=\small]
+\foreach \x/\name in {0/Worker A,1/Memcached,2/Worker B}{
+\node[box] at (\x,0) {\name}; \draw[densely dotted,gray] (\x,-.4)--(\x,-10.5);}
+\draw[arr] (0,-1)--node[above,font=\scriptsize]{gets counter}(1,-1);
+\draw[thinarr,dashed] (1,-2)--node[above,font=\scriptsize]{7, version X}(0,-2);
+\draw[arr] (2,-3)--node[above,font=\scriptsize]{gets counter}(1,-3);
+\draw[thinarr,dashed] (1,-4)--node[above,font=\scriptsize]{7, version X}(2,-4);
+\draw[arr] (0,-5)--node[above,font=\scriptsize]{CAS X, write 8}(1,-5);
+\draw[thinarr,dashed] (1,-6)--node[above,font=\scriptsize]{stored; version Y}(0,-6);
+\draw[badarr] (2,-7)--node[above,font=\scriptsize]{CAS X, write 8}(1,-7);
+\draw[badarr,dashed] (1,-8)--node[above,font=\scriptsize]{rejected: stale version}(2,-8);
+\draw[arr] (2,-9)--node[above,font=\scriptsize]{gets again: 8, Y}(1,-9);
+\draw[arr] (2,-10)--node[above,font=\scriptsize]{CAS Y, write 9}(1,-10);
+\end{tikzpicture}
+\end{adjustbox}
+\caption{CAS prevents a lost update. Without conditional replacement both workers could write 8. With CAS, the second worker must reread and recompute; the final value is 9 if the retry succeeds.}
+\end{figure}
+
+\begin{figure}[H]\centering
+\begin{adjustbox}{max width=\linewidth}
+\begin{tikzpicture}[node distance=7mm and 10mm]
+\node[box] (start) {Start: deadline and retry budget};
+\node[box,below=of start] (get) {gets key};
+\node[box,below left=of get,text width=38mm] (cas) {Present: compute next value; CAS};
+\node[box,below right=of get,text width=38mm] (add) {Absent: add initial value};
+\node[okbox,below=22mm of get] (done) {Success: return value};
+\node[badbox,right=of done,text width=36mm] (retry) {Failure: jitter and check budget};
+\node[badbox,below=of retry] (stop) {Exhausted: 503};
+\draw[arr] (start)--(get);
+\draw[arr] (get)--(cas);
+\draw[arr] (get)--(add);
+\draw[arr] (cas)--(done);
+\draw[arr] (add)--(done);
+\draw[badarr] (cas.west)--++(-.4,0)|-(retry.south);
+\draw[badarr] (add.east)--++(.4,0)|-(retry.east);
+\draw[badarr] (retry)--(stop);
+\draw[badarr] (retry.north)|-node[pos=.75,above,font=\scriptsize]{budget remains}(get.east);
+\end{tikzpicture}
+\end{adjustbox}
+\caption{Bounded CAS retry control flow. A failed conditional write is not permission to overwrite blindly. Network calls can extend the nominal deadline by their own timeout.}
+\end{figure}
+
+\begin{figure}[H]\centering
+\begin{adjustbox}{max width=\linewidth}
+\begin{tikzpicture}[x=4cm,y=.8cm,font=\small]
+\foreach \x/\name in {0/Worker A,1/InnoDB,2/Worker B}{
+\node[box] at (\x,0) {\name}; \draw[densely dotted,gray] (\x,-.4)--(\x,-8.5);}
+\draw[arr] (0,-1)--node[above,font=\scriptsize]{insert (alice, K, 25)}(1,-1);
+\draw[arr] (2,-2)--node[above,font=\scriptsize]{insert (alice, K, 25)}(1,-2);
+\node[okbox,font=\scriptsize] at (1,-3) {Unique index arbitrates};
+\draw[thinarr,dashed] (1,-4)--node[above,font=\scriptsize]{A commits row}(0,-4);
+\draw[thinarr,dashed] (1,-5)--node[above,font=\scriptsize]{B retains existing row}(2,-5);
+\draw[arr] (0,-6)--node[above,font=\scriptsize]{select amount}(1,-6);
+\draw[arr] (2,-7)--node[above,font=\scriptsize]{select amount}(1,-7);
+\node[okbox,font=\scriptsize] at (1,-8) {One row; both see 25};
+\end{tikzpicture}
+\end{adjustbox}
+\caption{Durable idempotency. Either worker may win; the unique index, not a cache lease, serializes conflicting inserts. A different amount is rejected after reading the stored row.}
+\end{figure}
+
+\section{Failure boundaries and the reason for the split}
+\begin{figure}[H]\centering
+\begin{adjustbox}{max width=\linewidth}
+\begin{tikzpicture}[node distance=8mm and 9mm]
+\node[box,text width=85mm] (before) {Before loss: counter = 8; order (alice, K, 25) committed};
+\node[badbox,below=of before] (loss) {Memcached entry evicted or deleted};
+\node[box,below left=of loss,text width=48mm] (counter) {Next counter request may initialize to 1};
+\node[okbox,below right=of loss,text width=48mm] (order) {Order replay reads durable row; still one order};
+\node[box,below=of counter,text width=48mm] (why1) {Acceptable only for disposable statistics};
+\node[box,below=of order,text width=48mm] (why2) {Required for correctness-critical effects};
+\draw[badarr] (before)--(loss);
+\draw[badarr] (loss)--(counter);
+\draw[arr] (loss)--(order);
+\draw[thinarr] (counter)--(why1);
+\draw[thinarr] (order)--(why2);
+\end{tikzpicture}
+\end{adjustbox}
+\caption{Cache loss changes performance and ephemeral state, not the identity of a committed order. The laboratory deletes selected keys; it does not simulate every restart or network failure.}
+\end{figure}
+
+A rate window uses a key containing the principal and minute number. Concurrent add operations initialize at most one live key; incr updates that key atomically. Expiration removes obsolete windows. Eviction can nevertheless reset a live window, so a strict abuse quota needs a stronger authority. Likewise, the advisory lease in example 14 can coalesce cache refreshes but must not protect a payment: eviction or expiry can admit a second owner. A CAS tombstone avoids deleting a successor's lease, but cannot restore mutual exclusion after the original lease has expired.
+
+\noindent\textbf{Reader exercise.} Trace two requests with the same order key but different amounts. Identify the unique index as the arbitration point, the stored amount as the decision input, and HTTP 409 as the losing request's outcome. Then repeat with an evicted counter key. Explain why only the latter operation may restart its count.
+
 \section{Executable laboratory}
 Run example 40 against disposable MySQL and Memcached services. The driver starts four workers, checks the served API contract, exercises missing credentials and insufficient scope, submits eight concurrent increments and eight duplicate orders, deletes cache entries and verifies the durable order remains unique. It then revokes the token and checks that subsequent authentication fails. A successful run prints an explicit final success line; consult the release verification record for observed results.
 
