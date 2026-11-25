@@ -201,6 +201,12 @@ REDIS_SERVER=127.0.0.1:6379 starman --workers 4 --listen 127.0.0.1:5000 \
     examples/catalyst-session/app.psgi
 ```
 
+## Memcached Catalyst laboratory
+
+Example 40 runs a second Catalyst application under four Starman workers with Memcached and MySQL. It serves its [OpenAPI 3.1 contract](examples/catalyst-memcached/openapi.json) at `/openapi.json`, uses database-backed opaque bearer credentials with read/write scopes, and exercises CAS counters, advisory rate limiting, durable idempotency and revocation. Concurrent HTTP tests verify that deleting cache entries does not duplicate the durable order.
+
+Run `perl examples/40-catalyst-memcached.pl` with the disposable database and Memcached environment described above. The driver provisions temporary credentials and cleans up its database rows. This is a loopback laboratory, not a production authentication service.
+
 ## Laboratory safety
 
 The examples create, delete and flush keys and tables in the namespaces they
