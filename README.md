@@ -40,7 +40,7 @@ Designed for junior developers learning synchronization and experienced engineer
 
 ## Continuously verified technical publishing
 
-Modern Perl Concurrency is a continuously verified technical reference that combines professional LaTeX typesetting, executable examples, automated testing and repeatable publication through GitHub Actions. The book and its supporting software are maintained as a unified engineering project.
+Modern Perl Concurrency is a continuously verified technical reference that combines professional LaTeX typesetting, executable examples, automated testing and repeatable publication through GitHub Actions (continuous integration, or CI). The book and its supporting software are maintained as a unified engineering project.
 
 Rather than treating the PDF as a manually assembled manuscript, the project treats it as a versioned release artifact. Canonical example sources feed both the executable laboratory and the generated syntax-highlighted listings. The publication pipeline exercises concurrency invariants against disposable services, records benchmark observations and checks the compiled documents before release.
 
@@ -203,7 +203,7 @@ REDIS_SERVER=127.0.0.1:6379 starman --workers 4 --listen 127.0.0.1:5000 \
 
 ## Memcached Catalyst laboratory
 
-Example 40 runs a second Catalyst application under four Starman workers with Memcached and MySQL. It serves its [OpenAPI 3.1 contract](examples/catalyst-memcached/openapi.json) at `/openapi.json`, uses database-backed opaque bearer credentials with read/write scopes, and exercises CAS counters, advisory rate limiting, durable idempotency and revocation. Concurrent HTTP tests verify that deleting cache entries does not duplicate the durable order.
+Example 40 runs a second Catalyst application under four Starman workers with Memcached and MySQL. It serves its [OpenAPI 3.1 application programming interface (API) contract](examples/catalyst-memcached/openapi.json) at `/openapi.json`, uses database-backed opaque bearer credentials with read/write scopes, and exercises compare-and-swap (CAS) counters, advisory rate limiting, durable idempotency and revocation. Concurrent HTTP tests verify that deleting cache entries does not duplicate the durable order.
 
 Run `perl examples/40-catalyst-memcached.pl` with the disposable database and Memcached environment described above. The driver provisions temporary credentials and cleans up its database rows. This is a loopback laboratory, not a production authentication service.
 
