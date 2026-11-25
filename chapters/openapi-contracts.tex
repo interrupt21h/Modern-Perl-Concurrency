@@ -1,0 +1,35 @@
+\section{OpenAPI as an executable contract}
+OpenAPI describes the interface, not the implementation of security. A document can declare a bearer credential without verifying a signature or checking whether the caller owns a record. Keep the contract, authentication, authorization and business invariant separate, and test their composition.
+
+\subsection{From request to protected operation}
+\begin{center}
+\begin{tikzpicture}[font=\small]
+\node[box,text width=65mm] (a) at (0,0) {HTTP request: method, headers, body};
+\node[box,text width=65mm] (b) at (0,-1.4) {Contract validation: types and required fields};
+\node[box,text width=65mm] (c) at (0,-2.8) {Authentication: identify the principal};
+\node[box,text width=65mm] (d) at (0,-4.2) {Authorization: scope and resource ownership};
+\node[okbox,text width=65mm] (e) at (0,-5.6) {Atomic business operation and response};
+\draw[arr] (a)--(b);
+\draw[arr] (b)--(c);
+\draw[arr] (c)--(d);
+\draw[arr] (d)--(e);
+\end{tikzpicture}
+\end{center}
+The order is illustrative: reject oversized requests before expensive parsing, and authenticate before exposing sensitive validation details. A failed authorization check must not perform the protected mutation.
+
+\subsection{Reading security requirements}
+In an OpenAPI security array, separate objects are alternatives (logical OR); multiple schemes in one object are jointly required (logical AND). An empty array disables inherited security requirements. A refresh endpoint may have an empty security array because its credential is carried in the body, not because anyone may mint tokens.
+
+The Redis laboratory accepts either a bearer token or an API key at its identity endpoint. The Memcached laboratory uses opaque bearer tokens checked against MySQL, including an explicit write-scope check. Memcached is not the authority for credentials or durable orders.
+
+\subsection{Contract tests and failure semantics}
+Test the actual HTTP interface, not only the controller methods. Verify the declared method, required headers, content type, response status and response schema. Test invalid credentials, insufficient scope, mismatched resource ownership and concurrent revocation. A 405 response includes an Allow header. A 409 can describe a pending operation; a 422 describes an idempotency key reused with a different payload. A 429 indicates quota exhaustion; a 503 indicates unavailable capacity or dependencies.
+
+The existing laboratory drivers exercise selected contract properties. They are not complete OpenAPI schema validators. A production pipeline should validate the document against its declared specification version and validate representative request and response bodies using a compatible JSON Schema implementation.
+
+\subsection{Identity providers and service credentials}
+For interactive clients, use an established authorization server with authorization code and PKCE. OpenID Connect adds identity assertions; an ID token is not an API access token. For machine clients, use client credentials with narrowly scoped access tokens. Asymmetric signing separates issuance from verification; publish public keys through a JSON Web Key Set (JWKS), bound key-cache lifetimes and handle unknown key identifiers without unlimited refresh traffic. Mutual TLS can bind a credential to a client certificate.
+
+For signed HTTP messages prefer a standardized protocol such as RFC~9421 over the laboratory's custom canonicalization. For cookie-authenticated writes, enforce CSRF protection in addition to method restrictions. Never interpret an OpenAPI security declaration as proof that these controls are implemented.
+
+See the official OpenAPI specification at \url{https://spec.openapis.org/oas/v3.2.0.html} and OAuth security best current practice at \url{https://www.rfc-editor.org/rfc/rfc9700}.

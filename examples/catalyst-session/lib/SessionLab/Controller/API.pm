@@ -36,6 +36,14 @@ sub _json {
     $c->res->body( $JSON->encode($data) );
 }
 
+sub _method {
+    my ( $c, $wanted ) = @_;
+    return 1 if $c->req->method eq $wanted;
+    $c->res->header( Allow => $wanted );
+    _json( $c, 405, { error => 'method not allowed' } );
+    return;
+}
+
 sub _body {
     my ($c) = @_;
     my $b = $c->req->body_data;
@@ -90,6 +98,7 @@ LUA
 
 sub create_key : Path('keys') : Args(0) {
     my ( $self, $c ) = @_;
+    return unless _method( $c, 'POST' );
     my $user = _session_user($c)
         or return _json( $c, 401, { error => 'login required' } );
     my $key = new_api_key();
@@ -116,6 +125,7 @@ sub create_key : Path('keys') : Args(0) {
 # password grant must not be used.
 sub create_token : Path('token') : Args(0) {
     my ( $self, $c ) = @_;
+    return unless _method( $c, 'POST' );
     my $user = _session_user($c)
         or return _json( $c, 401, { error => 'login required' } );
     my $family  = new_family();
@@ -171,6 +181,7 @@ LUA
 
 sub refresh : Path('refresh') : Args(0) {
     my ( $self, $c ) = @_;
+    return unless _method( $c, 'POST' );
     my $presented = _body($c)->{refresh_token} // '';
     my $family    = family_of($presented)
         or return _json( $c, 400, { error => 'malformed refresh token' } );
@@ -212,6 +223,7 @@ sub refresh : Path('refresh') : Args(0) {
 # with a random successor. Concurrent duplicates fork the family.
 sub refresh_naive : Path('refresh_naive') : Args(0) {
     my ( $self, $c ) = @_;
+    return unless _method( $c, 'POST' );
     my $presented = _body($c)->{refresh_token} // '';
     my $family    = family_of($presented)
         or return _json( $c, 400, { error => 'malformed refresh token' } );
@@ -263,6 +275,7 @@ sub _principal {
 
 sub me : Path('me') : Args(0) {
     my ( $self, $c )    = @_;
+    return unless _method( $c, 'GET' );
     my ( $user, $cred ) = _principal($c)
         or return _json( $c, 401, { error => 'unauthenticated' } );
     _json( $c, 200, { user => $user, credential => $cred->{type} } );
@@ -270,6 +283,7 @@ sub me : Path('me') : Args(0) {
 
 sub logout : Path('logout') : Args(0) {
     my ( $self, $c )    = @_;
+    return unless _method( $c, 'POST' );
     my ( $user, $cred ) = _principal($c);
     return _json( $c, 401, { error => 'bearer token required' } )
         unless $user && $cred->{type} eq 'jwt';
@@ -303,6 +317,7 @@ my ( $QUOTA, $WINDOW ) = ( 10, 60 );
 
 sub limited : Path('limited') : Args(0) {
     my ( $self, $c )    = @_;
+    return unless _method( $c, 'GET' );
     my ( $user, $cred ) = _principal($c);
     return _json( $c, 401, { error => 'API key required' } )
         unless $user && $cred->{type} eq 'api_key';
@@ -327,6 +342,7 @@ sub limited : Path('limited') : Args(0) {
 # attacker cannot burn a legitimate client's nonces with forged requests.
 sub signed : Path('signed') : Args(0) {
     my ( $self, $c ) = @_;
+    return unless _method( $c, 'POST' );
     my $kid   = $c->req->header('X-Key-Id')    // '';
     my $ts    = $c->req->header('X-Timestamp') // '';
     my $nonce = $c->req->header('X-Nonce')     // '';
