@@ -1,0 +1,153 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Memcached Catalyst laboratory",
+    "version": "1.0.0"
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "opaque"
+      }
+    }
+  },
+  "paths": {
+    "/openapi.json": {
+      "get": {
+        "operationId": "openapi",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/whoami": {
+      "get": {
+        "operationId": "whoami",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid token"
+          }
+        }
+      }
+    },
+    "/revoke": {
+      "post": {
+        "operationId": "revoke",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid token"
+          }
+        }
+      }
+    },
+    "/counter": {
+      "post": {
+        "operationId": "counter",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid token"
+          },
+          "403": {
+            "description": "Insufficient scope"
+          },
+          "503": {
+            "description": "Cache unavailable"
+          }
+        }
+      }
+    },
+    "/order": {
+      "post": {
+        "operationId": "order",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Invalid token"
+          },
+          "403": {
+            "description": "Insufficient scope"
+          },
+          "409": {
+            "description": "Idempotency conflict"
+          },
+          "429": {
+            "description": "Rate limited"
+          },
+          "503": {
+            "description": "Cache unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount"
+                ],
+                "properties": {
+                  "amount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 999999
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
