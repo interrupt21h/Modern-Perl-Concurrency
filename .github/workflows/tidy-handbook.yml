@@ -68,6 +68,7 @@ jobs:
           {
             make tidy
             make tidy-check
+            python3 scripts/check-abbreviations.py
             export MYSQL_PWD="$DB_PASS"
             mysql --protocol=TCP -h 127.0.0.1 -P "$MYSQL_PORT" -u "$DB_USER" concurrency_lab < examples/schema.sql
             sh run-tests.sh | tee verification-suite.txt
