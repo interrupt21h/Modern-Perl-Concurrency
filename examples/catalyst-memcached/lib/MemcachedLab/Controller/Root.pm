@@ -21,16 +21,26 @@ sub reply {
 }
 
 # Lazy per-process resources; never reuse a database socket from the master.
-my ($DB, $DB_PID, $CACHE, $CACHE_PID);
+my ( $DB, $DB_PID, $CACHE, $CACHE_PID );
+
 sub db {
-    if ($DB && $DB_PID != $$) {
+    if ( $DB && $DB_PID != $$ ) {
         $DB->{InactiveDestroy} = 1;
         undef $DB;
     }
     return $DB if $DB && $DB->ping;
-    $DB = DBI->connect($ENV{DB_DSN}, $ENV{DB_USER}, $ENV{DB_PASS},
-        { RaiseError => 1, PrintError => 0, AutoCommit => 1,
-          AutoInactiveDestroy => 1, mysql_auto_reconnect => 0 });
+    $DB = DBI->connect(
+        $ENV{DB_DSN},
+        $ENV{DB_USER},
+        $ENV{DB_PASS},
+        {
+            RaiseError           => 1,
+            PrintError           => 0,
+            AutoCommit           => 1,
+            AutoInactiveDestroy  => 1,
+            mysql_auto_reconnect => 0
+        }
+    );
     $DB_PID = $$;
     return $DB;
 }

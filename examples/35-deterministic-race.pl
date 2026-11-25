@@ -35,7 +35,12 @@ $counter = 0;
         sub {
             $read->enqueue(1);
             $go->dequeue;
-            { lock($counter); my $snapshot = $counter; threads->yield(); $counter = $snapshot + 1; }
+            {
+                lock($counter);
+                my $snapshot = $counter;
+                threads->yield();
+                $counter = $snapshot + 1;
+            }
             return 1;
         }
     );

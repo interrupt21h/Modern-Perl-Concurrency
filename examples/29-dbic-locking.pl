@@ -192,7 +192,8 @@ sub in_workers {
     my @failed;
     for my $pid (@pids) {
         my $reaped;
-        do { $reaped = waitpid($pid, 0) } while $reaped == -1 && $!{EINTR};
+        do { $reaped = waitpid( $pid, 0 ) }
+            while $reaped == -1 && $!{EINTR};
         push @failed, $pid if $reaped != $pid || $?;
     }
     die "workers failed: @failed\n" if @failed;

@@ -242,6 +242,27 @@
 \PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stuck\PGZus{}ttl}\PG{+w}{ }\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{0}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{stuck\PGZus{}ttl}\PG{+w}{ }\PG{o}{\PGZlt{}=}\PG{+w}{ }\PG{l+m+mi}{120}\PG{p}{,}
 \PG{+w}{    }\PG{l+s}{\PGZdq{}abandoned pending key expires in \PGZdl{}stuck\PGZus{}ttl s, not 24 h\PGZdq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 
+\PG{c+c1}{\PGZsh{} Force expiry of the admission claim without waiting two minutes.}
+\PG{c+c1}{\PGZsh{} The provider\PGZsq{}s separate ledger must still reject a different fingerprint}
+\PG{c+c1}{\PGZsh{} and replay the original charge without incrementing its effect count.}
+\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{del}\PG{p}{(}\PG{l+s}{\PGZdq{}idem:alice:\PGZdl{}crash\PGZus{}key\PGZdq{}}\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/pay\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{form}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{amount}\PG{+w}{            }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{99}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Idempotency\PGZhy{}Key\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{crash\PGZus{}key}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{422}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}provider rejects changed request after claim expiry\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rb}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}
+\PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}POST\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/pay\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{form}\PG{+w}{    }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n}{amount}\PG{+w}{            }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{l+m+mi}{40}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{p}{,}
+\PG{+w}{    }\PG{n}{headers}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{l+s}{\PGZsq{}Idempotency\PGZhy{}Key\PGZsq{}}\PG{+w}{ }\PG{o}{=}\PG{o}{\PGZgt{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{crash\PGZus{}key}\PG{+w}{ }\PG{p}{\PGZcb{}}
+\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rs}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{201}\PG{+w}{ }\PG{o}{\PGZam{}\PGZam{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{rb}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{charge\PGZus{}no}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}provider replays the original charge after expiry\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{(}\PG{+w}{ }\PG{n+nb}{undef}\PG{p}{,}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{+w}{ }\PG{p}{)}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n}{request}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{alice}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}GET\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}/charges\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{body}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{p}{\PGZob{}}\PG{n}{charges}\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{l+m+mi}{2}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}no duplicate effect after admission expiry\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+
 \PG{c+c1}{\PGZsh{} \PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{}\PGZhy{} 5. rate limit}
 \PG{k}{print}\PG{+w}{ }\PG{l+s}{\PGZdq{}Login rate limiting\PGZbs{}n\PGZdq{}}\PG{p}{;}
 \PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{bob}\PG{+w}{      }\PG{o}{=}\PG{+w}{ }\PG{n}{client}\PG{p}{(}\PG{p}{)}\PG{p}{;}
@@ -315,6 +336,16 @@
 \PG{p}{\PGZcb{}}
 \PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{logged}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}and the event is logged\PGZsq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
 
+\PG{c+c1}{\PGZsh{} Only expiring records belong here; charges is the simulated provider ledger.}
+\PG{c+c1}{\PGZsh{} KEYS is intentionally confined to this disposable laboratory.}
+\PG{k}{for}\PG{+w}{ }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pattern}\PG{+w}{ }\PG{p}{(}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}sess:*\PGZsq{}}\PG{p}{,}\PG{+w}{      }\PG{l+s}{\PGZsq{}cart:*\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}user\PGZhy{}sessions:*\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}idem:*\PGZsq{}}\PG{p}{,}
+\PG{+w}{    }\PG{l+s}{\PGZsq{}ratelimit:*\PGZsq{}}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZsq{}slock:*\PGZsq{}}
+\PG{+w}{    }\PG{p}{)}
+\PG{p}{\PGZob{}}
+\PG{+w}{    }\PG{k}{my}\PG{+w}{ }\PG{n+nv}{@}\PG{n+nv}{persistent}\PG{+w}{ }\PG{o}{=}\PG{+w}{ }\PG{n+nb}{grep}\PG{+w}{ }\PG{p}{\PGZob{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n}{ttl}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{\PGZus{}}\PG{p}{)}\PG{+w}{ }\PG{o}{==}\PG{+w}{ }\PG{o}{\PGZhy{}}\PG{l+m+mi}{1}\PG{+w}{ }\PG{p}{\PGZcb{}}\PG{+w}{ }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{redis}\PG{o}{\PGZhy{}}\PG{o}{\PGZgt{}}\PG{n+nb}{keys}\PG{p}{(}\PG{n+nv}{\PGZdl{}}\PG{n+nv}{pattern}\PG{p}{)}\PG{p}{;}
+\PG{+w}{    }\PG{n}{check}\PG{p}{(}\PG{+w}{ }\PG{o}{!}\PG{n+nv}{@}\PG{n+nv}{persistent}\PG{p}{,}\PG{+w}{ }\PG{l+s}{\PGZdq{}no persistent expiring keys in \PGZdl{}pattern\PGZdq{}}\PG{+w}{ }\PG{p}{)}\PG{p}{;}
+\PG{p}{\PGZcb{}}
 \PG{n}{clear\PGZus{}namespaces}\PG{p}{(}\PG{p}{)}\PG{p}{;}
 \PG{n+nb}{printf}\PG{+w}{ }\PG{l+s}{\PGZdq{}Catalyst sessions: all checks passed (naive kept \PGZpc{}d of 8)\PGZbs{}n\PGZdq{}}\PG{p}{,}
 \PG{+w}{    }\PG{n+nv}{\PGZdl{}}\PG{n+nv}{naive}\PG{p}{;}

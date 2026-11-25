@@ -246,14 +246,22 @@ check( $stuck_ttl > 0 && $stuck_ttl <= 120,
 # The provider's separate ledger must still reject a different fingerprint
 # and replay the original charge without incrementing its effect count.
 $redis->del("idem:alice:$crash_key");
-($rs) = request($alice, 'POST', '/pay',
-    form => { amount => 99 }, headers => { 'Idempotency-Key' => $crash_key });
-check($rs == 422, 'provider rejects changed request after claim expiry');
-($rs, $rb) = request($alice, 'POST', '/pay',
-    form => { amount => 40 }, headers => { 'Idempotency-Key' => $crash_key });
-check($rs == 201 && $rb->{charge_no} == 2, 'provider replays the original charge after expiry');
-(undef, $body) = request($alice, 'GET', '/charges');
-check($body->{charges} == 2, 'no duplicate effect after admission expiry');
+($rs) = request(
+    $alice, 'POST', '/pay',
+    form    => { amount            => 99 },
+    headers => { 'Idempotency-Key' => $crash_key }
+);
+check( $rs == 422, 'provider rejects changed request after claim expiry' );
+( $rs, $rb ) = request(
+    $alice, 'POST', '/pay',
+    form    => { amount            => 40 },
+    headers => { 'Idempotency-Key' => $crash_key }
+);
+check( $rs == 201 && $rb->{charge_no} == 2,
+    'provider replays the original charge after expiry' );
+( undef, $body ) = request( $alice, 'GET', '/charges' );
+check( $body->{charges} == 2,
+    'no duplicate effect after admission expiry' );
 
 # ---------------------------------------------------------------- 5. rate limit
 print "Login rate limiting\n";
@@ -330,9 +338,13 @@ check( $logged, 'and the event is logged' );
 
 # Only expiring records belong here; charges is the simulated provider ledger.
 # KEYS is intentionally confined to this disposable laboratory.
-for my $pattern ( 'sess:*', 'cart:*', 'user-sessions:*', 'idem:*', 'ratelimit:*', 'slock:*' ) {
+for my $pattern (
+    'sess:*',      'cart:*', 'user-sessions:*', 'idem:*',
+    'ratelimit:*', 'slock:*'
+    )
+{
     my @persistent = grep { $redis->ttl($_) == -1 } $redis->keys($pattern);
-    check(!@persistent, "no persistent expiring keys in $pattern");
+    check( !@persistent, "no persistent expiring keys in $pattern" );
 }
 clear_namespaces();
 printf "Catalyst sessions: all checks passed (naive kept %d of 8)\n",

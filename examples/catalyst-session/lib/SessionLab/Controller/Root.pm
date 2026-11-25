@@ -49,6 +49,7 @@ sub login : Local : Args(0) {
         $c->res->header( 'Retry-After' => 60 );
         return _json( $c, 429, { error => 'too many attempts' } );
     }
+
     # Lab-only fixed credentials: production must verify a password hash
     # using a vetted password-verification library, not compare plaintext.
     return _json( $c, 401, { error => 'invalid credentials' } )
@@ -86,11 +87,14 @@ sub logout_everywhere : Local : Args(0) {
     my ( $self, $c ) = @_;
     my $user = $c->sessionid ? $c->session->{user} : undef;
     return _json( $c, 401, { error => 'not logged in' } ) unless $user;
-    my @sids = _redis()->smembers("user-sessions:$user");
+    my @sids   = _redis()->smembers("user-sessions:$user");
     my $prefix = $c->_session_plugin_config->{redis_prefix} // 'sess:';
     _redis()->del(
         map {
-            ( "${prefix}session:$_", "${prefix}expires:$_", "${prefix}flash:$_" )
+            (
+                "${prefix}session:$_", "${prefix}expires:$_",
+                "${prefix}flash:$_"
+            )
         } @sids
     );
     _redis()->del("user-sessions:$user");
@@ -196,10 +200,14 @@ sub pay : Local : Args(0) {
 
     # A short TTL while pending: if this worker dies mid-request, the key
     # frees itself in two minutes instead of blocking retries for a day.
-    my $pending = $JSON->encode({
-        state => 'pending', fp => $fingerprint, owner => $c->random_hex(16)
-    });
-    my $claimed = _redis()->set($key, $pending, 'NX', 'EX', 120);
+    my $pending = $JSON->encode(
+        {
+            state => 'pending',
+            fp    => $fingerprint,
+            owner => $c->random_hex(16)
+        }
+    );
+    my $claimed = _redis()->set( $key, $pending, 'NX', 'EX', 120 );
     unless ($claimed) {
         my $prior =
             $JSON->decode( _redis()->get($key) // '{"state":"pending"}' );
@@ -216,33 +224,38 @@ sub pay : Local : Args(0) {
 
     my ( $status, $body ) = eval {
         sleep(0.2);
-        my ($matched, $n) = @{ SessionLab::Redis->run_script(
-            $PROVIDER, 2, "charges:$user:$idem", "charges:$user", $fingerprint
-        ) };
-        if (!$matched) {
-            (422, { error => 'key reused with a different request' });
+        my ( $matched, $n ) = @{ SessionLab::Redis->run_script(
+                $PROVIDER,             2,
+                "charges:$user:$idem", "charges:$user",
+                $fingerprint
+            )
+        };
+        if ( !$matched ) {
+            ( 422, { error => 'key reused with a different request' } );
         }
         else {
-            # Fault injection: die after the effect, before saving the response.
+        # Fault injection: die after the effect, before saving the response.
             kill 'KILL', $$
                 if $ENV{SESSIONLAB_FAULTS} && $c->req->params->{crash};
-            (201, { charged => $amount, charge_no => $n });
+            ( 201, { charged => $amount, charge_no => $n } );
         }
     };
     unless ($status) {
-        # A transport error may have followed a committed provider operation.
-        # Preserve the claim until expiration; reconciliation uses the same key.
+
+    # A transport error may have followed a committed provider operation.
+    # Preserve the claim until expiration; reconciliation uses the same key.
         return _json( $c, 502, { error => 'payment outcome unknown' } );
     }
 
-    if ($status == 422) {
-        SessionLab::Redis->run_script($RELEASE_CLAIM, 1, $key, $pending);
-        return _json($c, $status, $body);
+    if ( $status == 422 ) {
+        SessionLab::Redis->run_script( $RELEASE_CLAIM, 1, $key, $pending );
+        return _json( $c, $status, $body );
     }
 
     # Completed: keep the stored response for 24 hours of safe retries.
     my $saved = SessionLab::Redis->run_script(
-        $COMPLETE, 1, $key, $pending,
+        $COMPLETE,
+        1, $key, $pending,
         $JSON->encode(
             {
                 state  => 'done',
@@ -252,7 +265,9 @@ sub pay : Local : Args(0) {
             }
         )
     );
-    $c->log->warn('payment response not cached: claim expired or ownership changed') unless $saved;
+    $c->log->warn(
+        'payment response not cached: claim expired or ownership changed')
+        unless $saved;
     _json( $c, $status, $body );
 }
 
