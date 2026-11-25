@@ -189,7 +189,13 @@ sub in_workers {
         }
         push @pids, $pid;
     }
-    for (@pids) { waitpid( $_, 0 ); die "worker failed\n" if $? }
+    my @failed;
+    for my $pid (@pids) {
+        my $reaped;
+        do { $reaped = waitpid($pid, 0) } while $reaped == -1 && $!{EINTR};
+        push @failed, $pid if $reaped != $pid || $?;
+    }
+    die "workers failed: @failed\n" if @failed;
     return
         map { open my $fh, '<', "$dir/$_" or die; local $/; scalar <$fh> }
         1 .. $n;

@@ -33,11 +33,15 @@ $counter = 0;
 @workers = map {
     threads->create(
         sub {
-            { lock($counter); ++$counter; }
+            $read->enqueue(1);
+            $go->dequeue;
+            { lock($counter); my $snapshot = $counter; threads->yield(); $counter = $snapshot + 1; }
             return 1;
         }
     );
 } 1 .. 2;
+$read->dequeue for 1 .. 2;
+$go->enqueue( 1, 1 );
 for my $worker (@workers) {
     my $ok = $worker->join;
     die "worker failed" unless $ok && !$worker->error;

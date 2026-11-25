@@ -315,6 +315,12 @@ for ( 1 .. 20 ) {
 }
 check( $logged, 'and the event is logged' );
 
+# Only expiring records belong here; charges is the simulated provider ledger.
+# KEYS is intentionally confined to this disposable laboratory.
+for my $pattern ( 'sess:*', 'cart:*', 'user-sessions:*', 'idem:*', 'ratelimit:*', 'slock:*' ) {
+    my @persistent = grep { $redis->ttl($_) == -1 } $redis->keys($pattern);
+    check(!@persistent, "no persistent expiring keys in $pattern");
+}
 clear_namespaces();
 printf "Catalyst sessions: all checks passed (naive kept %d of 8)\n",
     $naive;

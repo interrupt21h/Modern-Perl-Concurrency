@@ -174,6 +174,8 @@ Read downward in time. A solid arrow represents a request or operation; a dashed
 \caption{Cache loss changes performance and ephemeral state, not the identity of a committed order. The laboratory deletes selected keys; it does not simulate every restart or network failure.}
 \end{figure}
 
+The controller uses lazy process-local database and cache handles; database connectivity is checked before reuse. Duplicate submissions consume rate quota because admission precedes the durable idempotency lookup; this is intentional in the laboratory.
+
 A rate window uses a key containing the principal and minute number. Concurrent add operations initialize at most one live key; incr updates that key atomically. Expiration removes obsolete windows. Eviction can nevertheless reset a live window, so a strict abuse quota needs a stronger authority. Likewise, the advisory lease in example 14 can coalesce cache refreshes but must not protect a payment: eviction or expiry can admit a second owner. A CAS tombstone avoids deleting a successor's lease, but cannot restore mutual exclusion after the original lease has expired.
 
 \noindent\textbf{Reader exercise.} Trace two requests with the same order key but different amounts. Identify the unique index as the arbitration point, the stored amount as the decision input, and HTTP 422 as the losing request's outcome. Then repeat with an evicted counter key. Explain why only the latter operation may restart its count.

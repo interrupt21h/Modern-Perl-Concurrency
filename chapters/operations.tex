@@ -122,7 +122,12 @@ Appendix~\ref{app:capstone}.
 The counter invariant is tested in every trial. Treat the timings as a
 snapshot of the stated environment, not as a speedup guarantee. The shared
 array and Perl interpreter overhead still contribute even when separate
-locks are used. With different hardware, data skew or scheduling, results
+locks are used. Each shared-variable access is internally synchronized by
+\code{threads::shared}; the shared array can remain a bottleneck despite
+four application locks. The extra lock bookkeeping and contention can
+make striping slower than a single lock. Use striping here to teach lock
+ordering and bounded lock identity, not as a throughput recommendation.
+A native or process-isolated benchmark is a separate experiment. With different hardware, data skew or scheduling, results
 can change; compare repeated runs under controlled conditions.
 \section{Connection pool exhaustion}
 \index{Connection pools}
